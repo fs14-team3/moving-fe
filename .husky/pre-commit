@@ -1,1 +1,7 @@
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --no-banner --verbose
+else
+  echo "gitleaks not found: skipping local secret scan. Install it (see README) to catch leaks before they are committed."
+fi
+
 npx lint-staged

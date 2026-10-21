@@ -23,6 +23,17 @@
 # misc
 .DS_Store
 *.pem
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+AGENTS.md
+CLAUDE.md
+.claude/
+.codex/
+.cursor/
+.windsurf/
+.aider*
 
 # debug
 npm-debug.log*

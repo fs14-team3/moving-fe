@@ -1,1 +1,13 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-primary: #ff5a2c;
+  --color-primary-hover: #e64a1f;
+  --font-sans:
+    'Pretendard', system-ui, -apple-system, 'Segoe UI', 'Noto Sans KR',
+    sans-serif;
+
+  /* 모바일 ~767px / 태블릿 768~1199px (md) / 데스크톱 1200px~ (lg) */
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 75rem;
+}

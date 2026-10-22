@@ -1,5 +1,6 @@
-import type { Metadata } from 'next'
 import Header from '@/components/layout/Header'
+import Toaster from '@/components/toast/Toaster'
+import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <body className="antialiased">
         <Header />
         <main>{children}</main>
+        <Toaster />
       </body>
     </html>
   )

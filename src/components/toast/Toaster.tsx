@@ -4,7 +4,7 @@ import { Toaster as SonnerToaster } from 'sonner'
 export default function Toaster() {
   return (
     <SonnerToaster
-      className="lg:w-[520px]!"
+      className="lg:w-130!"
       position="top-center"
       duration={3000}
       visibleToasts={1}
@@ -16,7 +16,7 @@ export default function Toaster() {
       }}
       toastOptions={{
         classNames: {
-          toast: 'h-[54px]! px-4! lg:h-[66px]! lg:w-[520px]! lg:px-6!',
+          toast: 'h-[54px]! px-4! lg:h-[66px]! lg:w-full! lg:px-6!',
           title: 'font-sans! text-sm! font-semibold! lg:text-base!',
         },
       }}

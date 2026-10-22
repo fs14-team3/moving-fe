@@ -1,5 +1,5 @@
 import Header from '@/components/layout/Header'
-import Toaster from '@/components/Toaster'
+import Toaster from '@/components/toast/Toaster'
 import type { Metadata } from 'next'
 import './globals.css'
 

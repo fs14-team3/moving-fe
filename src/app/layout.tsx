@@ -1,3 +1,4 @@
+import Header from '@/components/layout/Header'
 import Toaster from '@/components/Toaster'
 import type { Metadata } from 'next'
 import './globals.css'
@@ -11,7 +12,8 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko">
       <body className="antialiased">
-        {children}
+        <Header />
+        <main>{children}</main>
         <Toaster />
       </body>
     </html>

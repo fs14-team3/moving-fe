@@ -25,7 +25,7 @@ export default function Header() {
           </Link>
         </div>
         <div className="hidden lg:block">
-          <Button href="/login" fullWidth={false}>
+          <Button href="/login" className="lg:h-[54px] lg:w-auto lg:px-8">
             로그인
           </Button>
         </div>

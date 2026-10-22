@@ -1,15 +1,13 @@
 import Link from 'next/link'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { cn } from '@/lib/cn'
 
 type Variant = 'solid' | 'outlined'
-type Size = 'md' | 'lg'
 
 type CommonProps = {
   variant?: Variant
-  size?: Size
   icon?: ReactNode
   done?: boolean
-  fullWidth?: boolean
   className?: string
   children: ReactNode
 }
@@ -23,10 +21,8 @@ type ButtonProps = CommonProps &
 const BASE =
   'inline-flex items-center justify-center gap-2 rounded-2xl border font-semibold transition-colors'
 
-const SIZE: Record<Size, string> = {
-  md: 'h-[54px] text-base',
-  lg: 'h-15 text-lg',
-}
+// 모바일·태블릿 327×54 / 데스크톱 640×60. 페이지마다 다른 크기는 className으로 덮어쓴다.
+const SIZE = 'h-[54px] w-[327px] text-base lg:h-15 lg:w-160 lg:text-lg'
 
 const VARIANT: Record<Variant, string> = {
   solid:
@@ -39,27 +35,19 @@ const DONE = 'border-gray-300 bg-transparent text-gray-400'
 
 export default function Button({
   variant = 'solid',
-  size = 'md',
   icon,
   done = false,
-  fullWidth = true,
-  className = '',
+  className,
   children,
   href,
   ...rest
 }: ButtonProps) {
-  // done은 outlined의 색을 덮어쓰지 않고 대체한다. (같은 속성 클래스가 겹치면 적용 순서를 보장할 수 없음)
-  const variantClass = variant === 'outlined' && done ? DONE : VARIANT[variant]
-
-  const classes = [
+  const classes = cn(
     BASE,
-    SIZE[size],
-    variantClass,
-    fullWidth ? 'w-full' : 'px-8',
+    SIZE,
+    variant === 'outlined' && done ? DONE : VARIANT[variant],
     className,
-  ]
-    .filter(Boolean)
-    .join(' ')
+  )
 
   const content = (
     <>

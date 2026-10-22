@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import Button from '@/components/common/Button'
 
 export default function Header() {
   return (
@@ -23,12 +24,11 @@ export default function Header() {
             기사님 찾기
           </Link>
         </div>
-        <Link
-          href="/login"
-          className="hidden rounded-2xl bg-primary-500 px-8 py-3 text-lg font-semibold text-white lg:block"
-        >
-          로그인
-        </Link>
+        <div className="hidden lg:block">
+          <Button href="/login" fullWidth={false}>
+            로그인
+          </Button>
+        </div>
         <button
           type="button"
           aria-label="메뉴 열기"

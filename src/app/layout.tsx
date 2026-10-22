@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Header from '@/components/layout/Header'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Header />
+        <main>{children}</main>
+      </body>
     </html>
   )
 }

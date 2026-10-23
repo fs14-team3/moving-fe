@@ -1,5 +1,6 @@
 import Header from '@/components/layout/Header'
 import Toaster from '@/components/toast/Toaster'
+import QueryProvider from '@/providers/QueryProvider'
 import type { Metadata } from 'next'
 import './globals.css'
 
@@ -12,9 +13,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko">
       <body className="antialiased">
-        <Header />
-        <main>{children}</main>
-        <Toaster />
+        <QueryProvider>
+          <Header />
+          <main>{children}</main>
+          <Toaster />
+        </QueryProvider>
       </body>
     </html>
   )

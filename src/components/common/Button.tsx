@@ -28,7 +28,7 @@ const VARIANT: Record<Variant, string> = {
   solid:
     'border-transparent bg-primary-500 text-white hover:brightness-90 disabled:bg-gray-300 disabled:hover:brightness-100',
   outlined:
-    'border-primary-400 bg-transparent text-primary-400 active:bg-primary-100 active:shadow-md disabled:border-gray-300 disabled:text-gray-400',
+    'border-primary-400 bg-transparent text-primary-400 hover:bg-primary-100/50 active:bg-primary-100 active:shadow-md disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent',
 }
 
 const DONE = 'border-gray-300 bg-transparent text-gray-400'

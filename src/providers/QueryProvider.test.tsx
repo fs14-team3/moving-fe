@@ -1,0 +1,100 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { AxiosError, type AxiosResponse } from 'axios'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { meQueryKey } from '@/features/auth/queryKeys'
+import type { Me } from '@/features/auth/types'
+import QueryProvider from '@/providers/QueryProvider'
+
+const mocks = vi.hoisted(() => ({ replace: vi.fn() }))
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ replace: mocks.replace }),
+}))
+
+const user: Me = {
+  id: 'user-1',
+  role: 'CUSTOMER',
+  name: '김고객',
+  email: 'customer@example.com',
+  phone: '01012345678',
+  hasProfile: true,
+  customerProfile: null,
+  moverProfile: null,
+}
+
+function createAxiosError(status: number) {
+  return new AxiosError('Request failed', undefined, undefined, undefined, {
+    status,
+  } as AxiosResponse)
+}
+
+function renderWithProvider<T>(hook: () => T) {
+  const { result } = renderHook(
+    () => ({ queryClient: useQueryClient(), value: hook() }),
+    { wrapper: QueryProvider },
+  )
+  result.current.queryClient.setQueryData(meQueryKey, user)
+  return result
+}
+
+function fetchFailingQuery(
+  queryClient: ReturnType<typeof useQueryClient>,
+  error: Error,
+) {
+  const queryFn = vi.fn(() => Promise.reject(error))
+  const request = queryClient
+    .fetchQuery({ queryKey: ['quotes'], queryFn, retryDelay: 0 })
+    .catch(() => {})
+  return { queryFn, request }
+}
+
+describe('QueryProvider', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('로그인 중 조회 요청이 401로 실패하면 로그인 페이지로 보낸다', async () => {
+    const result = renderWithProvider(() => null)
+
+    await fetchFailingQuery(result.current.queryClient, createAxiosError(401))
+      .request
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/login'))
+  })
+
+  it('로그인 중 변경 요청이 401로 실패해도 로그인 페이지로 보낸다', async () => {
+    const result = renderWithProvider(() =>
+      useMutation({ mutationFn: () => Promise.reject(createAxiosError(401)) }),
+    )
+
+    act(() => result.current.value.mutate())
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/login'))
+  })
+
+  it('401 응답은 다시 요청하지 않는다', async () => {
+    const result = renderWithProvider(() => null)
+
+    const { queryFn, request } = fetchFailingQuery(
+      result.current.queryClient,
+      createAxiosError(401),
+    )
+    await request
+
+    expect(queryFn).toHaveBeenCalledOnce()
+  })
+
+  it('그 밖의 오류는 3번까지 다시 요청한다', async () => {
+    const result = renderWithProvider(() => null)
+
+    const { queryFn, request } = fetchFailingQuery(
+      result.current.queryClient,
+      createAxiosError(500),
+    )
+    await request
+
+    expect(queryFn).toHaveBeenCalledTimes(4)
+    expect(mocks.replace).not.toHaveBeenCalled()
+  })
+})

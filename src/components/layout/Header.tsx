@@ -9,7 +9,7 @@ export default function Header() {
         <div className="flex items-center gap-20">
           <Link href="/" className="flex items-center">
             <Image
-              src="/assets/logo-icon-text.png"
+              src="/assets/logos/icon-text.png"
               alt="무빙"
               width={480}
               height={176}

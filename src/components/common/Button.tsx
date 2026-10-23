@@ -1,5 +1,9 @@
 import Link from 'next/link'
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  ReactNode,
+} from 'react'
 import { cn } from '@/lib/cn'
 
 type Variant = 'solid' | 'outlined'
@@ -12,11 +16,18 @@ type CommonProps = {
   children: ReactNode
 }
 
-// href가 있으면 Link, 없으면 button으로 렌더링한다.
-type ButtonProps = CommonProps &
-  Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof CommonProps> & {
-    href?: string
+// href가 있으면 Link, 없으면 button으로 렌더링한다. 각 태그의 나머지 속성은 그대로 전달한다.
+type LinkButtonProps = CommonProps &
+  Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof CommonProps | 'href'> & {
+    href: string
   }
+
+type NativeButtonProps = CommonProps &
+  Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof CommonProps> & {
+    href?: undefined
+  }
+
+type ButtonProps = LinkButtonProps | NativeButtonProps
 
 const BASE =
   'inline-flex items-center justify-center gap-2 rounded-2xl border font-semibold transition-colors'
@@ -33,41 +44,50 @@ const VARIANT: Record<Variant, string> = {
 
 const DONE = 'border-gray-300 bg-transparent text-gray-400'
 
-export default function Button({
+function getClassName({
   variant = 'solid',
-  icon,
   done = false,
   className,
-  children,
-  href,
-  ...rest
-}: ButtonProps) {
-  const classes = cn(
+}: Pick<CommonProps, 'variant' | 'done' | 'className'>) {
+  return cn(
     BASE,
     SIZE,
     variant === 'outlined' && done ? DONE : VARIANT[variant],
     className,
   )
+}
 
-  const content = (
-    <>
-      {children}
-      {icon}
-    </>
-  )
-
-  if (href !== undefined) {
+export default function Button(props: ButtonProps) {
+  if (props.href !== undefined) {
+    const { variant, done, className, icon, children, ...linkProps } = props
     return (
-      <Link href={href} className={classes}>
-        {content}
+      <Link
+        {...linkProps}
+        className={getClassName({ variant, done, className })}
+      >
+        {children}
+        {icon}
       </Link>
     )
   }
 
-  const { type = 'button', ...buttonProps } = rest
+  const {
+    variant,
+    done,
+    className,
+    icon,
+    children,
+    type = 'button',
+    ...buttonProps
+  } = props
   return (
-    <button type={type} className={classes} {...buttonProps}>
-      {content}
+    <button
+      {...buttonProps}
+      type={type}
+      className={getClassName({ variant, done, className })}
+    >
+      {children}
+      {icon}
     </button>
   )
 }

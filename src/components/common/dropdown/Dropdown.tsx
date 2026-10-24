@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDown } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type DropdownProps = {
   placeholder: string
@@ -47,6 +47,7 @@ export default function Dropdown({
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedValue, setSelectedValue] = useState('')
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   function handleSelect(value: string) {
     setSelectedValue(value)
@@ -57,8 +58,37 @@ export default function Dropdown({
     (option) => option.value === selectedValue,
   )
 
+  useEffect(() => {
+    if (!isOpen) return
+
+    // 외부 클릭 핸들러
+    function handleClickOutside(event: PointerEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false)
+      }
+    }
+
+    // esc 키 핸들러
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen])
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         type="button"
         aria-expanded={isOpen}

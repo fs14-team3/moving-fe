@@ -22,5 +22,5 @@ export default function RegionDropdown() {
     { label: '제주', value: 'jeju' },
   ]
 
-  return <Dropdown placeholder="지역" options={regions} />
+  return <Dropdown placeholder="지역" options={regions} variant="region" />
 }

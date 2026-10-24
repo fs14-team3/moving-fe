@@ -8,5 +8,5 @@ export default function ServiceDropdown() {
     { label: '사무실이사', value: 'office' },
   ]
 
-  return <Dropdown placeholder="서비스" options={services} />
+  return <Dropdown placeholder="서비스" options={services} variant="service" />
 }

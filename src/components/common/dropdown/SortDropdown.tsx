@@ -8,5 +8,5 @@ export default function SortDropdown() {
     { label: '확정 많은순', value: 'confirmed' },
   ]
 
-  return <Dropdown placeholder="정렬" options={sorts} />
+  return <Dropdown placeholder="정렬" options={sorts} variant="sort" />
 }

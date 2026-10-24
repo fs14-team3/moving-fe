@@ -1,9 +1,14 @@
 type LandingImageProps = {
-  name: 'img1' | 'img2' | 'img3' | 'img4'
+  name: 'img2' | 'img3' | 'img4'
+  className?: string
   alt?: string
 }
 
-export default function LandingImage({ name, alt = '' }: LandingImageProps) {
+export default function LandingImage({
+  name,
+  className,
+  alt = '',
+}: LandingImageProps) {
   return (
     <picture>
       <source
@@ -14,7 +19,11 @@ export default function LandingImage({ name, alt = '' }: LandingImageProps) {
         media="(min-width: 768px)"
         srcSet={`/assets/landing/${name}_md.png`}
       />
-      <img src={`/assets/landing/${name}_sm.png`} alt={alt} />
+      <img
+        src={`/assets/landing/${name}_sm.png`}
+        className={className}
+        alt={alt}
+      />
     </picture>
   )
 }

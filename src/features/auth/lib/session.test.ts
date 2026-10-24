@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { meQueryKey } from '@/features/auth/queryKeys'
-import { clearSession, handleUnauthorized } from '@/features/auth/lib/session'
+import { handleUnauthorized, resetSession } from '@/features/auth/lib/session'
 import type { Me } from '@/features/auth/types'
 
 const toast = vi.hoisted(() => ({ info: vi.fn() }))
@@ -37,11 +37,11 @@ function createRouter() {
   return { router, replace }
 }
 
-describe('clearSession', () => {
+describe('resetSession', () => {
   it('다른 쿼리를 지우고 내 정보는 비회원(null)으로 남긴다', async () => {
     const queryClient = createQueryClient(user)
 
-    await clearSession(queryClient)
+    await resetSession(queryClient, null)
 
     expect(queryClient.getQueryData(meQueryKey)).toBeNull()
     expect(
@@ -60,7 +60,7 @@ describe('clearSession', () => {
         }),
     })
 
-    await clearSession(queryClient)
+    await resetSession(queryClient, null)
     resolveMe(user)
     await request.catch(() => {})
 

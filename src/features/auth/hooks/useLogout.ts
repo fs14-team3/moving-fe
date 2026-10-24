@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { logout } from '@/features/auth/api'
-import { clearSession } from '@/features/auth/lib/session'
+import { resetSession } from '@/features/auth/lib/session'
 
 export function useLogout() {
   const queryClient = useQueryClient()
@@ -12,7 +12,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logout,
     onSuccess: async () => {
-      await clearSession(queryClient)
+      await resetSession(queryClient, null)
       router.replace('/')
     },
     onError: () => {

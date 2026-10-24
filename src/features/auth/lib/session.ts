@@ -5,12 +5,12 @@ import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me } from '@/features/auth/types'
 
-export async function clearSession(queryClient: QueryClient) {
+export async function resetSession(queryClient: QueryClient, me: Me | null) {
   await queryClient.cancelQueries({ queryKey: meQueryKey, exact: true })
   queryClient.removeQueries({
     predicate: (query) => query.queryHash !== hashKey(meQueryKey),
   })
-  queryClient.setQueryData<Me | null>(meQueryKey, null)
+  queryClient.setQueryData<Me | null>(meQueryKey, me)
 }
 
 export async function handleUnauthorized(
@@ -22,7 +22,7 @@ export async function handleUnauthorized(
     return
   }
 
-  await clearSession(queryClient)
+  await resetSession(queryClient, null)
   toast.info(TOAST_MESSAGES.auth.sessionExpired)
   router.replace('/login')
 }

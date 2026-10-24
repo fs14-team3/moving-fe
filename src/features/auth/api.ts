@@ -1,5 +1,10 @@
-import type { Me } from '@/features/auth/types'
+import type { AuthResponse, LoginRequest, Me } from '@/features/auth/types'
 import { api, isUnauthorized } from '@/lib/api'
+
+export async function login(body: LoginRequest) {
+  const { data } = await api.post<AuthResponse>('/auth/login', body)
+  return data.user
+}
 
 export async function getMe() {
   const { data } = await api.get<Me>('/users/me')

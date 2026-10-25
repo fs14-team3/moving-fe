@@ -8,10 +8,12 @@ import type { Me, Role } from '@/features/auth/types'
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
+  useRouter: () => ({ replace: vi.fn() }),
 }))
 
 vi.mock('@/features/auth/api', () => ({
   getMe: () => new Promise(() => {}),
+  logout: vi.fn(),
 }))
 
 function createUser(role: Role): Me {

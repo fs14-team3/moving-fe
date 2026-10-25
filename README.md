@@ -38,6 +38,7 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 | `npm run lint`         | ESLint 검사 (`lint:fix`로 자동 수정) |
 | `npm run typecheck`    | 빌드 없이 타입만 검사                |
 | `npm run format:check` | Prettier 검사 (`format`으로 수정)    |
+| `npm run test`         | Vitest 실행 (`test:watch`로 감시)    |
 
 커밋 시 Husky가 gitleaks(비밀값 검사), lint-staged(ESLint + Prettier), commitlint를 실행합니다. gitleaks가 설치되어 있지 않으면 로컬 검사만 건너뛰고, CI가 push마다 전체 이력을 다시 검사합니다.
 

@@ -19,6 +19,16 @@ export const NAV_ITEMS: Record<Role | 'GUEST', NavItem[]> = {
   ],
 }
 
+// TODO(#68): #11 · #24에서 페이지 경로가 정해지면 찜한 기사님 · 이사 리뷰 경로 맞추기
+export const PROFILE_MENU_ITEMS: Record<Role, NavItem[]> = {
+  CUSTOMER: [
+    { label: '프로필 수정', href: '/profile/edit' },
+    { label: '찜한 기사님', href: '/favorites' },
+    { label: '이사 리뷰', href: '/my-reviews' },
+  ],
+  MOVER: [{ label: '마이페이지', href: '/mover/mypage' }],
+}
+
 export function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }

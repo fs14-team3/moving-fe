@@ -38,7 +38,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="md:px-8 lg:px-0">
+      <section className="md:px-8">
         <div className="relative mx-auto w-full md:max-w-[679px] lg:max-w-[1402px]">
           <LandingImage name="img3" className="block h-auto w-full" />
           <h2 className="absolute top-10 right-8 text-right text-xl leading-8 font-bold text-white md:top-[49px] md:right-[54px] md:text-3xl md:leading-10 lg:top-[19.3%] lg:right-[19.1%] lg:text-[clamp(24px,2.14vw,30px)] lg:leading-[1.35]">

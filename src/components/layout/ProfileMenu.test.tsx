@@ -56,15 +56,19 @@ describe('ProfileMenu', () => {
   })
 
   it.each<Role>(['CUSTOMER', 'MOVER'])(
-    '%s에게 맞는 메뉴를 보여 준다',
+    '%s에게 맞는 메뉴를 각 페이지로 연결한다',
     async (role) => {
       const { open } = renderProfileMenu(role)
 
       await open()
 
       expect(
-        screen.getAllByRole('link').map((link) => link.textContent),
-      ).toEqual(PROFILE_MENU_ITEMS[role].map(({ label }) => label))
+        screen
+          .getAllByRole('link')
+          .map((link) => [link.textContent, link.getAttribute('href')]),
+      ).toEqual(
+        PROFILE_MENU_ITEMS[role].map(({ label, href }) => [label, href]),
+      )
     },
   )
 

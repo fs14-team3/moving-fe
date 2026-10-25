@@ -42,27 +42,45 @@ function renderHeader(user?: Me | null) {
   )
 }
 
-function getLinkLabels() {
-  return within(screen.getByRole('navigation'))
-    .getAllByRole('link')
-    .map((link) => link.textContent)
-    .filter(Boolean)
+function toLabelsAndHrefs(links: HTMLElement[]) {
+  return links
+    .filter((link) => link.textContent)
+    .map((link) => [link.textContent, link.getAttribute('href')])
+}
+
+function getMenuLinks() {
+  return toLabelsAndHrefs(
+    within(screen.getByRole('navigation')).getAllByRole('link'),
+  )
+}
+
+function getMobileMenuLinks() {
+  return toLabelsAndHrefs(
+    within(screen.getByRole('dialog', { hidden: true })).getAllByRole('link', {
+      hidden: true,
+    }),
+  )
 }
 
 describe('Header', () => {
   it('내 정보를 불러오는 동안에는 메뉴와 로그인 버튼을 보여 주지 않는다', () => {
     renderHeader()
 
-    expect(getLinkLabels()).toEqual([])
+    expect(getMenuLinks()).toEqual([])
   })
 
   it.each([
     ['비회원', null, [...NAV_ITEMS.GUEST, { label: '로그인', href: '/login' }]],
     ['일반 유저', createUser('CUSTOMER'), NAV_ITEMS.CUSTOMER],
     ['기사님', createUser('MOVER'), NAV_ITEMS.MOVER],
-  ])('%s에게 맞는 메뉴를 보여 준다', (_, user, items) => {
-    renderHeader(user)
+  ])(
+    '%s에게 맞는 메뉴를 GNB와 모바일 메뉴에서 각 페이지로 연결한다',
+    (_, user, items) => {
+      renderHeader(user)
 
-    expect(getLinkLabels()).toEqual(items.map(({ label }) => label))
-  })
+      const links = items.map(({ label, href }) => [label, href])
+      expect(getMenuLinks()).toEqual(links)
+      expect(getMobileMenuLinks()).toEqual(links)
+    },
+  )
 })

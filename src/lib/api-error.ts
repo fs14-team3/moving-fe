@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-interface ApiErrorDetail {
+export interface ApiErrorDetail {
   field: string
   reason: string
 }
@@ -13,15 +13,15 @@ interface ApiErrorResponse {
   }
 }
 
-interface ApiError {
+export interface ApiError {
   code: string
   message: string
   status: number | null
   details?: ApiErrorDetail[]
 }
 
+/** Axios 오류를 프론트 공통 에러 형태로 변환 */
 export function toApiError(error: unknown): ApiError {
-  // Axios 에러가 아닌 경우
   if (!axios.isAxiosError<ApiErrorResponse>(error)) {
     return {
       code: 'UNKNOWN_ERROR',
@@ -46,4 +46,17 @@ export function toApiError(error: unknown): ApiError {
     status,
     details: data?.error?.details,
   }
+}
+
+/** 전달받은 오류가 공통 API 에러인지 확인 */
+export function isApiError(error: unknown): error is ApiError {
+  if (typeof error !== 'object' || error === null) return false
+
+  const apiError = error as Partial<ApiError>
+
+  return (
+    typeof apiError.code === 'string' &&
+    typeof apiError.message === 'string' &&
+    (typeof apiError.status === 'number' || apiError.status === null)
+  )
 }

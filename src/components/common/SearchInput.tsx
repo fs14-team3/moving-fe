@@ -2,6 +2,7 @@
 
 import { Search, X } from 'lucide-react'
 import { useState, type ComponentProps, type FocusEvent } from 'react'
+import { cn } from '@/lib/cn'
 
 type SearchInputProps = Omit<
   ComponentProps<'input'>,
@@ -28,8 +29,8 @@ export default function SearchInput({
   defaultValue = '',
   onChange,
   onSearch,
-  wrapperClassName = '',
-  className = '',
+  wrapperClassName,
+  className,
   placeholder = '텍스트를 입력해 주세요.',
   ...rest
 }: SearchInputProps) {
@@ -59,7 +60,7 @@ export default function SearchInput({
       }}
       onFocus={() => setIsFocused(true)}
       onBlur={handleBlur}
-      className={`${FORM} ${wrapperClassName}`}
+      className={cn(FORM, wrapperClassName)}
     >
       {!isTyping && <Search aria-hidden="true" className={ICON} />}
       <input
@@ -68,7 +69,7 @@ export default function SearchInput({
         value={currentValue}
         placeholder={placeholder}
         onChange={(e) => changeValue(e.target.value)}
-        className={`${INPUT} ${className}`}
+        className={cn(INPUT, className)}
       />
       {isTyping && (
         <>

@@ -1,4 +1,5 @@
 import { useId, type ComponentProps } from 'react'
+import { cn } from '@/lib/cn'
 
 type TextAreaProps = ComponentProps<'textarea'> & {
   error?: string
@@ -17,19 +18,29 @@ const BORDER_ERROR = 'border-red-500'
 
 export default function TextArea({
   error,
-  wrapperClassName = '',
-  className = '',
+  wrapperClassName,
+  className,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
   ...rest
 }: TextAreaProps) {
   const errorId = useId()
 
+  // 페이지에서 넘긴 설명과 에러 메시지를 둘 다 연결한다.
+  const describedBy =
+    [ariaDescribedBy, error && errorId].filter(Boolean).join(' ') || undefined
+
   return (
-    <div className={`${WRAPPER} ${wrapperClassName}`}>
+    <div className={cn(WRAPPER, wrapperClassName)}>
       <textarea
         {...rest}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
-        className={`${TEXTAREA} ${error ? BORDER_ERROR : BORDER_DEFAULT} ${className}`}
+        aria-invalid={error ? true : ariaInvalid}
+        aria-describedby={describedBy}
+        className={cn(
+          TEXTAREA,
+          error ? BORDER_ERROR : BORDER_DEFAULT,
+          className,
+        )}
       />
       {error && (
         <p

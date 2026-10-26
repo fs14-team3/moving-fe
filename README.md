@@ -39,6 +39,7 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 | `npm run build`        | 프로덕션 빌드 (타입 검사 포함)           |
 | `npm run lint`         | ESLint 검사 (`lint:fix`로 자동 수정)     |
 | `npm run typecheck`    | 빌드 없이 타입만 검사                    |
+| `npm run knip`         | 사용하지 않는 파일·export·의존성 검사    |
 | `npm run format:check` | Prettier 검사 (`format`으로 수정)        |
 | `npm run test`         | Vitest 실행 (`test:watch`로 감시)        |
 | `npm run api:types`    | moving-be `develop` 명세로 API 타입 생성 |

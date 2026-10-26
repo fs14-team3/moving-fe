@@ -4,7 +4,7 @@ import {
   type InternalAxiosRequestConfig,
 } from 'axios'
 import { describe, expect, it } from 'vitest'
-import { ApiError, isApiError, toApiError } from './api-error'
+import { ApiError, isApiError, isUnauthorized, toApiError } from './api-error'
 
 function createAxiosError(response?: { status: number; data: unknown }) {
   const config = {
@@ -131,5 +131,28 @@ describe('isApiError', () => {
         status: 401,
       }),
     ).toBe(false)
+  })
+})
+
+describe('isUnauthorized', () => {
+  it('401 응답이면 true를 반환한다', () => {
+    const error = toApiError(createAxiosError({ status: 401, data: {} }))
+
+    expect(isUnauthorized(error)).toBe(true)
+  })
+
+  it.each([403, 500])('%i 응답이면 false를 반환한다', (status) => {
+    const error = toApiError(createAxiosError({ status, data: {} }))
+
+    expect(isUnauthorized(error)).toBe(false)
+  })
+
+  it('응답이 없는 네트워크 오류나 ApiError로 변환되지 않은 오류는 false를 반환한다', () => {
+    const networkError = toApiError(createAxiosError())
+    const axiosError = createAxiosError({ status: 401, data: {} })
+
+    expect(isUnauthorized(networkError)).toBe(false)
+    expect(isUnauthorized(axiosError)).toBe(false)
+    expect(isUnauthorized(new Error('401'))).toBe(false)
   })
 })

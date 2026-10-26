@@ -22,6 +22,8 @@
   --color-primary-400: #f9502e;
   --color-primary-500: #e04829;
 
+  --color-red-500: #fb2c36;
+
   --color-background-100: #fcfcfc;
   --color-background-200: #f7f7f7;
   --color-background-300: #efefef;
@@ -53,5 +55,13 @@
   textarea,
   select {
     font: inherit;
+  }
+}
+
+@utility min-h-page {
+  min-height: calc(100dvh - 55px);
+
+  @variant lg {
+    min-height: calc(100dvh - 89px);
   }
 }

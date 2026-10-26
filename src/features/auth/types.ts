@@ -1,24 +1,7 @@
-export type Role = 'CUSTOMER' | 'MOVER'
+import type { components } from '@/lib/api-schema'
 
-export type ServiceType = 'SMALL' | 'HOME' | 'OFFICE'
+type Schemas = components['schemas']
 
-export type Profile = {
-  imageUrl?: string | null
-  nickname?: string | null
-  careerYears?: number | null
-  intro?: string | null
-  description?: string | null
-  serviceTypes?: ServiceType[] | null
-  regions?: string[] | null
-}
+export type Role = Schemas['Role']
 
-export type Me = {
-  id: string
-  role: Role
-  name: string | null
-  email: string | null
-  phone: string | null
-  hasProfile: boolean
-  customerProfile: Profile | null
-  moverProfile: Profile | null
-}
+export type Me = Schemas['Me']

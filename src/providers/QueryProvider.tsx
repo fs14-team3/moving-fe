@@ -20,7 +20,11 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
 
     const client = new QueryClient({
       queryCache: new QueryCache({ onError }),
-      mutationCache: new MutationCache({ onError }),
+      mutationCache: new MutationCache({
+        onError: (error, _variables, _onMutateResult, mutation) => {
+          if (!mutation.meta?.ignoreUnauthorized) onError(error)
+        },
+      }),
       defaultOptions: {
         queries: {
           staleTime: 60 * 1000,

@@ -2,8 +2,8 @@ import { QueryClient } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { meQueryKey } from '@/features/auth/queryKeys'
-import { clearSession, handleUnauthorized } from '@/features/auth/lib/session'
-import type { Me } from '@/features/auth/types'
+import { handleUnauthorized, resetSession } from '@/features/auth/lib/session'
+import type { Me, Role } from '@/features/auth/types'
 
 const toast = vi.hoisted(() => ({ info: vi.fn() }))
 
@@ -37,11 +37,11 @@ function createRouter() {
   return { router, replace }
 }
 
-describe('clearSession', () => {
+describe('resetSession', () => {
   it('다른 쿼리를 지우고 내 정보는 비회원(null)으로 남긴다', async () => {
     const queryClient = createQueryClient(user)
 
-    await clearSession(queryClient)
+    await resetSession(queryClient, null)
 
     expect(queryClient.getQueryData(meQueryKey)).toBeNull()
     expect(
@@ -60,11 +60,23 @@ describe('clearSession', () => {
         }),
     })
 
-    await clearSession(queryClient)
+    await resetSession(queryClient, null)
     resolveMe(user)
     await request.catch(() => {})
 
     expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+  })
+
+  it('이전 세션의 쿼리를 지우고 새 내 정보로 시작한다', async () => {
+    const queryClient = createQueryClient()
+    const mover: Me = { ...user, id: 'user-2', role: 'MOVER' }
+
+    await resetSession(queryClient, mover)
+
+    expect(queryClient.getQueryData(meQueryKey)).toEqual(mover)
+    expect(
+      queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
+    ).toBeUndefined()
   })
 })
 
@@ -87,17 +99,25 @@ describe('handleUnauthorized', () => {
     expect(replace).not.toHaveBeenCalled()
   })
 
-  it('로그인 중 세션이 만료되면 캐시를 비우고 알린 뒤 로그인 페이지로 보낸다', async () => {
-    const queryClient = createQueryClient(user)
-    const { router, replace } = createRouter()
+  it.each<[Role, string]>([
+    ['CUSTOMER', '/login'],
+    ['MOVER', '/mover/login'],
+  ])(
+    '%s의 세션이 만료되면 캐시를 비우고 알린 뒤 로그인 페이지(%s)로 보낸다',
+    async (role, loginPath) => {
+      const queryClient = createQueryClient({ ...user, role })
+      const { router, replace } = createRouter()
 
-    await handleUnauthorized(queryClient, router)
+      await handleUnauthorized(queryClient, router)
 
-    expect(queryClient.getQueryData(meQueryKey)).toBeNull()
-    expect(
-      queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
-    ).toBeUndefined()
-    expect(toast.info).toHaveBeenCalledWith(TOAST_MESSAGES.auth.sessionExpired)
-    expect(replace).toHaveBeenCalledWith('/login')
-  })
+      expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+      expect(
+        queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
+      ).toBeUndefined()
+      expect(toast.info).toHaveBeenCalledWith(
+        TOAST_MESSAGES.auth.sessionExpired,
+      )
+      expect(replace).toHaveBeenCalledWith(loginPath)
+    },
+  )
 })

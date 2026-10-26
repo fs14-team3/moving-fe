@@ -1,6 +1,7 @@
 export const TOAST_MESSAGES = {
   auth: {
     loginFailed: '로그인에 실패했습니다.',
+    invalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다.',
     signupFailed: '계정 생성에 실패했습니다.',
     sessionExpired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
     logoutFailed: '로그아웃에 실패했습니다.',

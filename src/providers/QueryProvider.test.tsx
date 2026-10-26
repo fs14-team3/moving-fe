@@ -71,6 +71,20 @@ describe('QueryProvider', () => {
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/login'))
   })
 
+  it('401을 직접 처리하겠다고 표시한 변경 요청은 로그인 페이지로 보내지 않는다', async () => {
+    const result = renderWithProvider(() =>
+      useMutation({
+        mutationFn: () => Promise.reject(createApiError(401)),
+        meta: { ignoreUnauthorized: true },
+      }),
+    )
+
+    act(() => result.current.value.mutate())
+
+    await waitFor(() => expect(result.current.value.isError).toBe(true))
+    expect(mocks.replace).not.toHaveBeenCalled()
+  })
+
   it('401 응답은 다시 요청하지 않는다', async () => {
     const result = renderWithProvider(() => null)
 

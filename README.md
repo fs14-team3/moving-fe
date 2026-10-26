@@ -43,7 +43,7 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 | `npm run test`         | Vitest 실행 (`test:watch`로 감시)        |
 | `npm run api:types`    | moving-be `develop` 명세로 API 타입 생성 |
 
-커밋 시 Husky가 gitleaks(비밀값 검사), lint-staged(ESLint + Prettier), commitlint를 실행합니다. gitleaks가 설치되어 있지 않으면 로컬 검사만 건너뛰고, CI가 push마다 전체 이력을 다시 검사합니다.
+커밋 시 Husky가 gitleaks(비밀값 검사), lint-staged(ESLint + Prettier), commitlint를 실행합니다. gitleaks가 설치되어 있지 않으면 로컬 검사만 건너뛰고, CI가 PR과 push에 포함된 커밋을 다시 검사합니다.
 
 ## 비밀값 검사 (gitleaks)
 

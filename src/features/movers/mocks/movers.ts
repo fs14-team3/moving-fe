@@ -55,7 +55,7 @@ export const MOCK_MOVERS = [
     averageRating: 4.7,
     reviewCount: 315,
     confirmedCount: 264,
-    isFavorite: false,
+    isFavorite: true,
     favoriteCount: 293,
   },
   {

@@ -10,6 +10,8 @@ type DropdownProps = {
     value: string
   }[]
   variant: 'service' | 'region' | 'sort'
+  value?: string
+  onChange?: (value: string) => void
 }
 
 const variantStyles = {
@@ -44,19 +46,23 @@ export default function Dropdown({
   placeholder,
   options,
   variant,
+  value,
+  onChange,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedValue, setSelectedValue] = useState('')
+  const currentValue = value ?? selectedValue
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  function handleSelect(value: string) {
-    setSelectedValue(value)
+  function handleSelect(newValue: string) {
+    if (value === undefined) {
+      setSelectedValue(newValue)
+    }
+    onChange?.(newValue)
     setIsOpen(false)
   }
 
-  const selectedOption = options.find(
-    (option) => option.value === selectedValue,
-  )
+  const selectedOption = options.find((option) => option.value === currentValue)
 
   useEffect(() => {
     if (!isOpen) return

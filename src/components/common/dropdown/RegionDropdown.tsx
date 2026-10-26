@@ -1,6 +1,14 @@
 import Dropdown from './Dropdown'
 
-export default function RegionDropdown() {
+type RegionDropdownProps = {
+  value?: string
+  onChange?: (value: string) => void
+}
+
+export default function RegionDropdown({
+  value,
+  onChange,
+}: RegionDropdownProps) {
   const regions = [
     { label: '전체', value: 'all' },
     { label: '서울', value: 'seoul' },
@@ -22,5 +30,13 @@ export default function RegionDropdown() {
     { label: '제주', value: 'jeju' },
   ]
 
-  return <Dropdown placeholder="지역" options={regions} variant="region" />
+  return (
+    <Dropdown
+      placeholder="지역"
+      options={regions}
+      variant="region"
+      value={value}
+      onChange={onChange}
+    />
+  )
 }

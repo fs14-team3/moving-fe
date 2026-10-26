@@ -1,3 +1,4 @@
+import AuthGuard from '@/components/auth/AuthGuard'
 import Header from '@/components/layout/Header'
 import Toaster from '@/components/toast/Toaster'
 import QueryProvider from '@/providers/QueryProvider'
@@ -15,7 +16,9 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       <body className="antialiased">
         <QueryProvider>
           <Header />
-          <main>{children}</main>
+          <main>
+            <AuthGuard>{children}</AuthGuard>
+          </main>
           <Toaster />
         </QueryProvider>
       </body>

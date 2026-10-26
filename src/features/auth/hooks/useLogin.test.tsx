@@ -4,19 +4,14 @@ import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { login } from '@/features/auth/api'
-import { getPathAfterLogin } from '@/features/auth/lib/paths'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { ApiError } from '@/lib/api-error'
 
-const mocks = vi.hoisted(() => ({ replace: vi.fn(), toastError: vi.fn() }))
+const toastError = vi.hoisted(() => vi.fn())
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mocks.replace }),
-}))
-
-vi.mock('sonner', () => ({ toast: { error: mocks.toastError } }))
+vi.mock('sonner', () => ({ toast: { error: toastError } }))
 
 vi.mock('@/features/auth/api', () => ({ login: vi.fn() }))
 
@@ -59,16 +54,15 @@ describe('useLogin', () => {
     vi.clearAllMocks()
   })
 
-  it('로그인하면 세션을 시작하고 로그인 후 페이지로 보낸다', async () => {
+  it('로그인하면 세션을 시작한다', async () => {
     vi.mocked(login).mockResolvedValue(user)
     const { result, queryClient } = renderUseLogin()
 
     act(() => result.current.mutate(credentials))
 
-    await waitFor(() =>
-      expect(mocks.replace).toHaveBeenCalledWith(getPathAfterLogin(user)),
-    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(queryClient.getQueryData(meQueryKey)).toEqual(user)
+    expect(toastError).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -80,9 +74,8 @@ describe('useLogin', () => {
 
     act(() => result.current.mutate(credentials))
 
-    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(message))
-    expect(mocks.toastError).toHaveBeenCalledOnce()
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(message))
+    expect(toastError).toHaveBeenCalledOnce()
     expect(queryClient.getQueryData(meQueryKey)).toBeNull()
-    expect(mocks.replace).not.toHaveBeenCalled()
   })
 })

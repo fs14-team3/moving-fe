@@ -4,20 +4,15 @@ import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { signup } from '@/features/auth/api'
-import { getPathAfterLogin } from '@/features/auth/lib/paths'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { PASSWORD_RULE_MESSAGE } from '@/features/auth/lib/validation'
 import { ApiError } from '@/lib/api-error'
 
-const mocks = vi.hoisted(() => ({ replace: vi.fn(), toastError: vi.fn() }))
+const toastError = vi.hoisted(() => vi.fn())
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mocks.replace }),
-}))
-
-vi.mock('sonner', () => ({ toast: { error: mocks.toastError } }))
+vi.mock('sonner', () => ({ toast: { error: toastError } }))
 
 vi.mock('@/features/auth/api', () => ({ signup: vi.fn() }))
 
@@ -64,15 +59,13 @@ describe('useSignup', () => {
     vi.clearAllMocks()
   })
 
-  it('가입하면 세션을 시작하고 로그인 후 페이지로 보낸다', async () => {
+  it('가입하면 세션을 시작한다', async () => {
     vi.mocked(signup).mockResolvedValue(user)
     const { result, queryClient } = renderUseSignup()
 
     act(() => result.current.mutate(body))
 
-    await waitFor(() =>
-      expect(mocks.replace).toHaveBeenCalledWith(getPathAfterLogin(user)),
-    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(queryClient.getQueryData(meQueryKey)).toEqual(user)
   })
 
@@ -90,8 +83,7 @@ describe('useSignup', () => {
         password: PASSWORD_RULE_MESSAGE,
       }),
     )
-    expect(mocks.toastError).not.toHaveBeenCalled()
-    expect(mocks.replace).not.toHaveBeenCalled()
+    expect(toastError).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -104,9 +96,7 @@ describe('useSignup', () => {
     act(() => result.current.mutate(body))
 
     await waitFor(() =>
-      expect(mocks.toastError).toHaveBeenCalledWith(
-        TOAST_MESSAGES.auth.signupFailed,
-      ),
+      expect(toastError).toHaveBeenCalledWith(TOAST_MESSAGES.auth.signupFailed),
     )
     expect(onFieldErrors).not.toHaveBeenCalled()
   })

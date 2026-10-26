@@ -100,11 +100,12 @@ describe('handleUnauthorized', () => {
   })
 
   it.each<[Role, string]>([
-    ['CUSTOMER', '/login'],
-    ['MOVER', '/mover/login'],
+    ['CUSTOMER', '/login?redirect=%2Fmovers%3Fpage%3D2'],
+    ['MOVER', '/mover/login?redirect=%2Fmovers%3Fpage%3D2'],
   ])(
-    '%s의 세션이 만료되면 캐시를 비우고 알린 뒤 로그인 페이지(%s)로 보낸다',
+    '%s의 세션이 만료되면 캐시를 비우고 알린 뒤 지금 주소를 담아 %s로 보낸다',
     async (role, loginPath) => {
+      window.history.replaceState(null, '', '/movers?page=2')
       const queryClient = createQueryClient({ ...user, role })
       const { router, replace } = createRouter()
 

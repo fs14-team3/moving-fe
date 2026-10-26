@@ -28,7 +28,12 @@ export default function AuthForm({
       onSubmit={handleSubmit}
       className="mt-10 flex w-[327px] flex-col gap-4 md:mt-12 md:w-140 md:gap-8 lg:w-160"
     >
-      {children}
+      <fieldset
+        disabled={isSubmitting}
+        className="flex min-w-0 flex-col gap-4 md:gap-8"
+      >
+        {children}
+      </fieldset>
       <Button
         type="submit"
         disabled={!canSubmit || isSubmitting}

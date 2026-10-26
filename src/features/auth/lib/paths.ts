@@ -1,4 +1,8 @@
-import type { RouteAccess } from '@/features/auth/lib/access'
+import {
+  canAccess,
+  getRouteAccess,
+  type RouteAccess,
+} from '@/features/auth/lib/access'
 import type { Me, Role } from '@/features/auth/types'
 
 export const LOGIN_PATH: Record<Role, string> = {
@@ -27,6 +31,8 @@ const PROFILE_REGISTER_PATH: Record<Role, string> = {
   MOVER: '/',
 }
 
+const URL_BASE = 'http://localhost'
+
 type PathParts = Pick<URL, 'pathname' | 'search' | 'hash'>
 
 function toPath({ pathname, search, hash }: PathParts) {
@@ -37,12 +43,39 @@ export function getCurrentPath() {
   return toPath(window.location)
 }
 
-export function getPathAfterLogin({ role, hasProfile }: Me) {
-  return hasProfile ? HOME_PATH[role] : PROFILE_REGISTER_PATH[role]
+function getRedirectParam() {
+  return new URLSearchParams(window.location.search).get('redirect')
+}
+
+function parseLocalUrl(path: string) {
+  try {
+    const url = new URL(path, URL_BASE)
+    return url.origin === URL_BASE ? url : null
+  } catch {
+    return null
+  }
+}
+
+function getSafeRedirect(redirect: string, user: Me) {
+  const url = parseLocalUrl(redirect)
+  if (!url || !canAccess(getRouteAccess(url.pathname), user)) return null
+
+  const path = toPath(url)
+  return parseLocalUrl(path) ? path : null
+}
+
+export function getPathAfterLogin(user: Me, redirect?: string | null) {
+  if (!user.hasProfile) return PROFILE_REGISTER_PATH[user.role]
+
+  const path = redirect ? getSafeRedirect(redirect, user) : null
+  return path ?? HOME_PATH[user.role]
 }
 
 export function getRedirectPath(access: RouteAccess, user: Me | null) {
-  if (user) return getPathAfterLogin(user)
+  if (user) {
+    const redirect = access === 'GUEST' ? getRedirectParam() : null
+    return getPathAfterLogin(user, redirect)
+  }
   if (access === 'PUBLIC' || access === 'GUEST') return null
   return getLoginPath(access, getCurrentPath())
 }

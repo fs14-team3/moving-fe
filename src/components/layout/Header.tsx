@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import Button from '@/components/common/Button'
+import Button from '@/components/common/button/Button'
 
 export default function Header() {
   return (

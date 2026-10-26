@@ -19,6 +19,20 @@ const customer = createUser('CUSTOMER')
 const mover = createUser('MOVER')
 
 describe('getPathAfterLogin', () => {
+  it.each<[Role, string]>([
+    ['CUSTOMER', '/'],
+    ['MOVER', '/'],
+  ])('redirect가 없으면 %s 유저를 기본 페이지 %s로 보낸다', (role, path) => {
+    expect(getPathAfterLogin(createUser(role))).toBe(path)
+  })
+
+  it.each<[Role, string]>([
+    ['CUSTOMER', '/'],
+    ['MOVER', '/'],
+  ])('프로필이 없는 %s 유저는 프로필 등록 페이지 %s로 보낸다', (role, path) => {
+    expect(getPathAfterLogin(createUser(role, false))).toBe(path)
+  })
+
   it.each([
     '//example.com',
     '/.//example.com',

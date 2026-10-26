@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Button from '@/components/common/Button'
+import MobileMenu from '@/components/layout/MobileMenu'
 import { isActivePath, NAV_ITEMS } from '@/constants/navigation'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { cn } from '@/lib/cn'
@@ -94,24 +95,14 @@ export default function Header() {
                 </Button>
               </div>
             )}
-            <button
-              type="button"
-              aria-label="메뉴 열기"
-              className="text-gray-400 lg:hidden"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-            </button>
+            <MobileMenu
+              items={
+                user
+                  ? navItems
+                  : [...navItems, { label: '로그인', href: '/login' }]
+              }
+              pathname={pathname}
+            />
           </div>
         )}
       </nav>

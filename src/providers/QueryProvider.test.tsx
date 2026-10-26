@@ -47,9 +47,12 @@ function fetchFailingQuery(
   return { queryFn, request }
 }
 
+const loginPath = '/login?redirect=%2Fmy-quotes'
+
 describe('QueryProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.history.replaceState(null, '', '/my-quotes')
   })
 
   it('로그인 중 조회 요청이 401로 실패하면 로그인 페이지로 보낸다', async () => {
@@ -58,7 +61,7 @@ describe('QueryProvider', () => {
     await fetchFailingQuery(result.current.queryClient, createApiError(401))
       .request
 
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/login'))
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith(loginPath))
   })
 
   it('로그인 중 변경 요청이 401로 실패해도 로그인 페이지로 보낸다', async () => {
@@ -68,7 +71,7 @@ describe('QueryProvider', () => {
 
     act(() => result.current.value.mutate())
 
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/login'))
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith(loginPath))
   })
 
   it('401을 직접 처리하겠다고 표시한 변경 요청은 로그인 페이지로 보내지 않는다', async () => {

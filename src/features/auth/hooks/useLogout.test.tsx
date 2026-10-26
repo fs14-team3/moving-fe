@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { logout } from '@/features/auth/api'
 import { meQueryKey } from '@/features/auth/queryKeys'
@@ -9,10 +9,6 @@ import type { Me } from '@/features/auth/types'
 import { useLogout } from '@/features/auth/hooks/useLogout'
 
 const mocks = vi.hoisted(() => ({ replace: vi.fn(), toastError: vi.fn() }))
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mocks.replace }),
-}))
 
 vi.mock('sonner', () => ({ toast: { error: mocks.toastError } }))
 
@@ -45,16 +41,20 @@ function renderUseLogout() {
 describe('useLogout', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal('location', { replace: mocks.replace })
   })
 
-  it('로그아웃하면 세션을 비우고 홈으로 보낸다', async () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('로그아웃하면 홈을 새로 불러와 이전 세션의 화면과 캐시를 모두 버린다', async () => {
     vi.mocked(logout).mockResolvedValue()
-    const { result, queryClient } = renderUseLogout()
+    const { result } = renderUseLogout()
 
     act(() => result.current.mutate())
 
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/'))
-    expect(queryClient.getQueryData(meQueryKey)).toBeNull()
   })
 
   it('로그아웃에 실패하면 알리고 로그인 상태를 유지한다', async () => {

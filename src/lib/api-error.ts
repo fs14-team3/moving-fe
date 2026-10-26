@@ -67,3 +67,12 @@ export function isApiError(error: unknown): error is ApiError {
 export function isUnauthorized(error: unknown) {
   return isApiError(error) && error.status === 401
 }
+
+export function isClientError(error: unknown) {
+  return (
+    isApiError(error) &&
+    error.status !== null &&
+    error.status >= 400 &&
+    error.status < 500
+  )
+}

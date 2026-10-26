@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthGuard from '@/components/auth/AuthGuard'
+import { getMe } from '@/features/auth/api'
 import { getPathAfterLogin } from '@/features/auth/lib/paths'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
@@ -17,7 +19,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/features/auth/api', () => ({
-  getMe: () => new Promise(() => {}),
+  getMe: vi.fn(() => new Promise(() => {})),
 }))
 
 function createUser(role: Role): Me {
@@ -36,14 +38,14 @@ function createUser(role: Role): Me {
 const customer = createUser('CUSTOMER')
 const mover = createUser('MOVER')
 
-function renderGuard(url: string, user: Me | null) {
+function renderGuard(url: string, user?: Me | null) {
   window.history.replaceState(null, '', url)
   navigation.pathname = window.location.pathname
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   })
-  queryClient.setQueryData(meQueryKey, user)
+  if (user !== undefined) queryClient.setQueryData(meQueryKey, user)
 
   render(
     <QueryClientProvider client={queryClient}>
@@ -140,5 +142,67 @@ describe('AuthGuard', () => {
       ),
     )
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+  })
+
+  it('세션을 확인하는 동안에는 페이지 내용을 보여 주지 않는다', async () => {
+    const me = Promise.withResolvers<Me>()
+    vi.mocked(getMe).mockReturnValueOnce(me.promise)
+    renderGuard('/mover/requests')
+
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+
+    me.resolve(mover)
+
+    expect(await screen.findByRole('heading')).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(navigation.router.replace).not.toHaveBeenCalled()
+  })
+
+  it('세션 확인에 실패하면 다시 시도해 페이지 내용을 보여 준다', async () => {
+    const retried = Promise.withResolvers<Me>()
+    vi.mocked(getMe)
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockReturnValueOnce(retried.promise)
+    const user = userEvent.setup()
+    renderGuard('/mover/requests')
+
+    const retry = await screen.findByRole('button', { name: '다시 시도' })
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+
+    await user.click(retry)
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+
+    retried.resolve(mover)
+
+    expect(await screen.findByRole('heading')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(navigation.router.replace).not.toHaveBeenCalled()
+  })
+
+  it('보던 중 세션 확인에 실패하면 오류 화면으로 바꾸고, 다시 시도하는 동안 버튼을 막는다', async () => {
+    const retried = Promise.withResolvers<Me>()
+    vi.mocked(getMe)
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockReturnValueOnce(retried.promise)
+    const user = userEvent.setup()
+    const queryClient = renderGuard('/mover/requests', mover)
+    expect(screen.getByRole('heading')).toBeInTheDocument()
+
+    await act(() => queryClient.refetchQueries({ queryKey: meQueryKey }))
+
+    const retry = await screen.findByRole('button', { name: '다시 시도' })
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+
+    await user.click(retry)
+    await waitFor(() => expect(retry).toBeDisabled())
+
+    retried.resolve(mover)
+
+    expect(await screen.findByRole('heading')).toBeInTheDocument()
+    expect(navigation.router.replace).not.toHaveBeenCalled()
   })
 })

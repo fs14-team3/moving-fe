@@ -1,3 +1,5 @@
+export type ServiceType = 'SMALL' | 'HOME' | 'OFFICE'
+
 export type Mover = {
   id: string
   nickname: string | null
@@ -5,7 +7,7 @@ export type Mover = {
   intro: string | null
   description: string
   careerYears: number | null
-  serviceTypes: ('SMALL' | 'HOME' | 'OFFICE')[] | null
+  serviceTypes: ServiceType[]
   averageRating: number
   reviewCount: number
   confirmedCount: number

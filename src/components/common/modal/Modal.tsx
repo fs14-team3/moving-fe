@@ -25,8 +25,9 @@ type ModalProps = {
 
 // dialog의 padding은 0으로 두고 안쪽 div에 준다. dialog 자체를 클릭했다면 배경을 누른 것이다.
 // 태블릿 이상은 모두 가운데 608px 모달이다.
+// 내용이 길면 스크롤되지만, 스크롤바가 둥근 모서리를 가리지 않게 숨긴다.
 const BASE =
-  'max-h-[90dvh] max-w-none overflow-y-auto bg-white p-0 text-black-400 backdrop:bg-black/50 md:m-auto md:w-152 md:rounded-4xl'
+  'max-h-[90dvh] max-w-none overflow-y-auto bg-white p-0 text-black-400 [scrollbar-width:none] backdrop:bg-black/50 md:m-auto md:w-152 md:rounded-4xl'
 
 // 모바일: 화면 아래에 붙는 바텀시트 / 가운데 293px 모달
 const LAYOUT = {

@@ -18,22 +18,22 @@ const SIZE_TWO_STEP = 'size-10 lg:size-16'
 // 이미지에 배경·라운드·테두리가 포함되어 있어 버튼은 크기만 정한다.
 const ICON: Record<Icon, { src: string; label: string; size: string }> = {
   like: {
-    src: '/assets/icon-blackheart.png',
+    src: '/assets/icons/like.png',
     label: '좋아요',
     size: SIZE_THREE_STEP,
   },
   link: {
-    src: '/assets/icon-share.png',
+    src: '/assets/icons/share-link.png',
     label: '링크 복사',
     size: SIZE_TWO_STEP,
   },
   kakao: {
-    src: '/assets/icon-kakao.png',
+    src: '/assets/icons/share-kakao.png',
     label: '카카오톡 공유',
     size: SIZE_TWO_STEP,
   },
   facebook: {
-    src: '/assets/icon-facebook.png',
+    src: '/assets/icons/share-facebook.png',
     label: '페이스북 공유',
     size: SIZE_TWO_STEP,
   },

@@ -73,8 +73,8 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 
 ## API 명세
 
-- [openapi.yaml](https://github.com/fs14-team3/moving-be/blob/develop/docs/api/openapi.yaml) (moving-be 저장소)
-- Swagger UI: 배포 후 추가
+- [openapi.ko.yaml](https://github.com/fs14-team3/moving-be/blob/develop/docs/api/openapi.ko.yaml) (moving-be 저장소)
+- [Swagger UI](https://api.dev.helpisa.com/api/docs/) (dev 서버)
 
 ## 협업 규칙
 

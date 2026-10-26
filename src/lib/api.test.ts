@@ -21,6 +21,7 @@ describe('api', () => {
 
   it('응답 인터셉터에서 Axios 오류를 ApiError로 변환한다', async () => {
     const { default: api } = await import('./api')
+    const { ApiError } = await import('./api-error')
 
     api.defaults.adapter = async (config) => {
       const response = {
@@ -45,7 +46,10 @@ describe('api', () => {
       )
     }
 
-    await expect(api.get('/users/me')).rejects.toEqual({
+    const error = await api.get('/users/me').catch((error: unknown) => error)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
       code: 'UNAUTHORIZED',
       message: '로그인이 필요합니다.',
       status: 401,

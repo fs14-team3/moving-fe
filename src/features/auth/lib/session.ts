@@ -2,7 +2,7 @@ import { hashKey, type QueryClient } from '@tanstack/react-query'
 import type { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { LOGIN_PATH } from '@/features/auth/lib/paths'
+import { getCurrentPath, getLoginPath } from '@/features/auth/lib/paths'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me } from '@/features/auth/types'
 
@@ -26,5 +26,5 @@ export async function handleUnauthorized(
 
   await resetSession(queryClient, null)
   toast.info(TOAST_MESSAGES.auth.sessionExpired)
-  router.replace(LOGIN_PATH[me.role])
+  router.replace(getLoginPath(me.role, getCurrentPath()))
 }

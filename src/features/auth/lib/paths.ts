@@ -1,8 +1,13 @@
+import type { RouteAccess } from '@/features/auth/lib/access'
 import type { Me, Role } from '@/features/auth/types'
 
 export const LOGIN_PATH: Record<Role, string> = {
   CUSTOMER: '/login',
   MOVER: '/mover/login',
+}
+
+export function getLoginPath(role: Role, redirect: string) {
+  return `${LOGIN_PATH[role]}?${new URLSearchParams({ redirect })}`
 }
 
 export const SIGNUP_PATH: Record<Role, string> = {
@@ -22,6 +27,22 @@ const PROFILE_REGISTER_PATH: Record<Role, string> = {
   MOVER: '/',
 }
 
+type PathParts = Pick<URL, 'pathname' | 'search' | 'hash'>
+
+function toPath({ pathname, search, hash }: PathParts) {
+  return `${pathname}${search}${hash}`
+}
+
+export function getCurrentPath() {
+  return toPath(window.location)
+}
+
 export function getPathAfterLogin({ role, hasProfile }: Me) {
   return hasProfile ? HOME_PATH[role] : PROFILE_REGISTER_PATH[role]
+}
+
+export function getRedirectPath(access: RouteAccess, user: Me | null) {
+  if (user) return getPathAfterLogin(user)
+  if (access === 'PUBLIC' || access === 'GUEST') return null
+  return getLoginPath(access, getCurrentPath())
 }

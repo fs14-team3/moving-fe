@@ -1,9 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { signup } from '@/features/auth/api'
-import { getPathAfterLogin } from '@/features/auth/lib/paths'
 import { resetSession } from '@/features/auth/lib/session'
 import type { SignupRequest } from '@/features/auth/types'
 import { PASSWORD_RULE_MESSAGE } from '@/features/auth/lib/validation'
@@ -36,15 +34,11 @@ function getSignupFieldErrors(error: unknown) {
 
 export function useSignup(onFieldErrors: (errors: SignupFieldErrors) => void) {
   const queryClient = useQueryClient()
-  const router = useRouter()
 
   return useMutation({
     mutationFn: signup,
     // TODO(#66): BE #22에서 가입 응답의 세션 발급 여부가 정해지면 확인
-    onSuccess: async (user) => {
-      await resetSession(queryClient, user)
-      router.replace(getPathAfterLogin(user))
-    },
+    onSuccess: (user) => resetSession(queryClient, user),
     onError: (error) => {
       const fieldErrors = getSignupFieldErrors(error)
       if (Object.keys(fieldErrors).length > 0) {

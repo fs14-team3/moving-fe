@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function MoverLoginPage() {
   return (
-    <AuthLayout>
+    <AuthLayout role="MOVER">
       <LoginForm role="MOVER" />
     </AuthLayout>
   )

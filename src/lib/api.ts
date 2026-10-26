@@ -9,7 +9,13 @@ const api = axios.create({
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(toApiError(error)),
+  (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject(error)
+    }
+
+    return Promise.reject(toApiError(error))
+  },
 )
 
 export default api

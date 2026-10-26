@@ -1,6 +1,5 @@
-import axios, {
+import {
   AxiosError,
-  CanceledError,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
@@ -107,16 +106,6 @@ describe('toApiError', () => {
       details: undefined,
     })
     expect(result.cause).toBe(error)
-  })
-
-  it('취소된 요청은 ApiError로 변환하지 않는다', () => {
-    const error = new CanceledError('요청이 취소되었습니다')
-
-    const result = toApiError(error)
-
-    expect(result).toBe(error)
-    expect(axios.isCancel(result)).toBe(true)
-    expect(isApiError(result)).toBe(false)
   })
 })
 

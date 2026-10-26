@@ -1,6 +1,16 @@
-import type { AuthResponse, LoginRequest, Me } from '@/features/auth/types'
+import type {
+  AuthResponse,
+  LoginRequest,
+  Me,
+  SignupRequest,
+} from '@/features/auth/types'
 import api from '@/lib/api'
 import { isUnauthorized } from '@/lib/api-error'
+
+export async function signup(body: SignupRequest) {
+  const { data } = await api.post<Me>('/auth/signup', body)
+  return data
+}
 
 export async function login(body: LoginRequest) {
   const { data } = await api.post<AuthResponse>('/auth/login', body)

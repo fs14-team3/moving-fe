@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { login, logout } from '@/features/auth/api'
+import { login, logout, signup } from '@/features/auth/api'
 import type { Me } from '@/features/auth/types'
 import api from '@/lib/api'
 import { ApiError } from '@/lib/api-error'
@@ -10,6 +10,32 @@ function createApiError(status: number) {
 
 afterEach(() => {
   vi.restoreAllMocks()
+})
+
+describe('signup', () => {
+  it('입력한 정보로 가입하고 가입한 유저 정보를 반환한다', async () => {
+    const user: Me = {
+      id: 'user-1',
+      role: 'CUSTOMER',
+      name: '김고객',
+      email: 'customer@example.com',
+      phone: '01012345678',
+      hasProfile: false,
+      customerProfile: null,
+      moverProfile: null,
+    }
+    const post = vi.spyOn(api, 'post').mockResolvedValue({ data: user })
+    const body = {
+      role: 'CUSTOMER' as const,
+      name: '김고객',
+      email: 'customer@example.com',
+      phone: '01012345678',
+      password: 'moving1!',
+    }
+
+    await expect(signup(body)).resolves.toEqual(user)
+    expect(post).toHaveBeenCalledWith('/auth/signup', body)
+  })
 })
 
 describe('login', () => {

@@ -19,14 +19,19 @@ export const NAV_ITEMS: Record<Role | 'GUEST', NavItem[]> = {
   ],
 }
 
+export const PROFILE_EDIT_PATH: Record<Role, string> = {
+  CUSTOMER: '/profile/edit',
+  MOVER: '/mover/mypage',
+}
+
 // TODO(#68): #11 · #24에서 페이지 경로가 정해지면 찜한 기사님 · 이사 리뷰 경로 맞추기
 export const PROFILE_MENU_ITEMS: Record<Role, NavItem[]> = {
   CUSTOMER: [
-    { label: '프로필 수정', href: '/profile/edit' },
+    { label: '프로필 수정', href: PROFILE_EDIT_PATH.CUSTOMER },
     { label: '찜한 기사님', href: '/favorites' },
     { label: '이사 리뷰', href: '/my-reviews' },
   ],
-  MOVER: [{ label: '마이페이지', href: '/mover/mypage' }],
+  MOVER: [{ label: '마이페이지', href: PROFILE_EDIT_PATH.MOVER }],
 }
 
 export function isActivePath(pathname: string, href: string) {

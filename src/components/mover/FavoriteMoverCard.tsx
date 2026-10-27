@@ -1,5 +1,6 @@
 import type { Mover } from '@/features/movers/mocks/movers'
 import Image from 'next/image'
+import Link from 'next/link'
 import ServiceTypeChip from './ServiceTypeChip'
 
 type FavoriteMoverCardProps = {
@@ -8,7 +9,7 @@ type FavoriteMoverCardProps = {
 
 export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)]">
+    <div className="relative flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)]">
       <div className="flex gap-2">
         {mover.serviceTypes.map((serviceType) => (
           <ServiceTypeChip
@@ -40,12 +41,18 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
             <p className="text-sm leading-6 font-semibold">
               {mover.nickname} 기사님
             </p>
-            <Image
-              src="/assets/icons/like_active.png"
-              width={23}
-              height={23}
-              alt=""
-            />
+            <button
+              type="button"
+              aria-label="찜 해제"
+              className="relative z-10 cursor-pointer"
+            >
+              <Image
+                src="/assets/icons/like_active.png"
+                width={23}
+                height={23}
+                alt=""
+              />
+            </button>
           </div>
           <div className="flex items-center gap-[6px]">
             <div className="flex gap-[2px]">
@@ -72,6 +79,11 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
           </div>
         </div>
       </div>
+      <Link
+        href={`/movers/${mover.id}`}
+        aria-label={`${mover.nickname} 기사님 상세 보기`}
+        className="absolute inset-0 rounded-2xl"
+      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import type { Mover } from '@/features/movers/mocks/movers'
 import Image from 'next/image'
+import Link from 'next/link'
 import ServiceTypeChip from './ServiceTypeChip'
 
 type MoverCardProps = {
@@ -8,7 +9,7 @@ type MoverCardProps = {
 
 export default function MoverCard({ mover }: MoverCardProps) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] md:px-7 md:py-6">
+    <div className="relative flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] md:px-7 md:py-6">
       <div className="flex gap-2">
         {mover.serviceTypes.map((serviceType) => (
           <ServiceTypeChip serviceType={serviceType} key={serviceType} />
@@ -44,7 +45,7 @@ export default function MoverCard({ mover }: MoverCardProps) {
               {mover.nickname} 기사님
             </p>
           </div>
-          <div className="col-span-2 row-start-2 flex gap-2 md:col-span-1 md:col-start-1">
+          <div className="col-span-2 row-start-2 flex items-center gap-2 md:col-span-1 md:col-start-1">
             <div className="flex items-center gap-[2px]">
               <Image
                 src="/assets/icons/star.png"
@@ -59,7 +60,7 @@ export default function MoverCard({ mover }: MoverCardProps) {
                 ({mover.reviewCount})
               </p>
             </div>
-            <p className="border-x border-line-200 px-2 text-xs leading-5 font-medium">
+            <p className="relative px-2 text-xs leading-5 font-medium before:absolute before:inset-y-1 before:left-0 before:w-px before:bg-line-200 after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-line-200">
               <span className="text-gray-400">경력</span> {mover.careerYears}년
             </p>
             <p className="text-xs leading-5 font-medium">
@@ -68,7 +69,7 @@ export default function MoverCard({ mover }: MoverCardProps) {
             </p>
           </div>
           <div className="col-start-2 row-start-1 flex items-center justify-self-end md:row-start-2">
-            <button type="button" className="cursor-pointer">
+            <button type="button" className="relative z-10 cursor-pointer">
               <Image
                 src={
                   mover.isFavorite
@@ -86,6 +87,11 @@ export default function MoverCard({ mover }: MoverCardProps) {
           </div>
         </div>
       </div>
+      <Link
+        href={`/movers/${mover.id}`}
+        aria-label={`${mover.nickname} 기사님 상세 보기`}
+        className="absolute inset-0 rounded-2xl"
+      />
     </div>
   )
 }

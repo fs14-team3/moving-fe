@@ -7,6 +7,8 @@ import MoverList from '@/components/mover/MoverList'
 import { MOCK_MOVERS } from '@/features/movers/mocks/movers'
 
 export default function MoversPage() {
+  // TODO: API 연동 시 검색 결과와 분리하여
+  // `/customers/me/favorites` 조회 결과를 사용
   const favoriteMovers = MOCK_MOVERS.filter((mover) => mover.isFavorite).slice(
     0,
     3,

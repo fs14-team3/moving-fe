@@ -1,7 +1,7 @@
 import RegionDropdown from '@/components/common/dropdown/RegionDropdown'
 import ServiceDropdown from '@/components/common/dropdown/ServiceDropdown'
 import SortDropdown from '@/components/common/dropdown/SortDropdown'
-import SearchInput from '@/components/common/SearchInput'
+import SearchInput from '@/components/common/input/SearchInput'
 import FavoriteMoverCard from '@/components/mover/FavoriteMoverCard'
 import MoverList from '@/components/mover/MoverList'
 import { MOCK_MOVERS } from '@/features/movers/mocks/movers'

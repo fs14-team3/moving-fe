@@ -25,10 +25,9 @@ const HOME_PATH: Record<Role, string> = {
   MOVER: '/',
 }
 
-// TODO(#42): #40 · #41의 프로필 등록 페이지가 생기면 '/profile/register' · '/mover/profile/register'로 변경
 const PROFILE_REGISTER_PATH: Record<Role, string> = {
-  CUSTOMER: '/',
-  MOVER: '/',
+  CUSTOMER: '/profile/register',
+  MOVER: '/mover/profile/register',
 }
 
 const URL_BASE = 'http://localhost'
@@ -77,5 +76,5 @@ export function getRedirectPath(access: RouteAccess, user: Me | null) {
     return getPathAfterLogin(user, redirect)
   }
   if (access === 'PUBLIC' || access === 'GUEST') return null
-  return getLoginPath(access, getCurrentPath())
+  return getLoginPath(access.role, getCurrentPath())
 }

@@ -22,14 +22,14 @@ vi.mock('@/features/auth/api', () => ({
   getMe: vi.fn(() => new Promise(() => {})),
 }))
 
-function createUser(role: Role): Me {
+function createUser(role: Role, hasProfile = true): Me {
   return {
     id: 'user-1',
     role,
     name: null,
     email: null,
     phone: null,
-    hasProfile: true,
+    hasProfile,
     customerProfile: null,
     moverProfile: null,
   }
@@ -37,6 +37,8 @@ function createUser(role: Role): Me {
 
 const customer = createUser('CUSTOMER')
 const mover = createUser('MOVER')
+const newCustomer = createUser('CUSTOMER', false)
+const newMover = createUser('MOVER', false)
 
 function renderGuard(url: string, user?: Me | null) {
   window.history.replaceState(null, '', url)
@@ -204,5 +206,82 @@ describe('AuthGuard', () => {
 
     expect(await screen.findByRole('heading')).toBeInTheDocument()
     expect(navigation.router.replace).not.toHaveBeenCalled()
+  })
+
+  it.each<[string, Me, string]>([
+    ['/mover/requests', newMover, '/mover/profile/register'],
+    ['/mover/profile/register', newCustomer, '/profile/register'],
+    ['/profile/register', newMover, '/mover/profile/register'],
+  ])(
+    '프로필이 없는 유저가 %s에 들어가면 자기 프로필 등록 페이지로 보낸다',
+    (url, user, path) => {
+      renderGuard(url, user)
+
+      expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+      expect(navigation.router.replace).toHaveBeenCalledWith(path)
+    },
+  )
+
+  it.each<[string, Me]>([
+    ['/profile/register', newCustomer],
+    ['/mover/profile/register', newMover],
+  ])('프로필이 없는 유저는 %s를 볼 수 있다', (url, user) => {
+    renderGuard(url, user)
+
+    expect(screen.getByRole('heading')).toBeInTheDocument()
+    expect(navigation.router.replace).not.toHaveBeenCalled()
+  })
+
+  it.each(['/', '/movers', '/movers/mover-1'])(
+    '프로필이 없어도 공개 페이지 %s는 볼 수 있다',
+    (url) => {
+      renderGuard(url, newCustomer)
+
+      expect(screen.getByRole('heading')).toBeInTheDocument()
+      expect(navigation.router.replace).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each<[string, Me]>([
+    ['/profile/register', customer],
+    ['/mover/profile/register', mover],
+  ])('프로필이 있는 유저가 %s에 들어가면 기본 페이지로 보낸다', (url, user) => {
+    renderGuard(url, user)
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+    expect(navigation.router.replace).toHaveBeenCalledWith(
+      getPathAfterLogin(user),
+    )
+  })
+
+  it('로그인한 유저에게 프로필이 없으면 redirect 대신 프로필 등록 페이지로 보낸다', async () => {
+    const queryClient = renderGuard(
+      '/mover/login?redirect=%2Fmover%2Frequests',
+      null,
+    )
+
+    setUser(queryClient, newMover)
+
+    await waitFor(() =>
+      expect(navigation.router.replace).toHaveBeenCalledWith(
+        '/mover/profile/register',
+      ),
+    )
+  })
+
+  it('프로필을 등록하면 기본 페이지로 보내고 등록 페이지로 돌려보내지 않는다', async () => {
+    const queryClient = renderGuard('/profile/register', newCustomer)
+    expect(screen.getByRole('heading')).toBeInTheDocument()
+
+    setUser(queryClient, customer)
+
+    await waitFor(() =>
+      expect(navigation.router.replace).toHaveBeenCalledWith(
+        getPathAfterLogin(customer),
+      ),
+    )
+    expect(navigation.router.replace).not.toHaveBeenCalledWith(
+      '/profile/register',
+    )
   })
 })

@@ -5,6 +5,7 @@ import Modal, {
   ModalButton,
   ModalField,
   RequestSummary,
+  countLetters,
   type RequestSummaryProps,
 } from './Modal'
 import TextArea from '@/components/common/input/TextArea'
@@ -30,13 +31,12 @@ function RejectForm({
   const reasonId = useId()
   const [reason, setReason] = useState('')
 
-  const trimmedReason = reason.trim()
-  const canSubmit = trimmedReason.length >= REASON_MIN_LENGTH && !isSubmitting
+  const canSubmit = countLetters(reason) >= REASON_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!canSubmit) return
-    onSubmit(trimmedReason)
+    onSubmit(reason.trim())
   }
 
   return (

@@ -6,6 +6,7 @@ import Modal, {
   ModalButton,
   ModalField,
   RequestSummary,
+  countLetters,
   type RequestSummaryProps,
 } from './Modal'
 import TextArea from '@/components/common/input/TextArea'
@@ -27,7 +28,7 @@ type StarRatingProps = {
 }
 
 type ReviewFormProps = {
-  // 리뷰 대상 기사님 정보. moverProfileImage까지 넘겨야 기사님 형태로 보인다.
+  // 리뷰 대상 기사님 정보. variant: 'mover'로 넘겨야 기사님 형태로 보인다.
   request: RequestSummaryProps
   onSubmit: (review: Review) => void
   isSubmitting?: boolean
@@ -83,14 +84,13 @@ function ReviewForm({
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
 
-  const trimmedContent = content.trim()
   const canSubmit =
-    rating > 0 && trimmedContent.length >= CONTENT_MIN_LENGTH && !isSubmitting
+    rating > 0 && countLetters(content) >= CONTENT_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!canSubmit) return
-    onSubmit({ rating, content: trimmedContent })
+    onSubmit({ rating, content: content.trim() })
   }
 
   return (

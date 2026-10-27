@@ -6,6 +6,7 @@ import Modal, {
   ModalButton,
   ModalField,
   RequestSummary,
+  countLetters,
   type RequestSummaryProps,
 } from './Modal'
 import TextArea from '@/components/common/input/TextArea'
@@ -45,14 +46,13 @@ function SendForm({ request, onSubmit, isSubmitting = false }: SendFormProps) {
   const [price, setPrice] = useState('')
   const [comment, setComment] = useState('')
 
-  const trimmedComment = comment.trim()
   const canSubmit =
-    price !== '' && trimmedComment.length >= COMMENT_MIN_LENGTH && !isSubmitting
+    price !== '' && countLetters(comment) >= COMMENT_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!canSubmit) return
-    onSubmit({ price: Number(price), comment: trimmedComment })
+    onSubmit({ price: Number(price), comment: comment.trim() })
   }
 
   return (

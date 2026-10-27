@@ -148,15 +148,22 @@ export function ModalButton(props: ComponentProps<typeof Button>) {
   )
 }
 
+// 최소 글자 수는 띄어쓰기·줄바꿈을 빼고 센다.
+export function countLetters(value: string) {
+  return value.replace(/\s/g, '').length
+}
+
 // 견적 보내기·반려요청·리뷰 쓰기 모달 위쪽의 요청 정보 묶음
 export type MoveType = 'small' | 'home' | 'office'
 
 export type RequestSummaryProps = {
+  // mover면 이름 위에 기사님 표시, 오른쪽에 프로필 이미지가 붙는다.
+  variant?: 'customer' | 'mover'
   moveType: MoveType
   isDesignated?: boolean
   // '김인서 고객님', '김코드 기사님'처럼 호칭까지 포함한 이름
   name: string
-  // 기사님 정보를 보여줄 때 넘긴다. 이름 위에 기사님 표시, 오른쪽에 프로필 이미지가 붙는다.
+  // 없으면 기본 프로필 이미지를 보여준다.
   moverProfileImage?: string
   from: string
   to: string
@@ -173,6 +180,7 @@ const MOVE_TYPE: Record<MoveType, { label: string; icon: ReactNode }> = {
 }
 
 const NAME = 'text-base font-semibold md:text-xl'
+const DEFAULT_PROFILE_IMAGE = '/assets/icons/profile.svg'
 
 // 고객님 요청: 모바일은 출발지·도착지 / 이사일 두 줄, 태블릿 이상은 한 줄
 // 기사님 정보: 모바일에서도 한 줄
@@ -216,16 +224,17 @@ function InfoItem({
 }
 
 export function RequestSummary({
+  variant = 'customer',
   moveType,
   isDesignated = false,
   name,
-  moverProfileImage,
+  moverProfileImage = DEFAULT_PROFILE_IMAGE,
   from,
   to,
   movingDate,
 }: RequestSummaryProps) {
   const { label, icon } = MOVE_TYPE[moveType]
-  const isMover = moverProfileImage !== undefined
+  const isMover = variant === 'mover'
 
   return (
     <section className="border-b border-line-100 pb-5 md:pb-6">
@@ -240,7 +249,7 @@ export function RequestSummary({
         <div className="mt-4 flex items-end justify-between gap-4 border-b border-line-100 pb-3 md:mt-6">
           <div>
             <Image
-              src="/assets/logo-symbol.svg"
+              src="/assets/logos/symbol.svg"
               alt=""
               width={16}
               height={17}

@@ -20,7 +20,7 @@ export const SIGNUP_PATH: Record<Role, string> = {
 }
 
 // TODO(#67): #13 · #23의 기본 페이지가 생기면 '/request' · '/mover/requests'로 변경
-const HOME_PATH: Record<Role, string> = {
+export const HOME_PATH: Record<Role, string> = {
   CUSTOMER: '/',
   MOVER: '/',
 }

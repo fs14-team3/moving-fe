@@ -27,8 +27,8 @@ describe('getPathAfterLogin', () => {
   })
 
   it.each<[Role, string]>([
-    ['CUSTOMER', '/'],
-    ['MOVER', '/'],
+    ['CUSTOMER', '/profile/register'],
+    ['MOVER', '/mover/profile/register'],
   ])('프로필이 없는 %s 유저는 프로필 등록 페이지 %s로 보낸다', (role, path) => {
     expect(getPathAfterLogin(createUser(role, false))).toBe(path)
   })
@@ -62,6 +62,12 @@ describe('getPathAfterLogin', () => {
     )
     expect(getPathAfterLogin(customer, '/login')).toBe(
       getPathAfterLogin(customer),
+    )
+  })
+
+  it('프로필이 있으면 redirect가 프로필 등록 페이지여도 기본 페이지로 보낸다', () => {
+    expect(getPathAfterLogin(mover, '/mover/profile/register')).toBe(
+      getPathAfterLogin(mover),
     )
   })
 

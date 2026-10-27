@@ -3,7 +3,6 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { HOME_PATH } from '@/features/auth/lib/paths'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import { createProfile } from '@/features/profile/api'
@@ -11,11 +10,8 @@ import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile'
 import { ApiError } from '@/lib/api-error'
 
 const toast = vi.hoisted(() => ({ error: vi.fn() }))
-const router = vi.hoisted(() => ({ replace: vi.fn() }))
 
 vi.mock('sonner', () => ({ toast }))
-
-vi.mock('next/navigation', () => ({ useRouter: () => router }))
 
 vi.mock('@/features/profile/api', () => ({ createProfile: vi.fn() }))
 
@@ -70,23 +66,19 @@ describe('useCreateProfile', () => {
   it.each<[Role, keyof Me]>([
     ['CUSTOMER', 'customerProfile'],
     ['MOVER', 'moverProfile'],
-  ])(
-    '%s 프로필을 등록하면 내 정보에 반영하고 기본 페이지로 이동한다',
-    async (role, profileField) => {
-      vi.mocked(createProfile).mockResolvedValue(body)
-      const { result, queryClient } = renderUseCreateProfile(role)
+  ])('%s 프로필을 등록하면 내 정보에 반영한다', async (role, profileField) => {
+    vi.mocked(createProfile).mockResolvedValue(body)
+    const { result, queryClient } = renderUseCreateProfile(role)
 
-      act(() => result.current.mutate(body))
+    act(() => result.current.mutate(body))
 
-      await waitFor(() => expect(result.current.isSuccess).toBe(true))
-      expect(createProfile).toHaveBeenCalledWith(role, body)
-      expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
-        hasProfile: true,
-        [profileField]: body,
-      })
-      expect(router.replace).toHaveBeenCalledWith(HOME_PATH[role])
-    },
-  )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(createProfile).toHaveBeenCalledWith(role, body)
+    expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
+      hasProfile: true,
+      [profileField]: body,
+    })
+  })
 
   it('등록 전에 시작된 내 정보 요청이 늦게 끝나도 등록 결과를 덮어쓰지 않는다', async () => {
     const staleMe = Promise.withResolvers<Me>()
@@ -122,7 +114,6 @@ describe('useCreateProfile', () => {
       act(() => result.current.mutate(body))
 
       await waitFor(() => expect(location.replace).toHaveBeenCalledWith(path))
-      expect(router.replace).not.toHaveBeenCalled()
       expect(toast.error).not.toHaveBeenCalled()
     },
   )
@@ -137,7 +128,6 @@ describe('useCreateProfile', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toast.error).not.toHaveBeenCalled()
-    expect(router.replace).not.toHaveBeenCalled()
     expect(location.replace).not.toHaveBeenCalled()
   })
 
@@ -191,7 +181,6 @@ describe('useCreateProfile', () => {
       ),
     )
     expect(onFieldErrors).not.toHaveBeenCalled()
-    expect(router.replace).not.toHaveBeenCalled()
     expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
       hasProfile: false,
     })

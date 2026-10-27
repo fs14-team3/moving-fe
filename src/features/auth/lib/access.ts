@@ -1,14 +1,16 @@
 import type { Me, Role } from '@/features/auth/types'
 
-export type RouteAccess = 'PUBLIC' | 'GUEST' | Role
+export type RouteAccess =
+  'PUBLIC' | 'GUEST' | { role: Role; hasProfile: boolean }
 
 const ROUTE_ACCESS: Record<string, RouteAccess> = {
   '/login': 'GUEST',
   '/signup': 'GUEST',
-  '/profile/register': 'CUSTOMER',
-  '/mover': 'MOVER',
+  '/profile/register': { role: 'CUSTOMER', hasProfile: false },
+  '/mover': { role: 'MOVER', hasProfile: true },
   '/mover/login': 'GUEST',
   '/mover/signup': 'GUEST',
+  '/mover/profile/register': { role: 'MOVER', hasProfile: false },
 }
 
 const ROUTES = Object.keys(ROUTE_ACCESS).sort((a, b) => b.length - a.length)
@@ -25,6 +27,5 @@ export function getRouteAccess(pathname: string): RouteAccess {
 export function canAccess(access: RouteAccess, user: Me | null) {
   if (access === 'PUBLIC') return true
   if (access === 'GUEST') return !user
-  // TODO(#42): 프로필이 없는 유저는 각자의 프로필 등록 페이지로 이동
-  return user?.role === access
+  return user?.role === access.role && user.hasProfile === access.hasProfile
 }

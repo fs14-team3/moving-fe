@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Button from '@/components/common/Button'
+import Button from '@/components/common/button/Button'
 import MobileMenu from '@/components/layout/MobileMenu'
 import ProfileMenu from '@/components/layout/ProfileMenu'
 import { isActivePath, NAV_ITEMS } from '@/constants/navigation'

@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  // Shared components are built before the pages that use them.
+  // Remove this before the final release so unused ones get cleaned up.
+  "ignoreFiles": ["src/components/common/**"],
+}

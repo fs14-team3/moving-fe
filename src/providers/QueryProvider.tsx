@@ -9,7 +9,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useState, type ReactNode } from 'react'
 import { handleUnauthorized } from '@/features/auth/lib/session'
-import { isUnauthorized } from '@/lib/api-error'
+import { isClientError, isUnauthorized } from '@/lib/api-error'
 
 export default function QueryProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
@@ -29,7 +29,7 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
         queries: {
           staleTime: 60 * 1000,
           retry: (failureCount, error) =>
-            !isUnauthorized(error) && failureCount < 3,
+            !isClientError(error) && failureCount < 3,
         },
       },
     })

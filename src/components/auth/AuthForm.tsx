@@ -1,6 +1,6 @@
 import { LoaderCircle } from 'lucide-react'
 import type { ReactNode, SubmitEvent } from 'react'
-import Button from '@/components/common/Button'
+import Button from '@/components/common/button/Button'
 
 type AuthFormProps = {
   submitLabel: string

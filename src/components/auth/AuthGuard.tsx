@@ -3,7 +3,7 @@
 import { LoaderCircle } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, type ReactNode } from 'react'
-import Button from '@/components/common/Button'
+import Button from '@/components/common/button/Button'
 import { canAccess, getRouteAccess } from '@/features/auth/lib/access'
 import { getRedirectPath } from '@/features/auth/lib/paths'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'

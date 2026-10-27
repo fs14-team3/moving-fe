@@ -5,6 +5,7 @@ export type RouteAccess = 'PUBLIC' | 'GUEST' | Role
 const ROUTE_ACCESS: Record<string, RouteAccess> = {
   '/login': 'GUEST',
   '/signup': 'GUEST',
+  '/profile/register': 'CUSTOMER',
   '/mover': 'MOVER',
   '/mover/login': 'GUEST',
   '/mover/signup': 'GUEST',

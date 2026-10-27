@@ -4,7 +4,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { FileText, LoaderCircle, MoveRight, Pencil } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef } from 'react'
-import Chip from '@/components/common/Chip'
+import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import { MOVE_TYPE, type MoveType } from '@/components/common/modal/Modal'
 import {
@@ -74,11 +74,11 @@ function RequestCard({ request }: { request: ReceivedRequest }) {
     <article className="rounded-2xl border border-line-100 bg-white px-5 py-6 shadow-sm lg:px-6 lg:py-7">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap gap-2">
-          <Chip icon={icon}>{label}</Chip>
+          <Badge icon={icon}>{label}</Badge>
           {request.isDesignated && (
-            <Chip icon={<FileText className="size-3.5 md:size-4" />}>
+            <Badge icon={<FileText className="size-3.5 md:size-4" />}>
               지정 견적 요청
-            </Chip>
+            </Badge>
           )}
         </div>
         <time

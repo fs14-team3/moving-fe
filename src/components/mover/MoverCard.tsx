@@ -24,7 +24,7 @@ export default function MoverCard({ mover }: MoverCardProps) {
       </div>
       <div className="grid grid-cols-[50px_minmax(0,1fr)] gap-x-2 gap-y-4 md:grid-cols-[134px_minmax(0,1fr)] md:gap-x-5">
         <Image
-          src={mover.imageUrl ?? '/assets/images/profile.svg'}
+          src={mover.imageUrl ?? '/assets/images/profile.png'}
           width={50}
           height={50}
           alt=""

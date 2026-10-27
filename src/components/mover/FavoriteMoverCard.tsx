@@ -30,7 +30,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
       </h3>
       <div className="flex gap-2">
         <Image
-          src={mover.imageUrl ?? '/assets/images/profile.svg'}
+          src={mover.imageUrl ?? '/assets/images/profile.png'}
           width={50}
           height={50}
           alt=""

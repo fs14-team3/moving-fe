@@ -88,24 +88,27 @@ describe('QueryProvider', () => {
     expect(mocks.replace).not.toHaveBeenCalled()
   })
 
-  it('401 응답은 다시 요청하지 않는다', async () => {
+  it.each([401, 403, 404])('%i 응답은 다시 요청하지 않는다', async (status) => {
     const result = renderWithProvider(() => null)
 
     const { queryFn, request } = fetchFailingQuery(
       result.current.queryClient,
-      createApiError(401),
+      createApiError(status),
     )
     await request
 
     expect(queryFn).toHaveBeenCalledOnce()
   })
 
-  it('그 밖의 오류는 3번까지 다시 요청한다', async () => {
+  it.each<[string, Error]>([
+    ['서버 오류', createApiError(500)],
+    ['네트워크 오류', new ApiError('NETWORK_ERROR', 'Network Error', null)],
+  ])('%s는 3번까지 다시 요청한다', async (_label, error) => {
     const result = renderWithProvider(() => null)
 
     const { queryFn, request } = fetchFailingQuery(
       result.current.queryClient,
-      createApiError(500),
+      error,
     )
     await request
 

@@ -197,19 +197,16 @@ export default function ReceivedRequestsPage() {
       )
     }
     if (requests.length === 0) {
-      // TODO: 시안의 회색 캐릭터 이미지를 받으면 교체. 지금은 기존 캐릭터를 흑백으로 보여준다.
+      // 안내 문구가 이미지 안에 들어 있어서 alt로 같은 문구를 읽어 준다.
       return (
-        <div className="flex flex-col items-center gap-6 py-20 lg:py-32">
+        <div className="flex justify-center py-20 lg:py-32">
           <Image
-            src="/assets/images/character-box.webp"
-            alt=""
-            width={549}
-            height={800}
-            className="h-auto w-28 opacity-40 grayscale lg:w-44"
+            src="/assets/images/empty.png"
+            alt="아직 받은 요청이 없어요!"
+            width={720}
+            height={780}
+            className="h-auto w-45 md:w-60"
           />
-          <p className="text-base text-gray-400 lg:text-xl">
-            아직 받은 요청이 없어요!
-          </p>
         </div>
       )
     }

@@ -1,4 +1,4 @@
-import type { ServiceType } from '@/features/movers/mocks/movers'
+import type { ServiceType } from '@/features/movers/types'
 import { cn } from '@/lib/cn'
 import Image from 'next/image'
 

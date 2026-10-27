@@ -1,4 +1,4 @@
-import type { Mover } from '@/features/movers/mocks/movers'
+import type { Mover } from '@/features/movers/types'
 import Image from 'next/image'
 import Link from 'next/link'
 import ServiceTypeChip from './ServiceTypeChip'
@@ -8,10 +8,16 @@ type FavoriteMoverCardProps = {
 }
 
 export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
+  const serviceTypes = mover.serviceTypes ?? []
+  const nickname = mover.nickname?.trim() || '익명'
+  const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
+  const careerYears =
+    mover.careerYears !== null ? `${mover.careerYears}년` : '-'
+
   return (
     <div className="relative flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)]">
       <div className="flex gap-2">
-        {mover.serviceTypes.map((serviceType) => (
+        {serviceTypes.map((serviceType) => (
           <ServiceTypeChip
             key={serviceType}
             serviceType={serviceType}
@@ -20,7 +26,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
         ))}
       </div>
       <h3 className="line-clamp-1 text-base leading-6 font-semibold">
-        {mover.intro}
+        {intro}
       </h3>
       <div className="flex gap-2">
         <Image
@@ -38,9 +44,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
               height={20}
               alt=""
             />
-            <p className="text-sm leading-6 font-semibold">
-              {mover.nickname} 기사님
-            </p>
+            <p className="text-sm leading-6 font-semibold">{nickname} 기사님</p>
             <button
               type="button"
               aria-label="찜 해제"
@@ -70,7 +74,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
               </p>
             </div>
             <p className="relative px-[6px] text-xs leading-5 font-medium before:absolute before:inset-y-1 before:left-0 before:w-px before:bg-line-200 after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-line-200">
-              <span className="text-gray-400">경력</span> {mover.careerYears}년
+              <span className="text-gray-400">경력</span> {careerYears}
             </p>
             <p className="text-xs leading-5 font-medium">
               {mover.confirmedCount}건{' '}
@@ -81,7 +85,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
       </div>
       <Link
         href={`/movers/${mover.id}`}
-        aria-label={`${mover.nickname} 기사님 상세 보기`}
+        aria-label={`${nickname} 기사님 상세 보기`}
         className="absolute inset-0 rounded-2xl"
       />
     </div>

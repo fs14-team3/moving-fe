@@ -1,4 +1,4 @@
-import type { Mover } from '@/features/movers/mocks/movers'
+import type { Mover } from '@/features/movers/types'
 import MoverCard from './MoverCard'
 
 type MoverListProps = {

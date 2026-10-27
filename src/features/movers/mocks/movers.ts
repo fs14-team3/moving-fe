@@ -1,19 +1,4 @@
-export type ServiceType = 'SMALL' | 'HOME' | 'OFFICE'
-
-export type Mover = {
-  id: string
-  nickname: string | null
-  imageUrl: string | null
-  intro: string | null
-  description: string
-  careerYears: number | null
-  serviceTypes: ServiceType[]
-  averageRating: number
-  reviewCount: number
-  confirmedCount: number
-  isFavorite: boolean | null
-  favoriteCount: number
-}
+import type { Mover } from '../types'
 
 export const MOCK_MOVERS = [
   {

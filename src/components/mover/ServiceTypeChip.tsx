@@ -1,6 +1,7 @@
 import type { ServiceType } from '@/features/movers/types'
 import { cn } from '@/lib/cn'
 import Image from 'next/image'
+import Chip from '../common/Chip'
 
 type ServiceTypeChipProps = {
   serviceType: ServiceType
@@ -33,21 +34,16 @@ export default function ServiceTypeChip({
   const isResponsive = size === 'responsive'
 
   return (
-    <div
+    <Chip
+      icon={<Image src={imageSrc} width={20} height={20} alt="" />}
       className={cn(
-        'flex w-fit items-center gap-[2px] rounded-sm bg-primary-100 px-1 py-[2px]',
-        isResponsive && 'md:gap-1',
+        'gap-[2px] rounded-sm px-1 py-[2px] text-xs leading-5 whitespace-nowrap text-primary-500',
+        isResponsive
+          ? 'md:gap-1 md:px-1 md:text-sm md:leading-6'
+          : 'md:gap-[2px] md:px-1 md:text-xs md:leading-5',
       )}
     >
-      <Image src={imageSrc} width={20} height={20} alt="" />
-      <span
-        className={cn(
-          'text-xs leading-5 font-semibold text-primary-500',
-          isResponsive && 'md:text-sm md:leading-6',
-        )}
-      >
-        {label}
-      </span>
-    </div>
+      {label}
+    </Chip>
   )
 }

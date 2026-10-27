@@ -34,16 +34,27 @@ export default function MoversPage() {
           <h2 className="leading-6 font-semibold lg:text-xl lg:leading-8">
             찜한 기사님
           </h2>
-          <ul className="mt-2 flex w-full snap-x snap-mandatory gap-4 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">
-            {favoriteMovers.map((mover) => (
-              <li
-                key={mover.id}
-                className="w-[327px] max-w-[calc(100vw-48px)] shrink-0 snap-start lg:w-full lg:max-w-none"
-              >
-                <FavoriteMoverCard mover={mover} />
-              </li>
-            ))}
-          </ul>
+          {favoriteMovers.length === 0 ? (
+            <div
+              role="status"
+              className="mt-2 flex items-center justify-center rounded-2xl border border-line-100 bg-white px-4 py-6 lg:py-8"
+            >
+              <p className="text-sm text-gray-400 md:text-base">
+                찜한 기사님이 없습니다.
+              </p>
+            </div>
+          ) : (
+            <ul className="mt-2 flex w-full snap-x snap-mandatory gap-4 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">
+              {favoriteMovers.map((mover) => (
+                <li
+                  key={mover.id}
+                  className="w-[327px] max-w-[calc(100vw-48px)] shrink-0 snap-start lg:w-full lg:max-w-none"
+                >
+                  <FavoriteMoverCard mover={mover} />
+                </li>
+              ))}
+            </ul>
+          )}
         </aside>
 
         <section className="lg:col-start-1 lg:row-start-2">

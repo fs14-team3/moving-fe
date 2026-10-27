@@ -180,7 +180,8 @@ export default function ReceivedRequestsPage() {
 
   const renderList = () => {
     if (isPending) return <Loading />
-    if (isError) {
+    // 다시 불러오기만 실패했다면 이미 받은 목록을 그대로 보여준다.
+    if (isError && !data) {
       return (
         <div role="alert" className="flex flex-col items-center gap-6 py-20">
           <p className="text-base font-semibold text-black-400 lg:text-lg">

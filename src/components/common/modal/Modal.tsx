@@ -112,6 +112,7 @@ type ModalFieldProps = {
   htmlFor?: string
   labelId?: string
   children: ReactNode
+  className?: string
 }
 
 // 모달 안의 입력 항목. 위 요소와의 간격까지 포함한다.
@@ -120,9 +121,10 @@ export function ModalField({
   htmlFor,
   labelId,
   children,
+  className,
 }: ModalFieldProps) {
   return (
-    <div className="mt-6 flex flex-col gap-4 md:mt-8">
+    <div className={cn('mt-6 flex flex-col gap-4 md:mt-8', className)}>
       <label
         id={labelId}
         htmlFor={htmlFor}
@@ -173,7 +175,7 @@ export type RequestSummaryProps = {
 
 const ICON = 'size-3.5 md:size-4'
 
-const MOVE_TYPE: Record<MoveType, { label: string; icon: ReactNode }> = {
+export const MOVE_TYPE: Record<MoveType, { label: string; icon: ReactNode }> = {
   small: { label: '소형이사', icon: <Package className={ICON} /> },
   home: { label: '가정이사', icon: <House className={ICON} /> },
   office: { label: '사무실이사', icon: <Building2 className={ICON} /> },

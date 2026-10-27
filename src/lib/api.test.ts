@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios'
+import { AxiosError, CanceledError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('api', () => {
@@ -17,6 +17,19 @@ describe('api', () => {
     expect(api.defaults.baseURL).toBe('http://localhost:4000/api')
     expect(api.defaults.withCredentials).toBe(true)
     expect(api.defaults.timeout).toBe(10000)
+  })
+
+  it('취소된 요청은 ApiError로 변환하지 않는다', async () => {
+    const { default: api } = await import('./api')
+    const canceledError = new CanceledError('요청이 취소되었습니다.')
+
+    api.defaults.adapter = async () => {
+      throw canceledError
+    }
+
+    const error = await api.get('/users/me').catch((error: unknown) => error)
+
+    expect(error).toBe(canceledError)
   })
 
   it('응답 인터셉터에서 Axios 오류를 ApiError로 변환한다', async () => {

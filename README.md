@@ -25,20 +25,23 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 
 ## 환경 변수
 
-| 이름                  | 예시                        | 설명                                        |
-| --------------------- | --------------------------- | ------------------------------------------- |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:4000/api` | API 주소. 브라우저에 노출되므로 비밀값 금지 |
+| 이름                     | 예시                        | 설명                                             |
+| ------------------------ | --------------------------- | ------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`    | `http://localhost:4000/api` | API 주소. 브라우저에 노출되므로 비밀값 금지      |
+| `NEXT_PUBLIC_SENTRY_DSN` |                             | Sentry 오류 수집을 위한 DSN                      |
+| `SENTRY_AUTH_TOKEN`      |                             | Sentry 소스맵 업로드용 인증 토큰. 외부 노출 금지 |
 
 ## 명령어
 
-| 명령어                 | 설명                                 |
-| ---------------------- | ------------------------------------ |
-| `npm run dev`          | 개발 서버                            |
-| `npm run build`        | 프로덕션 빌드 (타입 검사 포함)       |
-| `npm run lint`         | ESLint 검사 (`lint:fix`로 자동 수정) |
-| `npm run typecheck`    | 빌드 없이 타입만 검사                |
-| `npm run format:check` | Prettier 검사 (`format`으로 수정)    |
-| `npm run test`         | Vitest 실행 (`test:watch`로 감시)    |
+| 명령어                 | 설명                                     |
+| ---------------------- | ---------------------------------------- |
+| `npm run dev`          | 개발 서버                                |
+| `npm run build`        | 프로덕션 빌드 (타입 검사 포함)           |
+| `npm run lint`         | ESLint 검사 (`lint:fix`로 자동 수정)     |
+| `npm run typecheck`    | 빌드 없이 타입만 검사                    |
+| `npm run format:check` | Prettier 검사 (`format`으로 수정)        |
+| `npm run test`         | Vitest 실행 (`test:watch`로 감시)        |
+| `npm run api:types`    | moving-be `develop` 명세로 API 타입 생성 |
 
 커밋 시 Husky가 gitleaks(비밀값 검사), lint-staged(ESLint + Prettier), commitlint를 실행합니다. gitleaks가 설치되어 있지 않으면 로컬 검사만 건너뛰고, CI가 push마다 전체 이력을 다시 검사합니다.
 

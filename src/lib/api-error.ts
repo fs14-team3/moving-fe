@@ -1,4 +1,4 @@
-import axios, { type CanceledError } from 'axios'
+import axios from 'axios'
 
 export interface ApiErrorDetail {
   field: string
@@ -27,11 +27,7 @@ export class ApiError extends Error {
 }
 
 /** Axios 오류를 프론트 공통 에러 형태로 변환 */
-export function toApiError(error: unknown): ApiError | CanceledError<unknown> {
-  if (axios.isCancel(error)) {
-    return error
-  }
-
+export function toApiError(error: unknown): ApiError {
   if (!axios.isAxiosError<ApiErrorResponse>(error)) {
     return new ApiError(
       'UNKNOWN_ERROR',
@@ -66,4 +62,8 @@ export function toApiError(error: unknown): ApiError | CanceledError<unknown> {
 /** 전달받은 오류가 공통 API 에러인지 확인 */
 export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError
+}
+
+export function isUnauthorized(error: unknown) {
+  return isApiError(error) && error.status === 401
 }

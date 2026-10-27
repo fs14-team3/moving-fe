@@ -1,13 +1,22 @@
+'use client'
+
 import type { Mover } from '@/features/movers/types'
+import { Check } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ServiceTypeChip from './ServiceTypeChip'
 
 type MoverCardProps = {
   mover: Mover
+  selected?: boolean
+  onSelect?: () => void
 }
 
-export default function MoverCard({ mover }: MoverCardProps) {
+export default function MoverCard({
+  mover,
+  selected = false,
+  onSelect,
+}: MoverCardProps) {
   const serviceTypes = mover.serviceTypes ?? []
   const nickname = mover.nickname?.trim() || '익명'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
@@ -17,10 +26,29 @@ export default function MoverCard({ mover }: MoverCardProps) {
 
   return (
     <div className="relative flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] md:px-7 md:py-6">
-      <div className="flex gap-2">
-        {serviceTypes.map((serviceType) => (
-          <ServiceTypeChip serviceType={serviceType} key={serviceType} />
-        ))}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {serviceTypes.map((serviceType) => (
+            <ServiceTypeChip serviceType={serviceType} key={serviceType} />
+          ))}
+        </div>
+
+        {onSelect && (
+          <label className="relative z-10 flex size-5 shrink-0 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onSelect}
+              aria-label={`${nickname} 기사님 선택`}
+              className="peer size-5 appearance-none rounded-sm border border-line-200 bg-white checked:border-primary-400 checked:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
+            />
+            <Check
+              aria-hidden="true"
+              strokeWidth={3}
+              className="pointer-events-none absolute inset-0 m-auto hidden size-3.5 text-white peer-checked:block"
+            />
+          </label>
+        )}
       </div>
       <div className="grid grid-cols-[50px_minmax(0,1fr)] gap-x-2 gap-y-4 md:grid-cols-[134px_minmax(0,1fr)] md:gap-x-5">
         <Image

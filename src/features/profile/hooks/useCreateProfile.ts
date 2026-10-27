@@ -1,9 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { PROFILE_EDIT_PATH } from '@/constants/navigation'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { HOME_PATH } from '@/features/auth/lib/paths'
 import { meQueryKey } from '@/features/auth/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import { createProfile } from '@/features/profile/api'
@@ -52,7 +50,6 @@ export function useCreateProfile(
   onFieldErrors: (errors: ProfileFieldErrors) => void,
 ) {
   const queryClient = useQueryClient()
-  const router = useRouter()
 
   return useMutation({
     mutationFn: (body: ProfileCreate) => createProfile(role, body),
@@ -63,7 +60,6 @@ export function useCreateProfile(
         (me) =>
           me && { ...me, hasProfile: true, [PROFILE_FIELD[role]]: profile },
       )
-      router.replace(HOME_PATH[role])
     },
     onError: (error) => {
       if (isUnauthorized(error)) return

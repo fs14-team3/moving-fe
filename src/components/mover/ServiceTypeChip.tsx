@@ -1,4 +1,4 @@
-import type { ServiceType } from '@/features/movers/types'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import { cn } from '@/lib/cn'
 import Image from 'next/image'
 import Chip from '../common/Chip'
@@ -8,29 +8,20 @@ type ServiceTypeChipProps = {
   size?: 'responsive' | 'small'
 }
 
-const SERVICE_TYPE_CONFIG: Record<
-  ServiceType,
-  { label: string; imageSrc: string }
-> = {
-  SMALL: {
-    label: '소형이사',
-    imageSrc: '/assets/icons/box.png',
-  },
-  HOME: {
-    label: '가정이사',
-    imageSrc: '/assets/icons/home.png',
-  },
-  OFFICE: {
-    label: '사무실이사',
-    imageSrc: '/assets/icons/office.png',
-  },
+const SERVICE_TYPE_IMAGE: Record<ServiceType, string> = {
+  SMALL: '/assets/icons/box.png',
+  HOME: '/assets/icons/home.png',
+  OFFICE: '/assets/icons/office.png',
 }
 
 export default function ServiceTypeChip({
   serviceType,
   size = 'responsive',
 }: ServiceTypeChipProps) {
-  const { label, imageSrc } = SERVICE_TYPE_CONFIG[serviceType]
+  const label =
+    SERVICE_TYPE_OPTIONS.find((option) => option.value === serviceType)
+      ?.label ?? serviceType
+  const imageSrc = SERVICE_TYPE_IMAGE[serviceType]
   const isResponsive = size === 'responsive'
 
   return (

@@ -1,3 +1,4 @@
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import Dropdown from './Dropdown'
 
 type ServiceDropdownProps = {
@@ -5,21 +6,19 @@ type ServiceDropdownProps = {
   onChange?: (value: string) => void
 }
 
+const SERVICE_OPTIONS = [
+  { label: '전체', value: 'all' },
+  ...SERVICE_TYPE_OPTIONS,
+]
+
 export default function ServiceDropdown({
   value,
   onChange,
 }: ServiceDropdownProps) {
-  const services = [
-    { label: '전체', value: 'all' },
-    { label: '소형이사', value: 'small' },
-    { label: '가정이사', value: 'home' },
-    { label: '사무실이사', value: 'office' },
-  ]
-
   return (
     <Dropdown
       placeholder="서비스"
-      options={services}
+      options={SERVICE_OPTIONS}
       variant="service"
       value={value}
       onChange={onChange}

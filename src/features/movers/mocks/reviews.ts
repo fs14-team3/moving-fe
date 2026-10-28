@@ -31,3 +31,12 @@ export const MOCK_REVIEWS = [
     createdAt: '2026-09-28T16:40:00.000Z',
   },
 ] satisfies Review[]
+
+// TODO: 전체 리뷰 기준 평점별 집계 API 응답 형식 확정 후 제거
+export const MOCK_RATING_COUNTS = [
+  { rating: 5, count: 180 },
+  { rating: 4, count: 42 },
+  { rating: 3, count: 18 },
+  { rating: 2, count: 6 },
+  { rating: 1, count: 2 },
+]

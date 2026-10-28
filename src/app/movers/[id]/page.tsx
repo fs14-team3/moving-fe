@@ -1,9 +1,15 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import Chip from '@/components/common/Chip'
+import RatingDistribution from '@/components/mover/review/RatingDistribution'
 import RatingStarts from '@/components/mover/review/RatingStars'
+import ReviewList from '@/components/mover/review/ReviewList'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { MOCK_MOVER_DETAILS } from '@/features/movers/mocks/movers'
+import {
+  MOCK_RATING_COUNTS,
+  MOCK_REVIEWS,
+} from '@/features/movers/mocks/reviews'
 import { Star } from 'lucide-react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
@@ -220,7 +226,7 @@ export default async function MoverDetailPage({
         <section className="flex flex-col gap-4 lg:border-t lg:border-line-100 lg:pt-10">
           <h2 className="text-xl leading-8 font-semibold">리뷰</h2>
 
-          <div className="flex flex-col gap-6 md:flex-row md:justify-between">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="flex items-center gap-[18px]">
               <p className="text-4xl font-medium">{mover.averageRating}</p>
               <div>
@@ -231,16 +237,13 @@ export default async function MoverDetailPage({
               </div>
             </div>
 
-            <div>평점에 따른 리뷰 비율</div>
+            <RatingDistribution
+              ratingCounts={MOCK_RATING_COUNTS}
+              totalCount={mover.reviewCount}
+            />
           </div>
 
-          <div className="flex flex-col gap-10">
-            <p>리뷰1</p>
-            <p>리뷰2</p>
-            <p>리뷰3</p>
-            <p>리뷰4</p>
-            <p>리뷰5</p>
-          </div>
+          <ReviewList reviews={MOCK_REVIEWS} />
         </section>
       </div>
     </main>

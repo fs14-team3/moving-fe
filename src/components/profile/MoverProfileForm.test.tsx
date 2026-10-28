@@ -2,14 +2,33 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MoverProfileForm from '@/components/profile/MoverProfileForm'
-import type { Role } from '@/features/auth/types'
-import type { ProfileFieldErrors } from '@/features/profile/types'
+import type { Me, Role } from '@/features/auth/types'
+import type {
+  ProfileFieldErrors,
+  ProfileFormMode,
+} from '@/features/profile/types'
 
 const createProfileState = vi.hoisted(() => ({
   mutate: vi.fn(),
   isPending: false,
   isSuccess: false,
   onFieldErrors: (() => {}) as (errors: ProfileFieldErrors) => void,
+}))
+
+const updateProfileState = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  isPending: false,
+  isSuccess: false,
+}))
+
+const currentUser = vi.hoisted(() => ({ user: null as Me | null }))
+
+const router = vi.hoisted(() => ({ push: vi.fn() }))
+
+vi.mock('next/navigation', () => ({ useRouter: () => router }))
+
+vi.mock('@/features/auth/hooks/useCurrentUser', () => ({
+  useCurrentUser: () => currentUser,
 }))
 
 vi.mock('@/features/profile/hooks/useCreateProfile', () => ({
@@ -22,9 +41,36 @@ vi.mock('@/features/profile/hooks/useCreateProfile', () => ({
   },
 }))
 
-function renderMoverProfileForm() {
+vi.mock('@/features/profile/hooks/useUpdateProfile', () => ({
+  useUpdateProfile: () => updateProfileState,
+}))
+
+const savedProfile = {
+  imageUrl: null,
+  nickname: '김코드',
+  careerYears: 8,
+  intro: '꼼꼼한 이사를 도와드립니다.',
+  description: '고객님의 물품을 안전하게 옮겨 드립니다.',
+  serviceTypes: ['SMALL' as const],
+  regions: ['서울', '경기'],
+}
+
+function createMover(profile: Me['moverProfile']): Me {
+  return {
+    id: 'user-1',
+    role: 'MOVER',
+    name: '김기사',
+    email: 'mover@example.com',
+    phone: '01012345678',
+    hasProfile: true,
+    customerProfile: null,
+    moverProfile: profile,
+  }
+}
+
+function renderMoverProfileForm(mode: ProfileFormMode = 'register') {
   const user = userEvent.setup()
-  render(<MoverProfileForm />)
+  const { rerender } = render(<MoverProfileForm mode={mode} />)
 
   const fields = {
     nickname: screen.getByRole('textbox', { name: '별명' }),
@@ -48,11 +94,14 @@ function renderMoverProfileForm() {
 
   return {
     user,
+    rerender: () => rerender(<MoverProfileForm mode={mode} />),
     fields,
     fillValidForm,
     services: screen.getByRole('group', { name: '제공 서비스(필수)' }),
     regions: screen.getByRole('group', { name: '서비스 가능 지역(필수)' }),
-    submit: screen.getByRole('button', { name: '시작하기' }),
+    submit: screen.getByRole('button', {
+      name: mode === 'edit' ? '수정하기' : '시작하기',
+    }),
   }
 }
 
@@ -153,6 +202,109 @@ describe('MoverProfileForm', () => {
       expect(control).toBeDisabled()
     }
     expect(submit).toBeDisabled()
+    expect(submit).toHaveAttribute('aria-busy', 'true')
+  })
+})
+
+describe('MoverProfileForm 수정', () => {
+  beforeEach(() => {
+    updateProfileState.mutate.mockClear()
+    updateProfileState.isPending = false
+    router.push.mockClear()
+    currentUser.user = createMover(savedProfile)
+  })
+
+  it('등록한 프로필을 채운다', () => {
+    const { fields } = renderMoverProfileForm('edit')
+
+    expect(fields.nickname).toHaveValue('김코드')
+    expect(fields.careerYears).toHaveValue('8')
+    expect(fields.intro).toHaveValue('꼼꼼한 이사를 도와드립니다.')
+    expect(fields.description).toHaveValue(
+      '고객님의 물품을 안전하게 옮겨 드립니다.',
+    )
+    for (const name of ['소형이사', '서울', '경기']) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+    }
+  })
+
+  it('앞뒤 공백만 더하면 바뀐 항목으로 보지 않는다', async () => {
+    const { user, fields, submit } = renderMoverProfileForm('edit')
+    expect(submit).toBeDisabled()
+
+    await user.type(fields.nickname, ' ')
+    expect(submit).toBeDisabled()
+
+    await user.type(fields.nickname, '2')
+    expect(submit).toBeEnabled()
+  })
+
+  it('바꾼 항목만 수정하고 성공하면 마이페이지로 이동한다', async () => {
+    const { user, fields, submit } = renderMoverProfileForm('edit')
+
+    await user.clear(fields.careerYears)
+    await user.type(fields.careerYears, '9')
+    await user.click(screen.getByRole('button', { name: '인천' }))
+    await user.click(submit)
+
+    expect(updateProfileState.mutate).toHaveBeenCalledWith(
+      { careerYears: 9, regions: ['서울', '경기', '인천'] },
+      expect.anything(),
+    )
+    expect(router.push).not.toHaveBeenCalled()
+
+    act(() => updateProfileState.mutate.mock.calls[0][1].onSuccess())
+
+    expect(router.push).toHaveBeenCalledWith('/mover/mypage')
+  })
+
+  it('다시 불러온 프로필은 고치지 않은 항목에 반영하고 보내지 않는다', async () => {
+    const { user, rerender, fields, submit } = renderMoverProfileForm('edit')
+    await user.clear(fields.careerYears)
+    await user.type(fields.careerYears, '9')
+
+    currentUser.user = createMover({
+      ...savedProfile,
+      nickname: '김무빙',
+      regions: ['부산'],
+    })
+    rerender()
+
+    expect(fields.nickname).toHaveValue('김무빙')
+    expect(fields.careerYears).toHaveValue('9')
+    expect(screen.getByRole('button', { name: '부산' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    await user.click(submit)
+
+    expect(updateProfileState.mutate).toHaveBeenCalledWith(
+      { careerYears: 9 },
+      expect.anything(),
+    )
+  })
+
+  it('취소하면 수정하지 않고 마이페이지로 돌아간다', async () => {
+    const { user } = renderMoverProfileForm('edit')
+
+    await user.click(screen.getByRole('button', { name: '취소' }))
+
+    expect(router.push).toHaveBeenCalledWith('/mover/mypage')
+    expect(updateProfileState.mutate).not.toHaveBeenCalled()
+  })
+
+  it('수정 중에는 입력란과 버튼을 모두 잠근다', () => {
+    updateProfileState.isPending = true
+    const { fields, submit } = renderMoverProfileForm('edit')
+
+    for (const field of Object.values(fields)) {
+      expect(field).toBeDisabled()
+    }
+    expect(screen.getByRole('button', { name: '취소' })).toBeDisabled()
     expect(submit).toHaveAttribute('aria-busy', 'true')
   })
 })

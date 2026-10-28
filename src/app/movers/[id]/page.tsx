@@ -1,8 +1,10 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import Chip from '@/components/common/Chip'
+import RatingStarts from '@/components/mover/review/RatingStars'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { MOCK_MOVER_DETAILS } from '@/features/movers/mocks/movers'
+import { Star } from 'lucide-react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
@@ -118,12 +120,7 @@ export default async function MoverDetailPage({
                 리뷰
               </dt>
               <dd className="flex items-center gap-[2px] text-base leading-6 font-semibold md:gap-[6px] md:text-xl md:font-bold">
-                <Image
-                  src="/assets/icons/star.png"
-                  width={20}
-                  height={20}
-                  alt=""
-                />
+                <Star className="size-5 fill-yellow-400 text-yellow-400" />
                 <span>{mover.averageRating}</span>
                 <span className="text-sm leading-6 font-medium text-gray-400 md:text-base">
                   ({mover.reviewCount})
@@ -226,9 +223,8 @@ export default async function MoverDetailPage({
           <div className="flex flex-col gap-6 md:flex-row md:justify-between">
             <div className="flex items-center gap-[18px]">
               <p className="text-4xl font-medium">{mover.averageRating}</p>
-
               <div>
-                <p>별 개수</p>
+                <RatingStarts rating={mover.averageRating} isDecorative />
                 <p className="text-sm leading-6 font-normal text-gray-500">
                   {mover.reviewCount}개의 리뷰
                 </p>

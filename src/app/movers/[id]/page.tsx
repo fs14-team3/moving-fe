@@ -4,7 +4,7 @@ import Chip from '@/components/common/Chip'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { MOCK_MOVER_DETAILS } from '@/features/movers/mocks/movers'
-import { Star } from 'lucide-react'
+import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
@@ -79,20 +79,18 @@ export default async function MoverDetailPage({
               <button
                 type="button"
                 aria-label={mover.isFavorite ? '찜 해제' : '찜하기'}
-                className="flex cursor-pointer items-center gap-1"
+                className="flex cursor-pointer items-center gap-[6px]"
               >
                 <span className="text-sm leading-6 font-medium text-gray-500 md:text-lg">
                   {mover.favoriteCount}
                 </span>
-                <Image
-                  src={
+                <Heart
+                  aria-hidden="true"
+                  className={
                     mover.isFavorite
-                      ? '/assets/icons/like_active.png'
-                      : '/assets/icons/like_default.png'
+                      ? 'size-4 fill-red-500 text-red-500'
+                      : 'size-4 fill-transparent text-gray-300'
                   }
-                  width={24}
-                  height={24}
-                  alt=""
                 />
               </button>
             </div>
@@ -120,7 +118,10 @@ export default async function MoverDetailPage({
                 리뷰
               </dt>
               <dd className="flex items-center gap-[2px] text-base leading-6 font-semibold md:gap-[6px] md:text-xl md:font-bold">
-                <Star className="size-5 fill-yellow-400 text-yellow-400" />
+                <Star
+                  aria-hidden="true"
+                  className="size-5 fill-yellow-400 text-yellow-400"
+                />
                 <span>{mover.averageRating}</span>
                 <span className="text-sm leading-6 font-medium text-gray-400 md:text-base">
                   ({mover.reviewCount})
@@ -189,12 +190,9 @@ export default async function MoverDetailPage({
               </Button>
               <Button
                 icon={
-                  <Image
-                    src="/assets/icons/like_black.png"
-                    width={54}
-                    height={54}
-                    alt=""
-                    className="lg:size-6"
+                  <Heart
+                    aria-hidden="true"
+                    className="size-5 fill-black text-black"
                   />
                 }
                 variant="outlined"

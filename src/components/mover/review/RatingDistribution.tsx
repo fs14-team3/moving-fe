@@ -41,7 +41,7 @@ export default function RatingDistribution({
               />
             </div>
 
-            <span>{count}</span>
+            <span className="text-gray-400">{count}</span>
           </li>
         )
       })}

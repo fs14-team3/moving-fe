@@ -7,7 +7,13 @@ type ReviewListProps = {
 
 export default function ReviewList({ reviews }: ReviewListProps) {
   if (reviews.length === 0) {
-    return <p>아직 작성된 리뷰가 없습니다.</p>
+    return (
+      <div className="flex min-h-60 items-center justify-center md:min-h-80">
+        <p className="text-sm text-gray-400 md:text-base">
+          아직 작성된 리뷰가 없습니다.
+        </p>
+      </div>
+    )
   }
 
   return (

@@ -1,15 +1,9 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import Chip from '@/components/common/Chip'
-import RatingDistribution from '@/components/mover/review/RatingDistribution'
-import RatingStarts from '@/components/mover/review/RatingStars'
-import ReviewList from '@/components/mover/review/ReviewList'
+import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { MOCK_MOVER_DETAILS } from '@/features/movers/mocks/movers'
-import {
-  MOCK_RATING_COUNTS,
-  MOCK_REVIEWS,
-} from '@/features/movers/mocks/reviews'
 import { Star } from 'lucide-react'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
@@ -39,7 +33,7 @@ export default async function MoverDetailPage({
   const regions = mover.regions ?? []
 
   return (
-    <main>
+    <main className="bg-gray-50">
       <header className="relative">
         <div
           aria-hidden="true"
@@ -223,28 +217,7 @@ export default async function MoverDetailPage({
           </section>
         </div>
 
-        <section className="flex flex-col gap-4 lg:border-t lg:border-line-100 lg:pt-10">
-          <h2 className="text-xl leading-8 font-semibold">리뷰</h2>
-
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="flex items-center gap-[18px]">
-              <p className="text-4xl font-medium">{mover.averageRating}</p>
-              <div>
-                <RatingStarts rating={mover.averageRating} isDecorative />
-                <p className="text-sm leading-6 font-normal text-gray-500">
-                  {mover.reviewCount}개의 리뷰
-                </p>
-              </div>
-            </div>
-
-            <RatingDistribution
-              ratingCounts={MOCK_RATING_COUNTS}
-              totalCount={mover.reviewCount}
-            />
-          </div>
-
-          <ReviewList reviews={MOCK_REVIEWS} />
-        </section>
+        <ReviewSection mover={mover} />
       </div>
     </main>
   )

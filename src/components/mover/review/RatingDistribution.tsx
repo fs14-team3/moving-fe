@@ -5,15 +5,15 @@ type RatingCount = {
 
 type RatingDistributionProps = {
   ratingCounts: RatingCount[]
-  totalCount: number
 }
 
 const RATING_VALUES = [5, 4, 3, 2, 1] as const
 
 export default function RatingDistribution({
   ratingCounts,
-  totalCount,
 }: RatingDistributionProps) {
+  const totalCount = ratingCounts.reduce((total, item) => total + item.count, 0)
+
   return (
     <ul aria-label="평점별 리뷰 분포">
       {RATING_VALUES.map((rating) => {

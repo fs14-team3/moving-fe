@@ -30,6 +30,20 @@ export const MOCK_REVIEWS = [
     customerName: null,
     createdAt: '2026-09-28T16:40:00.000Z',
   },
+  {
+    id: '5',
+    rating: 4,
+    content: '전체적으로 만족스러웠고 다음에도 이용하고 싶습니다.',
+    customerName: '박코드',
+    createdAt: '2026-10-08T09:10:00.000Z',
+  },
+  {
+    id: '6',
+    rating: 3.5,
+    content: '이사 과정은 만족스러웠지만 도착 시간이 조금 늦었습니다.',
+    customerName: null,
+    createdAt: '2026-09-28T16:40:00.000Z',
+  },
 ] satisfies Review[]
 
 // TODO: 전체 리뷰 기준 평점별 집계 API 응답 형식 확정 후 제거

@@ -2,17 +2,13 @@
 
 import { Check } from 'lucide-react'
 import { useId, useState, type ReactNode, type SubmitEvent } from 'react'
-import Modal, {
-  MOVE_TYPE,
-  ModalButton,
-  ModalField,
-  type MoveType,
-} from './Modal'
+import Modal, { ModalButton, ModalField } from './Modal'
 import SelectChip from '@/components/common/SelectChip'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import { cn } from '@/lib/cn'
 
 export type RequestFilter = {
-  moveTypes: MoveType[]
+  moveTypes: ServiceType[]
   designatedOnly: boolean
   serviceRegionOnly: boolean
 }
@@ -23,15 +19,13 @@ export const DEFAULT_REQUEST_FILTER: RequestFilter = {
   serviceRegionOnly: false,
 }
 
-export const MOVE_TYPES = Object.keys(MOVE_TYPE) as MoveType[]
-
 export const FILTER_OPTIONS = [
   { key: 'designatedOnly', label: '지정 견적 요청' },
   { key: 'serviceRegionOnly', label: '서비스 가능 지역' },
 ] as const
 
 // 고른 이사 유형이면 빼고, 아니면 더한다.
-export function toggleMoveType(filter: RequestFilter, type: MoveType) {
+export function toggleMoveType(filter: RequestFilter, type: ServiceType) {
   return {
     ...filter,
     moveTypes: filter.moveTypes.includes(type)
@@ -115,14 +109,14 @@ function FilterForm({ value, onSubmit }: FilterFormProps) {
           className="flex flex-wrap gap-2.5"
         >
           {/* 모달 안에서는 화면 크기와 관계없이 작은 칩을 쓴다. */}
-          {MOVE_TYPES.map((type) => (
+          {SERVICE_TYPE_OPTIONS.map(({ value, label }) => (
             <SelectChip
-              key={type}
-              selected={filter.moveTypes.includes(type)}
-              onClick={() => setFilter((prev) => toggleMoveType(prev, type))}
+              key={value}
+              selected={filter.moveTypes.includes(value)}
+              onClick={() => setFilter((prev) => toggleMoveType(prev, value))}
               className="px-2.5 lg:h-9 lg:px-2.5 lg:text-sm"
             >
-              {MOVE_TYPE[type].label}
+              {label}
             </SelectChip>
           ))}
         </div>

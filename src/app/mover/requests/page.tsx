@@ -19,11 +19,11 @@ import FilterModal, {
   DEFAULT_REQUEST_FILTER,
   FILTER_OPTIONS,
   FilterCheckbox,
-  MOVE_TYPES,
   toggleMoveType,
   type RequestFilter,
 } from '@/components/common/modal/FilterModal'
-import { MOVE_TYPE, type MoveType } from '@/components/common/modal/Modal'
+import { MOVE_TYPE } from '@/components/common/modal/Modal'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import {
   getReceivedRequests,
   type ReceivedRequest,
@@ -32,8 +32,6 @@ import {
 } from '@/features/received-requests/api'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
-
-type ServiceType = NonNullable<ReceivedRequestQuery['moveTypes']>[number]
 
 const SORT_OPTIONS: { label: string; value: ReceivedRequestSort }[] = [
   { label: '이사 빠른순', value: 'MOVE_DATE_ASC' },
@@ -70,7 +68,6 @@ function formatTimeAgo(dateTime: string) {
 }
 
 // '서울특별시 중구 세종대로 110' → '서울특별시 중구'
-// TODO: 시안처럼 '서울시 중구'로 줄일지 지역 단위가 정해지면 맞추기
 function toShortAddress(address: string) {
   return address.split(' ').slice(0, 2).join(' ')
 }
@@ -79,11 +76,8 @@ function toQuery(
   filter: RequestFilter,
   sort: ReceivedRequestSort,
 ): ReceivedRequestQuery {
-  // TODO: 백엔드에 고객 이름 검색 · 서비스 가능 지역 파라미터 추가 요청. 생기면 여기서 함께 보낸다.
   return {
-    moveTypes: filter.moveTypes.length
-      ? filter.moveTypes.map((type) => type.toUpperCase() as ServiceType)
-      : undefined,
+    moveTypes: filter.moveTypes.length ? filter.moveTypes : undefined,
     designatedOnly: filter.designatedOnly || undefined,
     sort,
   }
@@ -109,7 +103,7 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 }
 
 function RequestCard({ request }: { request: ReceivedRequest }) {
-  const { label, icon } = MOVE_TYPE[request.moveType.toLowerCase() as MoveType]
+  const { label, icon } = MOVE_TYPE[request.moveType]
   const name = request.customerName
     ? `${request.customerName} 고객님`
     : '고객님'
@@ -155,11 +149,9 @@ function RequestCard({ request }: { request: ReceivedRequest }) {
 
       {/* 모바일은 견적 보내기가 위, 태블릿 이상은 반려하기가 왼쪽이다. */}
       <div className="mt-5 flex flex-col-reverse gap-2 md:grid md:grid-cols-2 lg:mt-6">
-        {/* TODO(#84): 반려요청 모달 연결 */}
         <Button variant="outlined" className={CARD_BUTTON}>
           반려하기
         </Button>
-        {/* TODO(#83): 견적 보내기 모달 연결 */}
         <Button
           icon={<Pencil aria-hidden="true" className="size-4 lg:size-5" />}
           className={CARD_BUTTON}
@@ -299,7 +291,6 @@ export default function ReceivedRequestsPage() {
       </div>
 
       <div className={cn(CONTAINER, 'pt-2 pb-20 lg:pt-6')}>
-        {/* TODO: 백엔드에 고객 이름 검색 파라미터가 생기면 onSearch로 목록 조회에 연결 */}
         <SearchInput placeholder="어떤 고객님을 찾고 계세요?" />
 
         {/* 데스크톱은 필터를 화면에 바로 보여주고, 누르면 바로 적용한다. */}
@@ -308,13 +299,13 @@ export default function ReceivedRequestsPage() {
           aria-label="이사 유형"
           className="mt-6 hidden flex-wrap gap-3 lg:flex"
         >
-          {MOVE_TYPES.map((type) => (
+          {SERVICE_TYPE_OPTIONS.map(({ value, label }) => (
             <SelectChip
-              key={type}
-              selected={filter.moveTypes.includes(type)}
-              onClick={() => setFilter((prev) => toggleMoveType(prev, type))}
+              key={value}
+              selected={filter.moveTypes.includes(value)}
+              onClick={() => setFilter((prev) => toggleMoveType(prev, value))}
             >
-              {MOVE_TYPE[type].label}
+              {label}
             </SelectChip>
           ))}
         </div>

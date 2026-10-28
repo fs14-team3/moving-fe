@@ -1,13 +1,14 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import { useId, useState, type SubmitEvent } from 'react'
+import { useId, useState, type ReactNode, type SubmitEvent } from 'react'
 import Modal, {
   MOVE_TYPE,
   ModalButton,
   ModalField,
   type MoveType,
 } from './Modal'
+import SelectChip from '@/components/common/SelectChip'
 import { cn } from '@/lib/cn'
 
 export type RequestFilter = {
@@ -16,12 +17,67 @@ export type RequestFilter = {
   serviceRegionOnly: boolean
 }
 
-const MOVE_TYPES = Object.keys(MOVE_TYPE) as MoveType[]
+export const DEFAULT_REQUEST_FILTER: RequestFilter = {
+  moveTypes: [],
+  designatedOnly: false,
+  serviceRegionOnly: false,
+}
 
-const OPTIONS = [
+export const MOVE_TYPES = Object.keys(MOVE_TYPE) as MoveType[]
+
+export const FILTER_OPTIONS = [
   { key: 'designatedOnly', label: '지정 견적 요청' },
   { key: 'serviceRegionOnly', label: '서비스 가능 지역' },
 ] as const
+
+// 고른 이사 유형이면 빼고, 아니면 더한다.
+export function toggleMoveType(filter: RequestFilter, type: MoveType) {
+  return {
+    ...filter,
+    moveTypes: filter.moveTypes.includes(type)
+      ? filter.moveTypes.filter((t) => t !== type)
+      : [...filter.moveTypes, type],
+  }
+}
+
+type FilterCheckboxProps = {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  children: ReactNode
+  className?: string
+}
+
+// 라벨 전체를 눌러도 체크된다. 데스크톱 받은 요청 페이지에서도 쓴다.
+export function FilterCheckbox({
+  checked,
+  onChange,
+  children,
+  className,
+}: FilterCheckboxProps) {
+  return (
+    <label
+      className={cn(
+        'flex w-fit cursor-pointer items-center gap-2 text-base text-black-400',
+        className,
+      )}
+    >
+      <span className="relative flex shrink-0">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="peer size-5 cursor-pointer appearance-none rounded border border-gray-300 checked:border-primary-400 checked:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
+        />
+        <Check
+          aria-hidden="true"
+          strokeWidth={3}
+          className="pointer-events-none absolute inset-0 m-auto hidden size-3.5 text-white peer-checked:block"
+        />
+      </span>
+      {children}
+    </label>
+  )
+}
 
 type FilterFormProps = {
   // 지금 적용된 필터. 모달을 열 때마다 이 값에서 시작한다.
@@ -41,15 +97,6 @@ function FilterForm({ value, onSubmit }: FilterFormProps) {
   // 조회하기 전까지는 모달 안에서만 바꾸고, 목록에는 반영하지 않는다.
   const [filter, setFilter] = useState(value)
 
-  const toggleMoveType = (type: MoveType) => {
-    setFilter((prev) => ({
-      ...prev,
-      moveTypes: prev.moveTypes.includes(type)
-        ? prev.moveTypes.filter((t) => t !== type)
-        : [...prev.moveTypes, type],
-    }))
-  }
-
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     onSubmit(filter)
@@ -67,25 +114,17 @@ function FilterForm({ value, onSubmit }: FilterFormProps) {
           aria-labelledby={moveTypeLabelId}
           className="flex flex-wrap gap-2.5"
         >
-          {MOVE_TYPES.map((type) => {
-            const selected = filter.moveTypes.includes(type)
-            return (
-              <button
-                key={type}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => toggleMoveType(type)}
-                className={cn(
-                  'h-9 rounded-full border px-2.5 text-sm font-medium',
-                  selected
-                    ? 'border-primary-400 bg-primary-100 text-primary-400'
-                    : 'border-gray-200 bg-gray-100 text-black-300',
-                )}
-              >
-                {MOVE_TYPE[type].label}
-              </button>
-            )
-          })}
+          {/* 모달 안에서는 화면 크기와 관계없이 작은 칩을 쓴다. */}
+          {MOVE_TYPES.map((type) => (
+            <SelectChip
+              key={type}
+              selected={filter.moveTypes.includes(type)}
+              onClick={() => setFilter((prev) => toggleMoveType(prev, type))}
+              className="px-2.5 lg:h-9 lg:px-2.5 lg:text-sm"
+            >
+              {MOVE_TYPE[type].label}
+            </SelectChip>
+          ))}
         </div>
       </ModalField>
 
@@ -99,29 +138,18 @@ function FilterForm({ value, onSubmit }: FilterFormProps) {
           aria-labelledby={optionLabelId}
           className="flex flex-col gap-3"
         >
-          {OPTIONS.map(({ key, label }) => (
-            <label
+          {/* 체크박스가 36px 영역 가운데에 오도록 왼쪽에 8px을 둔다. */}
+          {FILTER_OPTIONS.map(({ key, label }) => (
+            <FilterCheckbox
               key={key}
-              className="flex h-9 w-fit cursor-pointer items-center text-base text-black-400"
+              checked={filter[key]}
+              onChange={(checked) =>
+                setFilter((prev) => ({ ...prev, [key]: checked }))
+              }
+              className="h-9 pl-2"
             >
-              {/* 체크박스는 36px 영역 가운데에 둔다. */}
-              <span className="relative flex size-9 items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={filter[key]}
-                  onChange={(e) =>
-                    setFilter((prev) => ({ ...prev, [key]: e.target.checked }))
-                  }
-                  className="peer size-5 cursor-pointer appearance-none rounded border border-gray-300 checked:border-primary-400 checked:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
-                />
-                <Check
-                  aria-hidden="true"
-                  strokeWidth={3}
-                  className="pointer-events-none absolute inset-0 m-auto hidden size-3.5 text-white peer-checked:block"
-                />
-              </span>
               {label}
-            </label>
+            </FilterCheckbox>
           ))}
         </div>
       </ModalField>

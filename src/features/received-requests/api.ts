@@ -5,6 +5,8 @@ type Schemas = components['schemas']
 
 export type ReceivedRequest = Schemas['RequestForMover']
 
+export type ReceivedRequestSort = Schemas['ReceivedRequestSort']
+
 export type ReceivedRequestQuery = NonNullable<
   operations['listReceivedRequests']['parameters']['query']
 >

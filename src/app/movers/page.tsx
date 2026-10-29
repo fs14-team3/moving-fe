@@ -6,20 +6,72 @@ import SortDropdown from '@/components/common/dropdown/SortDropdown'
 import SearchInput from '@/components/common/input/SearchInput'
 import FavoriteMoverCard from '@/components/mover/FavoriteMoverCard'
 import MoverList from '@/components/mover/MoverList'
+import { MOVER_SORT_OPTIONS } from '@/constants/moverSort'
+import { REGION_OPTIONS } from '@/constants/regions'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
 import { useMovers } from '@/features/movers/hooks/useMovers'
+import type { MoverListFilters } from '@/features/movers/types'
+import { RotateCcw } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+
+type FilterKey = 'keyword' | 'serviceType' | 'region' | 'sort'
 
 export default function MoversPage() {
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const keyword = searchParams.get('keyword') ?? ''
+  const serviceType = SERVICE_TYPE_OPTIONS.find(
+    (option) => option.value === searchParams.get('serviceType'),
+  )?.value
+  const region = REGION_OPTIONS.find(
+    (option) => option.value === searchParams.get('region'),
+  )?.value
+  const sort = MOVER_SORT_OPTIONS.find(
+    (option) => option.value === searchParams.get('sort'),
+  )?.value
+
+  const [keywordInput, setKeywordInput] = useState(keyword)
+
+  const filters: MoverListFilters = {
+    keyword: keyword || undefined,
+    serviceType,
+    region,
+    sort,
+  }
+
   const { user } = useCurrentUser()
   const isCustomer = user?.role === 'CUSTOMER'
 
-  const { movers } = useMovers()
+  const { movers } = useMovers(filters)
 
   const { favoriteMovers } = useFavoriteMovers(
     { limit: 3 },
     { enabled: isCustomer },
   )
+
+  function updateFilter(key: FilterKey, value?: string) {
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (value) {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+
+    const query = params.toString()
+
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
+
+  function resetFilters() {
+    setKeywordInput('')
+    router.replace(pathname, { scroll: false })
+  }
 
   return (
     <div className="mx-auto max-w-300 px-6 pt-[6px] pb-12 lg:pt-0">
@@ -29,13 +81,53 @@ export default function MoversPage() {
 
       <div className="grid lg:grid-cols-[minmax(0,820px)_327px] lg:gap-x-[54px]">
         <section className="lg:col-start-1 lg:row-start-1">
-          <SearchInput />
+          <SearchInput
+            value={keywordInput}
+            onChange={setKeywordInput}
+            onSearch={(keyword) =>
+              updateFilter('keyword', keyword.trim() || undefined)
+            }
+          />
+
           <div className="flex justify-between py-4">
             <div className="flex gap-2">
-              <RegionDropdown />
-              <ServiceDropdown />
+              <RegionDropdown
+                value={region ?? 'all'}
+                onChange={(region) =>
+                  updateFilter('region', region === 'all' ? undefined : region)
+                }
+              />
+              <ServiceDropdown
+                value={serviceType ?? 'all'}
+                onChange={(serviceType) =>
+                  updateFilter(
+                    'serviceType',
+                    serviceType === 'all' ? undefined : serviceType,
+                  )
+                }
+              />
+              <button
+                type="button"
+                aria-label="검색 조건 초기화"
+                onClick={resetFilters}
+                className="cursor-pointer text-gray-300"
+              >
+                <span
+                  aria-hidden="true"
+                  className="hidden pl-3 text-base leading-6 font-medium text-gray-400 md:inline"
+                >
+                  초기화
+                </span>
+                <RotateCcw className="size-4 md:hidden" />
+              </button>
             </div>
-            <SortDropdown />
+
+            <SortDropdown
+              value={sort ?? 'REVIEW_COUNT'}
+              onChange={(sort) =>
+                updateFilter('sort', sort === 'REVIEW_COUNT' ? undefined : sort)
+              }
+            />
           </div>
         </section>
 

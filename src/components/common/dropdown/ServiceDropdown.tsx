@@ -1,15 +1,17 @@
-import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import Dropdown from './Dropdown'
 
+type ServiceFilterValue = ServiceType | 'all'
+
 type ServiceDropdownProps = {
-  value?: string
-  onChange?: (value: string) => void
+  value?: ServiceFilterValue
+  onChange?: (value: ServiceFilterValue) => void
 }
 
-const SERVICE_OPTIONS = [
-  { label: '전체', value: 'all' },
-  ...SERVICE_TYPE_OPTIONS,
-]
+const SERVICE_OPTIONS: {
+  label: string
+  value: ServiceFilterValue
+}[] = [{ label: '전체', value: 'all' }, ...SERVICE_TYPE_OPTIONS]
 
 export default function ServiceDropdown({
   value,
@@ -21,7 +23,7 @@ export default function ServiceDropdown({
       options={SERVICE_OPTIONS}
       variant="service"
       value={value}
-      onChange={onChange}
+      onChange={(nextValue) => onChange?.(nextValue as ServiceFilterValue)}
     />
   )
 }

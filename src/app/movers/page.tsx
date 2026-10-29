@@ -1,3 +1,5 @@
+'use client'
+
 import RegionDropdown from '@/components/common/dropdown/RegionDropdown'
 import ServiceDropdown from '@/components/common/dropdown/ServiceDropdown'
 import SortDropdown from '@/components/common/dropdown/SortDropdown'
@@ -5,8 +7,10 @@ import SearchInput from '@/components/common/input/SearchInput'
 import FavoriteMoverCard from '@/components/mover/FavoriteMoverCard'
 import MoverList from '@/components/mover/MoverList'
 import { MOCK_MOVERS } from '@/features/movers/mocks/movers'
+import { useMovers } from '@/features/movers/hooks/useMovers'
 
 export default function MoversPage() {
+  const { movers } = useMovers()
   // TODO: API 연동 시 검색 결과와 분리하여
   // `/customers/me/favorites` 조회 결과를 사용
   const favoriteMovers = MOCK_MOVERS.filter((mover) => mover.isFavorite).slice(
@@ -60,7 +64,7 @@ export default function MoversPage() {
         </aside>
 
         <section className="lg:col-start-1 lg:row-start-2">
-          <MoverList movers={MOCK_MOVERS} />
+          <MoverList movers={movers} />
         </section>
       </div>
     </div>

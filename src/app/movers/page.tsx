@@ -6,16 +6,19 @@ import SortDropdown from '@/components/common/dropdown/SortDropdown'
 import SearchInput from '@/components/common/input/SearchInput'
 import FavoriteMoverCard from '@/components/mover/FavoriteMoverCard'
 import MoverList from '@/components/mover/MoverList'
-import { MOCK_MOVERS } from '@/features/movers/mocks/movers'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
 import { useMovers } from '@/features/movers/hooks/useMovers'
 
 export default function MoversPage() {
+  const { user } = useCurrentUser()
+  const isCustomer = user?.role === 'CUSTOMER'
+
   const { movers } = useMovers()
-  // TODO: API 연동 시 검색 결과와 분리하여
-  // `/customers/me/favorites` 조회 결과를 사용
-  const favoriteMovers = MOCK_MOVERS.filter((mover) => mover.isFavorite).slice(
-    0,
-    3,
+
+  const { favoriteMovers } = useFavoriteMovers(
+    { limit: 3 },
+    { enabled: isCustomer },
   )
 
   return (

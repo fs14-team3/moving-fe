@@ -17,3 +17,9 @@ export type MoverListFilters = Omit<MoverListParams, 'cursor'>
 export type MoverListResponse = Omit<Schemas['MoverListResponse'], 'items'> & {
   items: Mover[]
 }
+
+export type FavoriteMoverListParams = NonNullable<
+  operations['listMyFavorites']['parameters']['query']
+>
+
+export type FavoriteMoverListFilters = Omit<FavoriteMoverListParams, 'cursor'>

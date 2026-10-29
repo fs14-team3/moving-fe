@@ -15,7 +15,7 @@ import { useMovers } from '@/features/movers/hooks/useMovers'
 import type { MoverListFilters } from '@/features/movers/types'
 import { RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type FilterKey = 'keyword' | 'serviceType' | 'region' | 'sort'
 
@@ -23,6 +23,7 @@ export default function MoversPage() {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
+  const sentinelRef = useRef(null)
 
   const keyword = searchParams.get('keyword') ?? ''
   const serviceType = SERVICE_TYPE_OPTIONS.find(
@@ -47,12 +48,36 @@ export default function MoversPage() {
   const { user } = useCurrentUser()
   const isCustomer = user?.role === 'CUSTOMER'
 
-  const { movers } = useMovers(filters)
+  const {
+    movers,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPage,
+    fetchNextPage,
+  } = useMovers(filters)
 
   const { favoriteMovers } = useFavoriteMovers(
     { limit: 3 },
     { enabled: isCustomer },
   )
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || !hasNextPage || isFetchingNextPage || isFetchNextPageError)
+      return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          fetchNextPage()
+        }
+      },
+      { rootMargin: '200px 0px' },
+    )
+    observer.observe(sentinel)
+
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage])
 
   function updateFilter(key: FilterKey, value?: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -160,6 +185,9 @@ export default function MoversPage() {
 
         <section className="lg:col-start-1 lg:row-start-2">
           <MoverList movers={movers} />
+          {hasNextPage && (
+            <div ref={sentinelRef} aria-hidden="true" className="h-px" />
+          )}
         </section>
       </div>
     </div>

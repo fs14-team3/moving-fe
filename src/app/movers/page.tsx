@@ -17,11 +17,11 @@ import type { MoverListFilters } from '@/features/movers/types'
 import { cn } from '@/lib/cn'
 import { LoaderCircle, RotateCcw } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 
 type FilterKey = 'keyword' | 'serviceType' | 'region' | 'sort'
 
-export default function MoversPage() {
+function MoversPageContent() {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
@@ -314,5 +314,25 @@ export default function MoversPage() {
         </section>
       </div>
     </div>
+  )
+}
+
+function MoversPageFallback() {
+  return (
+    <div role="status" className="flex min-h-100 items-center justify-center">
+      <LoaderCircle
+        aria-hidden="true"
+        className="size-8 animate-spin text-primary-400"
+      />
+      <span className="sr-only">페이지를 불러오는 중입니다.</span>
+    </div>
+  )
+}
+
+export default function MoversPage() {
+  return (
+    <Suspense fallback={<MoversPageFallback />}>
+      <MoversPageContent />
+    </Suspense>
   )
 }

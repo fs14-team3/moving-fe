@@ -1,6 +1,6 @@
+import { queryKeys } from '@/lib/queryKeys'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getFavoriteMovers } from '../api'
-import { favoriteMoverQueryKeys } from '../queryKeys'
 import type { FavoriteMoverListFilters } from '../types'
 
 type UseFavoriteMoversOptions = {
@@ -22,7 +22,7 @@ export function useFavoriteMovers(
     fetchNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: favoriteMoverQueryKeys.list(filters),
+    queryKey: queryKeys.favorites.list(filters),
     queryFn: ({ pageParam }) =>
       getFavoriteMovers({ ...filters, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,

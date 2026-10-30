@@ -3,4 +3,7 @@
   // Shared components are built before the pages that use them.
   // Remove this before the final release so unused ones get cleaned up.
   "ignoreFiles": ["src/components/common/**"],
+  "ignoreIssues": {
+    "src/components/common/**": ["exports", "types"],
+  },
 }

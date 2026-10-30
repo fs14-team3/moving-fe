@@ -6,6 +6,7 @@ import Chip from '@/components/common/Chip'
 import KakaoScript from '@/components/mover/KakaoScript'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
+import { getServiceTypeLabel } from '@/constants/services'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useMover } from '@/features/movers/hooks/useMover'
 import { Heart, Star } from 'lucide-react'
@@ -221,7 +222,7 @@ export default function MoverDetailPage() {
                     key={serviceType}
                     className="rounded-[100px] border border-primary-400 px-3 py-[6px] leading-6 font-medium md:px-5 md:py-[10px] md:text-lg"
                   >
-                    {serviceType}
+                    {getServiceTypeLabel(serviceType)}
                   </Chip>
                 ))}
               </div>
@@ -231,7 +232,7 @@ export default function MoverDetailPage() {
               <h2 className="mb-2 text-base leading-8 font-semibold text-black-400 md:mb-4 md:text-xl">
                 서비스 가능 지역
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {regions.map((region) => (
                   <Chip
                     key={region}

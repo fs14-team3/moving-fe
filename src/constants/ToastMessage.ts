@@ -7,6 +7,10 @@ export const TOAST_MESSAGES = {
     logoutFailed: '로그아웃에 실패했습니다.',
   },
 
+  mover: {
+    notFound: '기사님 정보를 찾을 수 없습니다.',
+  },
+
   favorite: {
     updateFailed: '찜 처리에 실패했습니다.',
   },

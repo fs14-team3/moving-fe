@@ -9,26 +9,64 @@ import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { getServiceTypeLabel } from '@/constants/services'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useMover } from '@/features/movers/hooks/useMover'
-import { Heart, Star } from 'lucide-react'
+import { isApiError } from '@/lib/api-error'
+import { Heart, LoaderCircle, Star } from 'lucide-react'
 import Image from 'next/image'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 export default function MoverDetailPage() {
+  const router = useRouter()
   const { id } = useParams<{ id: string }>()
-  const { mover, isPending, isError } = useMover(id)
+  const { mover, error, isPending, isError, refetch, isRefetching } =
+    useMover(id)
+
+  const isNotFound =
+    isApiError(error) && (error.status === 400 || error.status === 404)
+
+  useEffect(() => {
+    if (!isNotFound) return
+
+    toast.error(TOAST_MESSAGES.mover.notFound, {
+      id: 'mover-not-found',
+    })
+    router.replace('/movers')
+  }, [isNotFound, router])
 
   if (isPending) {
     return (
-      <main>
-        <span>기사님 정보를 불러오고 있습니다.</span>
+      <main
+        role="status"
+        className="flex min-h-page flex-col items-center justify-center gap-4"
+      >
+        <LoaderCircle
+          aria-hidden="true"
+          className="size-8 animate-spin text-primary-400"
+        />
+        <span className="text-base text-gray-400 md:text-lg">
+          기사님 정보를 불러오고 있습니다.
+        </span>
       </main>
     )
   }
+
+  if (isNotFound) return null
+
   if (isError) {
     return (
-      <main>
-        <p>기사님 정보를 불러오지 못했습니다.</p>
+      <main className="flex min-h-page flex-col items-center justify-center gap-4">
+        <p role="alert" className="text-base text-gray-400 md:text-lg">
+          기사님 정보를 불러오지 못했습니다.
+        </p>
+        <Button
+          variant="outlined"
+          disabled={isRefetching}
+          onClick={() => refetch()}
+          className="h-10 w-auto rounded-xl px-5 text-sm lg:h-10 lg:w-auto"
+        >
+          다시 시도
+        </Button>
       </main>
     )
   }

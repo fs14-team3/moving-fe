@@ -9,7 +9,7 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react'
-import Chip from '@/components/common/Chip'
+import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import { cn } from '@/lib/cn'
 
@@ -241,9 +241,9 @@ export function RequestSummary({
   return (
     <section className="border-b border-line-100 pb-5 md:pb-6">
       <div className="flex flex-wrap gap-2">
-        <Chip icon={icon}>{label}</Chip>
+        <Badge icon={icon}>{label}</Badge>
         {isDesignated && (
-          <Chip icon={<FileText className={ICON} />}>지정 견적 요청</Chip>
+          <Badge icon={<FileText className={ICON} />}>지정 견적 요청</Badge>
         )}
       </div>
 

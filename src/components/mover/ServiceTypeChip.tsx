@@ -1,7 +1,7 @@
 import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import { cn } from '@/lib/cn'
 import Image from 'next/image'
-import Chip from '../common/Chip'
+import Badge from '../common/Badge'
 
 type ServiceTypeChipProps = {
   serviceType: ServiceType
@@ -25,7 +25,7 @@ export default function ServiceTypeChip({
   const isResponsive = size === 'responsive'
 
   return (
-    <Chip
+    <Badge
       icon={<Image src={imageSrc} width={20} height={20} alt="" />}
       className={cn(
         'gap-[2px] rounded-sm px-1 py-[2px] text-xs leading-5 whitespace-nowrap text-primary-500',
@@ -35,6 +35,6 @@ export default function ServiceTypeChip({
       )}
     >
       {label}
-    </Chip>
+    </Badge>
   )
 }

@@ -4,7 +4,7 @@
 
 ## 기술 스택
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · ESLint · Prettier · Husky · lint-staged · commitlint · gitleaks · Vercel
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · ESLint · Prettier · Husky · lint-staged · commitlint · gitleaks · AWS Amplify
 
 ## 시작하기
 
@@ -30,6 +30,8 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 | `NEXT_PUBLIC_API_URL`    | `http://localhost:4000/api` | API 주소. 브라우저에 노출되므로 비밀값 금지      |
 | `NEXT_PUBLIC_SENTRY_DSN` |                             | Sentry 오류 수집을 위한 DSN                      |
 | `SENTRY_AUTH_TOKEN`      |                             | Sentry 소스맵 업로드용 인증 토큰. 외부 노출 금지 |
+
+새 환경 변수를 추가하면 `.env.example`과 이 표도 수정합니다.
 
 ## 명령어
 
@@ -57,12 +59,22 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 ## Windows 참고
 
 - **줄바꿈**: 모든 파일은 LF입니다. `.gitattributes`가 Git의 `core.autocrlf` 설정과 관계없이 LF로 체크아웃하고, `.editorconfig`와 `.vscode/settings.json`이 새 파일도 LF로 만듭니다. 그래도 Prettier가 여러 파일을 한꺼번에 경고하면 `npm run format`을 실행합니다.
-- **파일 이름 대소문자**: `button.tsx` → `Button.tsx`처럼 대소문자만 바꿀 때는 `git mv`를 사용합니다. Windows와 macOS는 대소문자를 구분하지 않아 Git이 변경을 놓치고, Linux인 Vercel과 CI에서만 빌드가 깨집니다.
+- **파일 이름 대소문자**: `button.tsx` → `Button.tsx`처럼 대소문자만 바꿀 때는 `git mv`를 사용합니다. Windows와 macOS는 대소문자를 구분하지 않아 Git이 변경을 놓치고, Linux인 Amplify와 CI에서만 빌드가 깨집니다.
+
+## 배포
+
+| 환경 | 브랜치    | 프론트                  | API                             |
+| ---- | --------- | ----------------------- | ------------------------------- |
+| dev  | `develop` | https://dev.helpisa.com | https://api.dev.helpisa.com/api |
+| prod | `main`    | https://helpisa.com     | https://api.helpisa.com/api     |
+
+- 머지하면 AWS Amplify가 자동으로 빌드·배포합니다.
+- 프로필 이미지는 `https://d2bj82o1ru7ucf.cloudfront.net`에서 제공됩니다. `next/image`로 쓰려면 `next.config.ts`의 `images.remotePatterns`에 추가합니다.
 
 ## API 명세
 
-- [openapi.yaml](https://github.com/fs14-team3/moving-be/blob/develop/docs/api/openapi.yaml) (moving-be 저장소)
-- Swagger UI: 배포 후 추가
+- [openapi.ko.yaml](https://github.com/fs14-team3/moving-be/blob/develop/docs/api/openapi.ko.yaml) (moving-be 저장소)
+- [Swagger UI](https://api.dev.helpisa.com/api/docs/) (dev 서버)
 
 ## 협업 규칙
 

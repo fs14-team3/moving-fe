@@ -149,6 +149,7 @@ export default function ReceivedRequestsPage() {
     refetch,
     hasNextPage,
     isFetchingNextPage,
+    isFetchNextPageError,
     fetchNextPage,
   } = useInfiniteQuery({
     queryKey: receivedRequestKeys.list(QUERY),
@@ -160,9 +161,12 @@ export default function ReceivedRequestsPage() {
   })
 
   // 목록 끝에 둔 요소가 보이면 다음 페이지를 불러온다.
+  // 다음 페이지가 실패했을 때 다시 감시하면 끝 요소가 보이는 동안 실패한 요청을 계속 반복하므로,
+  // 그때는 감시를 멈추고 다시 시도 버튼으로만 불러온다.
   useEffect(() => {
     const target = loadMoreRef.current
-    if (!target || !hasNextPage || isFetchingNextPage) return
+    if (!target || !hasNextPage || isFetchingNextPage || isFetchNextPageError)
+      return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -173,7 +177,7 @@ export default function ReceivedRequestsPage() {
     )
     observer.observe(target)
     return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage])
 
   const requests = data?.pages.flatMap((page) => page.items) ?? []
   const totalCount = data?.pages[0]?.totalCount
@@ -221,7 +225,28 @@ export default function ReceivedRequestsPage() {
           ))}
         </ul>
         <div ref={loadMoreRef} />
-        {isFetchingNextPage && <Loading />}
+        {/* 다시 시도하는 동안에는 실패 상태가 남아 있어서 불러오는 중을 먼저 확인한다. */}
+        {isFetchingNextPage ? (
+          <Loading />
+        ) : (
+          isFetchNextPageError && (
+            <div
+              role="alert"
+              className="flex flex-col items-center gap-4 py-10"
+            >
+              <p className="text-sm font-semibold text-black-400 lg:text-base">
+                요청을 더 불러오지 못했습니다.
+              </p>
+              <Button
+                variant="outlined"
+                onClick={() => fetchNextPage()}
+                className="w-auto px-8 lg:w-auto"
+              >
+                다시 시도
+              </Button>
+            </div>
+          )
+        )}
       </>
     )
   }

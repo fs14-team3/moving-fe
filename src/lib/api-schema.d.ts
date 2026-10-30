@@ -209,6 +209,7 @@ export interface paths {
      * 기사님 목록 (검색·정렬·필터·무한 스크롤)
      * @description 공개 API. 로그인한 일반 유저가 호출하면 `isFavorite`가 채워지고, 그 외에는 null입니다.
      *     프로필을 등록한 기사님만 목록에 노출됩니다.
+     *     검색어와 필터는 함께 적용되며, 다음 페이지를 요청할 때는 첫 페이지와 같은 조건에 `cursor`를 더해 보냅니다.
      */
     get: operations['listMovers']
     put?: never
@@ -230,6 +231,7 @@ export interface paths {
      * 기사님 상세 (SNS 공유 링크 대상)
      * @description 공개 API. 로그인한 일반 유저라면 `isFavorite`가 채워지고, `isDesignated`는 이 기사님이
      *     해당 유저의 활성 견적 요청에 이미 지정되어 있는지를 나타냅니다.
+     *     `ratingCounts`는 1~5점별 리뷰 수입니다. 프로필을 등록한 기사님만 조회됩니다 (404).
      */
     get: operations['getMover']
     put?: never
@@ -250,6 +252,7 @@ export interface paths {
     /**
      * 기사님이 받은 리뷰 (페이지네이션)
      * @description 공개 API. 기사님 본인 마이페이지에서도 사용합니다.
+     *     최근에 작성된 리뷰부터 보여주며, 작성자 이름은 첫 글자만 남기고 `*`로 가립니다.
      */
     get: operations['listMoverReviews']
     put?: never
@@ -268,10 +271,17 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** 찜하기 (멱등) */
+    /**
+     * 찜하기 (멱등)
+     * @description 프로필을 등록한 일반 유저만 호출할 수 있습니다. 이미 찜한 기사님이면 그대로 두고 현재 상태를 반환합니다.
+     *     프로필을 등록하지 않은 기사님은 찜할 수 없습니다 (404).
+     */
     put: operations['addFavorite']
     post?: never
-    /** 찜 해제 (멱등) */
+    /**
+     * 찜 해제 (멱등)
+     * @description 찜하지 않은 기사님이면 그대로 두고 현재 상태를 반환합니다. 그 외 조건은 찜하기와 같습니다.
+     */
     delete: operations['removeFavorite']
     options?: never
     head?: never
@@ -287,7 +297,8 @@ export interface paths {
     }
     /**
      * 찜한 기사님 목록
-     * @description 찜한 기사님 목록. PC 사이드바에서는 limit=3으로 최대 3명을 표시할 수 있습니다.
+     * @description 프로필을 등록한 일반 유저만 호출할 수 있습니다. 최근에 찜한 기사님부터 보여주며, 찜을 취소한 기사님은 빠집니다.
+     *     PC 사이드바에서는 `limit=3`으로 최대 3명을 표시할 수 있습니다. 다음 페이지를 요청할 때는 `cursor`를 더해 보내며, 그 사이에 찜을 취소했더라도 이어서 조회됩니다.
      */
     get: operations['listMyFavorites']
     put?: never
@@ -622,7 +633,7 @@ export interface components {
     NotificationType:
       'NEW_REQUEST' | 'NEW_QUOTE' | 'QUOTE_CONFIRMED' | 'MOVE_DAY'
     /**
-     * @description 리뷰순 / 평점순 / 경력순 / 확정순
+     * @description 리뷰 많은 순 / 평점 높은 순 / 경력 많은 순 / 확정 많은 순. 값이 같으면 기사님 id 순서이며, 경력순에서는 경력을 입력하지 않은 기사님이 마지막에 옵니다.
      * @enum {string}
      */
     MoverSort: 'REVIEW_COUNT' | 'RATING' | 'CAREER' | 'CONFIRMED_COUNT'
@@ -650,6 +661,7 @@ export interface components {
       | 'QUOTE_LIMIT_REACHED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
+      | 'SERVICE_UNAVAILABLE'
       | 'SOCIAL_LOGIN_FAILED'
     ErrorResponse: {
       error: {
@@ -823,7 +835,7 @@ export interface components {
       serviceTypes: components['schemas']['ServiceType'][] | null
       /**
        * Format: float
-       * @description 평점. 척도는 추후 결정합니다.
+       * @description 평균 평점 (소수점 둘째 자리까지). 리뷰가 없으면 0. 평점은 1~5점 정수입니다.
        * @example 4.8
        */
       averageRating: number
@@ -835,6 +847,14 @@ export interface components {
     MoverDetail: components['schemas']['MoverSummary'] & {
       description: string | null
       regions: components['schemas']['Region'][] | null
+      /** @description 1~5점별 리뷰 수. 리뷰가 없는 점수는 0입니다. */
+      ratingCounts: {
+        1: number
+        2: number
+        3: number
+        4: number
+        5: number
+      }
       /** @description 활성 견적 요청이 있는 일반 유저가 아니면 null */
       isDesignated: boolean | null
     }
@@ -845,6 +865,8 @@ export interface components {
       /** Format: uuid */
       moverId: string
       isFavorite: boolean
+      /** @description 기사님이 받은 전체 찜 수 */
+      favoriteCount: number
     }
     /** @description 우편번호 서비스로 입력한 주소. 제공자는 특정하지 않습니다. */
     AddressInput: {
@@ -967,7 +989,7 @@ export interface components {
     ReviewCreate: {
       /** Format: uuid */
       quoteId: string
-      /** @description 평점. 척도는 추후 결정합니다. */
+      /** @description 평점 (1~5점) */
       rating: number
       content: string
     }
@@ -975,10 +997,10 @@ export interface components {
     Review: {
       /** Format: uuid */
       id: string
-      /** @description 평점. 척도는 추후 결정합니다. */
+      /** @description 평점 (1~5점) */
       rating: number
       content: string
-      /** @description 리뷰 작성자 표시명. 표시 방식은 추후 결정합니다. */
+      /** @description 리뷰 작성자 이름. 첫 글자만 남기고 `*`로 가리며 이름이 없으면 null */
       customerName: string | null
       /** Format: date-time */
       createdAt: string
@@ -1000,7 +1022,7 @@ export interface components {
     MyReview: components['schemas']['ReviewTarget'] & {
       /** Format: uuid */
       id: string
-      /** @description 평점. 척도는 추후 결정합니다. */
+      /** @description 평점 (1~5점) */
       rating: number
       content: string
       /** Format: date-time */
@@ -1015,13 +1037,19 @@ export interface components {
     Notification: {
       /** Format: uuid */
       id: string
+      /** Format: uuid */
+      userId: string
       type: components['schemas']['NotificationType']
-      /** @description 사용자 언어로 표시할 알림. 번역 방식은 추후 결정합니다. */
-      message: string
+      message?: string | null
+      payload: {
+        [key: string]: unknown
+      }
       /** Format: uuid */
       moveRequestId?: string | null
       /** Format: uuid */
       quoteId?: string | null
+      /** Format: date-time */
+      readAt: string | null
       /** Format: date-time */
       createdAt: string
     }
@@ -1040,7 +1068,7 @@ export interface components {
          * @example {
          *       "error": {
          *         "code": "VALIDATION_ERROR",
-         *         "message": "Invalid request body",
+         *         "message": "잘못된 요청입니다",
          *         "details": [
          *           {
          *             "field": "password",
@@ -1100,7 +1128,9 @@ export interface components {
     /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
     Cursor: string
     Limit: number
+    /** @description 페이지 번호. 생략하면 1 */
     Page: number
+    /** @description 페이지당 개수. 생략하면 10 */
     PageSize: number
   }
   requestBodies: never
@@ -1462,14 +1492,17 @@ export interface operations {
   listMovers: {
     parameters: {
       query?: {
-        /** @description 기사님 별명 부분 검색 */
+        /** @description 기사님 별명, 한 줄 소개 또는 상세 설명 부분 검색 (대소문자 구분 없음). 앞뒤 공백은 제거하며, 빈 값이면 적용하지 않습니다. */
         keyword?: string
+        /** @description 서비스 지역에 이 지역이 포함된 기사님만 조회합니다. 빈 값이면 적용하지 않습니다. */
         region?: components['schemas']['Region']
+        /** @description 이 서비스를 제공하는 기사님만 조회합니다. */
         serviceType?: components['schemas']['ServiceType']
+        /** @description 생략하면 `REVIEW_COUNT` */
         sort?: components['schemas']['MoverSort']
         /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
         cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
+        limit?: number
       }
       header?: never
       path?: never
@@ -1477,7 +1510,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 기사님 목록 페이지 */
+      /** @description 기사님 목록 페이지. 조건에 맞는 기사님이 없으면 `items`는 빈 배열, `nextCursor`는 null, `hasNext`는 false입니다. */
       200: {
         headers: {
           [name: string]: unknown
@@ -1486,7 +1519,15 @@ export interface operations {
           'application/json': components['schemas']['MoverListResponse']
         }
       }
-      400: components['responses']['ValidationError']
+      /** @description `VALIDATION_ERROR`. `sort`·`serviceType`·`limit`이 허용 범위를 벗어나거나, `cursor`가 잘못된 경우 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   getMover: {
@@ -1510,13 +1551,16 @@ export interface operations {
           'application/json': components['schemas']['MoverDetail']
         }
       }
+      400: components['responses']['ValidationError']
       404: components['responses']['NotFound']
     }
   }
   listMoverReviews: {
     parameters: {
       query?: {
+        /** @description 페이지 번호. 생략하면 1 */
         page?: components['parameters']['Page']
+        /** @description 페이지당 개수. 생략하면 10 */
         pageSize?: components['parameters']['PageSize']
       }
       header?: never
@@ -1528,7 +1572,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 리뷰 목록 페이지 */
+      /** @description 리뷰 목록 페이지. 리뷰가 없으면 `items`는 빈 배열, `totalCount`와 `totalPages`는 0입니다. */
       200: {
         headers: {
           [name: string]: unknown
@@ -1537,6 +1581,7 @@ export interface operations {
           'application/json': components['schemas']['MoverReviewListResponse']
         }
       }
+      400: components['responses']['ValidationError']
       404: components['responses']['NotFound']
     }
   }
@@ -1552,7 +1597,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 찜한 상태 */
+      /** @description 찜한 상태와 기사님의 전체 찜 수 */
       200: {
         headers: {
           [name: string]: unknown
@@ -1561,6 +1606,7 @@ export interface operations {
           'application/json': components['schemas']['FavoriteState']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -1578,7 +1624,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 찜 해제된 상태 */
+      /** @description 찜 해제된 상태와 기사님의 전체 찜 수 */
       200: {
         headers: {
           [name: string]: unknown
@@ -1587,6 +1633,7 @@ export interface operations {
           'application/json': components['schemas']['FavoriteState']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -1597,7 +1644,7 @@ export interface operations {
       query?: {
         /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
         cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
+        limit?: number
       }
       header?: never
       path?: never
@@ -1605,13 +1652,22 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 찜한 기사님 목록 페이지 (`isFavorite`는 항상 true) */
+      /** @description 찜한 기사님 목록 페이지 (`isFavorite`는 항상 true). 찜한 기사님이 없으면 `items`는 빈 배열, `nextCursor`는 null, `hasNext`는 false입니다. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
           'application/json': components['schemas']['MoverListResponse']
+        }
+      }
+      /** @description `VALIDATION_ERROR`. `limit`이 허용 범위를 벗어나거나 `cursor`가 잘못된 경우 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
         }
       }
       401: components['responses']['Unauthorized']
@@ -2020,7 +2076,9 @@ export interface operations {
   listMyReviews: {
     parameters: {
       query?: {
+        /** @description 페이지 번호. 생략하면 1 */
         page?: components['parameters']['Page']
+        /** @description 페이지당 개수. 생략하면 10 */
         pageSize?: components['parameters']['PageSize']
       }
       header?: never
@@ -2045,7 +2103,9 @@ export interface operations {
   listWritableReviews: {
     parameters: {
       query?: {
+        /** @description 페이지 번호. 생략하면 1 */
         page?: components['parameters']['Page']
+        /** @description 페이지당 개수. 생략하면 10 */
         pageSize?: components['parameters']['PageSize']
       }
       header?: never

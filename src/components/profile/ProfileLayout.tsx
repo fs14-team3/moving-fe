@@ -3,12 +3,14 @@ import { cn } from '@/lib/cn'
 
 type ProfileLayoutProps = {
   title: string
+  description?: string
   className?: string
   children: ReactNode
 }
 
 export default function ProfileLayout({
   title,
+  description,
   className,
   children,
 }: ProfileLayoutProps) {
@@ -19,9 +21,11 @@ export default function ProfileLayout({
           <h1 className="text-lg font-semibold text-black-400 lg:text-[32px]">
             {title}
           </h1>
-          <p className="mt-4 text-xs text-black-200 lg:mt-8 lg:text-xl">
-            추가 정보를 입력하여 회원가입을 완료해 주세요.
-          </p>
+          {description && (
+            <p className="mt-4 text-xs text-black-200 lg:mt-8 lg:text-xl">
+              {description}
+            </p>
+          )}
         </div>
         {children}
       </div>

@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
-type ChipProps = {
+type BadgeProps = {
   icon?: ReactNode
   children: ReactNode
   className?: string
 }
 
 // 이사 유형, 지정 견적 요청 같은 정보 표시용 라벨. 클릭 동작은 없다.
-export default function Chip({ icon, children, className }: ChipProps) {
+export default function Badge({ icon, children, className }: BadgeProps) {
   return (
     <span
       className={cn(

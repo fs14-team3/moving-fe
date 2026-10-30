@@ -1,13 +1,19 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import ProfileChipField from '@/components/profile/ProfileChipField'
 import ProfileForm from '@/components/profile/ProfileForm'
 import ProfileImageField from '@/components/profile/ProfileImageField'
 import ProfileTextField from '@/components/profile/ProfileTextField'
+import { MOVER_MYPAGE_PATH } from '@/constants/navigation'
 import { REGION_OPTIONS } from '@/constants/regions'
 import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import type { Me } from '@/features/auth/types'
 import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile'
+import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile'
+import { isSameSelection } from '@/features/profile/lib/selection'
 import {
   getCareerYearsError,
   getDescriptionError,
@@ -15,36 +21,56 @@ import {
   getNicknameError,
   getSelectionError,
 } from '@/features/profile/lib/validation'
-import type { ProfileFieldErrors } from '@/features/profile/types'
+import type {
+  ProfileFieldErrors,
+  ProfileFormMode,
+  ProfileUpdate,
+} from '@/features/profile/types'
 
 type TextFieldName = 'nickname' | 'careerYears' | 'intro' | 'description'
 
 type FieldName = TextFieldName | 'serviceTypes' | 'regions'
 
-const INITIAL_VALUES: Record<TextFieldName, string> = {
-  nickname: '',
-  careerYears: '',
-  intro: '',
-  description: '',
+type FormValues = Record<TextFieldName, string> & {
+  serviceTypes: ServiceType[]
+  regions: string[]
 }
 
-export default function MoverProfileForm() {
-  const [values, setValues] = useState(INITIAL_VALUES)
-  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
-  const [regions, setRegions] = useState<string[]>([])
+function getSavedValues(profile: Me['moverProfile'] | undefined): FormValues {
+  return {
+    nickname: profile?.nickname ?? '',
+    careerYears: profile?.careerYears?.toString() ?? '',
+    intro: profile?.intro ?? '',
+    description: profile?.description ?? '',
+    serviceTypes: profile?.serviceTypes ?? [],
+    regions: profile?.regions ?? [],
+  }
+}
+
+type MoverProfileFormProps = {
+  mode: ProfileFormMode
+}
+
+export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
+  const isEdit = mode === 'edit'
+  const router = useRouter()
+  const { user } = useCurrentUser()
+  const saved = getSavedValues(isEdit ? user?.moverProfile : null)
+
+  const [edits, setEdits] = useState<Partial<FormValues>>({})
+  const values = { ...saved, ...edits }
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>(
     {},
   )
   const [serverErrors, setServerErrors] = useState<ProfileFieldErrors>({})
-  const { mutate, isPending, isSuccess } = useCreateProfile(
-    'MOVER',
-    setServerErrors,
-  )
+  const createProfile = useCreateProfile('MOVER', setServerErrors)
+  const updateProfile = useUpdateProfile('MOVER', setServerErrors)
 
   const nickname = values.nickname.trim()
   const careerYears = values.careerYears.trim()
   const intro = values.intro.trim()
   const description = values.description.trim()
+  const { serviceTypes, regions } = values
   const errors: Record<FieldName, string | undefined> = {
     nickname: getNicknameError(nickname),
     careerYears: getCareerYearsError(careerYears),
@@ -53,10 +79,42 @@ export default function MoverProfileForm() {
     serviceTypes: getSelectionError(serviceTypes),
     regions: getSelectionError(regions),
   }
-  const canSubmit = [
-    ...Object.values(errors),
-    ...Object.values(serverErrors),
-  ].every((error) => !error)
+  const changes: ProfileUpdate = {}
+  if (nickname !== saved.nickname) changes.nickname = nickname
+  if (careerYears !== saved.careerYears) {
+    changes.careerYears = Number(careerYears)
+  }
+  if (intro !== saved.intro) changes.intro = intro
+  if (description !== saved.description) changes.description = description
+  if (!isSameSelection(serviceTypes, saved.serviceTypes)) {
+    changes.serviceTypes = serviceTypes
+  }
+  if (!isSameSelection(regions, saved.regions)) changes.regions = regions
+  const canSubmit =
+    Object.keys(changes).length > 0 &&
+    [...Object.values(errors), ...Object.values(serverErrors)].every(
+      (error) => !error,
+    )
+  const isSubmitting = isEdit
+    ? updateProfile.isPending
+    : createProfile.isPending || createProfile.isSuccess
+
+  const submit = () => {
+    if (isEdit) {
+      updateProfile.mutate(changes, {
+        onSuccess: () => router.push(MOVER_MYPAGE_PATH),
+      })
+    } else {
+      createProfile.mutate({
+        nickname,
+        careerYears: Number(careerYears),
+        intro,
+        description,
+        serviceTypes,
+        regions,
+      })
+    }
+  }
 
   const touch = (field: FieldName) =>
     setTouched((prev) => ({ ...prev, [field]: true }))
@@ -72,7 +130,7 @@ export default function MoverProfileForm() {
     value: values[field],
     required: true,
     onChange: (value: string) => {
-      setValues((prev) => ({ ...prev, [field]: value }))
+      setEdits((prev) => ({ ...prev, [field]: value }))
       clearServerError(field)
     },
     onBlur: () => touch(field),
@@ -81,20 +139,13 @@ export default function MoverProfileForm() {
 
   return (
     <ProfileForm
+      submitLabel={isEdit ? '수정하기' : '시작하기'}
       canSubmit={canSubmit}
-      isSubmitting={isPending || isSuccess}
-      onSubmit={() =>
-        mutate({
-          nickname,
-          careerYears: Number(careerYears),
-          intro,
-          description,
-          serviceTypes,
-          regions,
-        })
-      }
+      isSubmitting={isSubmitting}
+      onSubmit={submit}
+      onCancel={isEdit ? () => router.push(MOVER_MYPAGE_PATH) : undefined}
       className="lg:grid lg:grid-cols-2 lg:gap-x-30"
-      submitClassName="lg:mt-4 lg:w-125 lg:self-end"
+      actionsClassName="lg:mt-4 lg:w-125 lg:self-end"
     >
       <div className="lg:*:last:border-b-0">
         <ProfileImageField />
@@ -129,7 +180,7 @@ export default function MoverProfileForm() {
           multiple
           value={serviceTypes}
           onChange={(value) => {
-            setServiceTypes(value)
+            setEdits((prev) => ({ ...prev, serviceTypes: value }))
             touch('serviceTypes')
             clearServerError('serviceTypes')
           }}
@@ -142,7 +193,7 @@ export default function MoverProfileForm() {
           multiple
           value={regions}
           onChange={(value) => {
-            setRegions(value)
+            setEdits((prev) => ({ ...prev, regions: value }))
             touch('regions')
             clearServerError('regions')
           }}

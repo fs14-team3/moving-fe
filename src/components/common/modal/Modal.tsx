@@ -9,8 +9,9 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react'
-import Chip from '@/components/common/Chip'
+import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
+import type { ServiceType } from '@/constants/services'
 import { cn } from '@/lib/cn'
 
 type ModalProps = {
@@ -156,12 +157,10 @@ export function countLetters(value: string) {
 }
 
 // 견적 보내기·반려요청·리뷰 쓰기 모달 위쪽의 요청 정보 묶음
-export type MoveType = 'small' | 'home' | 'office'
-
 export type RequestSummaryProps = {
   // mover면 이름 위에 기사님 표시, 오른쪽에 프로필 이미지가 붙는다.
   variant?: 'customer' | 'mover'
-  moveType: MoveType
+  moveType: ServiceType
   isDesignated?: boolean
   // '김인서 고객님', '김코드 기사님'처럼 호칭까지 포함한 이름
   name: string
@@ -175,10 +174,14 @@ export type RequestSummaryProps = {
 
 const ICON = 'size-3.5 md:size-4'
 
-export const MOVE_TYPE: Record<MoveType, { label: string; icon: ReactNode }> = {
-  small: { label: '소형이사', icon: <Package className={ICON} /> },
-  home: { label: '가정이사', icon: <House className={ICON} /> },
-  office: { label: '사무실이사', icon: <Building2 className={ICON} /> },
+// 이사 유형 배지의 라벨과 아이콘. 키는 API 값(ServiceType)을 그대로 쓴다.
+export const MOVE_TYPE: Record<
+  ServiceType,
+  { label: string; icon: ReactNode }
+> = {
+  SMALL: { label: '소형이사', icon: <Package className={ICON} /> },
+  HOME: { label: '가정이사', icon: <House className={ICON} /> },
+  OFFICE: { label: '사무실이사', icon: <Building2 className={ICON} /> },
 }
 
 const NAME = 'text-base font-semibold md:text-xl'
@@ -241,9 +244,9 @@ export function RequestSummary({
   return (
     <section className="border-b border-line-100 pb-5 md:pb-6">
       <div className="flex flex-wrap gap-2">
-        <Chip icon={icon}>{label}</Chip>
+        <Badge icon={icon}>{label}</Badge>
         {isDesignated && (
-          <Chip icon={<FileText className={ICON} />}>지정 견적 요청</Chip>
+          <Badge icon={<FileText className={ICON} />}>지정 견적 요청</Badge>
         )}
       </div>
 

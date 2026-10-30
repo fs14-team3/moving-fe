@@ -212,6 +212,9 @@ describe('AuthGuard', () => {
     ['/mover/requests', newMover, '/mover/profile/register'],
     ['/mover/profile/register', newCustomer, '/profile/register'],
     ['/profile/register', newMover, '/mover/profile/register'],
+    ['/profile/edit', newCustomer, '/profile/register'],
+    ['/basic-info/edit', newCustomer, '/profile/register'],
+    ['/mover/profile/edit', newMover, '/mover/profile/register'],
   ])(
     '프로필이 없는 유저가 %s에 들어가면 자기 프로필 등록 페이지로 보낸다',
     (url, user, path) => {

@@ -2,7 +2,7 @@
 
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
-import Chip from '@/components/common/Chip'
+import Badge from '@/components/common/Badge'
 import KakaoScript from '@/components/mover/KakaoScript'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
@@ -256,12 +256,12 @@ export default function MoverDetailPage() {
               </h2>
               <div className="flex items-center gap-2">
                 {serviceTypes.map((serviceType) => (
-                  <Chip
+                  <Badge
                     key={serviceType}
                     className="rounded-[100px] border border-primary-400 px-3 py-[6px] leading-6 font-medium md:px-5 md:py-[10px] md:text-lg"
                   >
                     {getServiceTypeLabel(serviceType)}
-                  </Chip>
+                  </Badge>
                 ))}
               </div>
             </section>
@@ -272,12 +272,12 @@ export default function MoverDetailPage() {
               </h2>
               <div className="flex flex-wrap items-center gap-2">
                 {regions.map((region) => (
-                  <Chip
+                  <Badge
                     key={region}
                     className="rounded-[100px] border border-gray-200 bg-background-100 px-3 py-[6px] font-medium text-black-400 md:px-5 md:py-[10px] md:text-lg"
                   >
                     {region}
-                  </Chip>
+                  </Badge>
                 ))}
               </div>
             </section>

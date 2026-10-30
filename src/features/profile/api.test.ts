@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Role } from '@/features/auth/types'
-import { createProfile } from '@/features/profile/api'
+import {
+  createProfile,
+  updateBasicInfo,
+  updateProfile,
+} from '@/features/profile/api'
 import api from '@/lib/api'
 
 afterEach(() => {
@@ -21,4 +25,30 @@ describe('createProfile', () => {
       expect(post).toHaveBeenCalledWith(path, body)
     },
   )
+})
+
+describe('updateProfile', () => {
+  it.each<[Role, string]>([
+    ['CUSTOMER', '/customers/me/profile'],
+    ['MOVER', '/movers/me/profile'],
+  ])(
+    '%s 프로필은 %s로 수정하고 수정한 프로필을 반환한다',
+    async (role, path) => {
+      const body = { serviceTypes: ['HOME' as const], regions: ['부산'] }
+      const patch = vi.spyOn(api, 'patch').mockResolvedValue({ data: body })
+
+      await expect(updateProfile(role, body)).resolves.toEqual(body)
+      expect(patch).toHaveBeenCalledWith(path, body)
+    },
+  )
+})
+
+describe('updateBasicInfo', () => {
+  it('/users/me로 기본정보를 수정하고 내 정보를 반환한다', async () => {
+    const me = { id: 'user-1', name: '김코드' }
+    const patch = vi.spyOn(api, 'patch').mockResolvedValue({ data: me })
+
+    await expect(updateBasicInfo({ name: '김코드' })).resolves.toEqual(me)
+    expect(patch).toHaveBeenCalledWith('/users/me', { name: '김코드' })
+  })
 })

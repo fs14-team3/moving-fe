@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'i.pravatar.cc',
-        pathname: '/160',
+        pathname: '/**',
       },
     ],
   },

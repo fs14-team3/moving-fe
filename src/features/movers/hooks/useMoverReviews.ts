@@ -1,6 +1,6 @@
+import { queryKeys } from '@/lib/queryKeys'
 import { useQuery } from '@tanstack/react-query'
 import { getMoverReviews } from '../api'
-import { moverQueryKeys } from '../queryKeys'
 import type { MoverId, MoverReviewListParams } from '../types'
 
 export function useMoverReviews(
@@ -8,7 +8,7 @@ export function useMoverReviews(
   query: MoverReviewListParams = {},
 ) {
   const { data, error, isPending, isError, isRefetching, refetch } = useQuery({
-    queryKey: moverQueryKeys.reviews(moverId, query),
+    queryKey: queryKeys.movers.reviews(moverId, query),
     queryFn: () => getMoverReviews(moverId, query),
   })
 

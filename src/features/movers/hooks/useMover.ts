@@ -1,6 +1,6 @@
+import { queryKeys } from '@/lib/queryKeys'
 import { useQuery } from '@tanstack/react-query'
 import { getMover } from '../api'
-import { moverQueryKeys } from '../queryKeys'
 import type { MoverId } from '../types'
 
 export function useMover(moverId: MoverId) {
@@ -12,7 +12,7 @@ export function useMover(moverId: MoverId) {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: moverQueryKeys.detail(moverId),
+    queryKey: queryKeys.movers.detail(moverId),
     queryFn: () => getMover(moverId),
   })
 

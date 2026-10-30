@@ -149,6 +149,7 @@ function RequestCard({ request }: { request: ReceivedRequest }) {
 
       {/* 모바일은 견적 보내기가 위, 태블릿 이상은 반려하기가 왼쪽이다. */}
       <div className="mt-5 flex flex-col-reverse gap-2 md:grid md:grid-cols-2 lg:mt-6">
+        {/* TODO(#84): 반려요청 모달 연결 */}
         <Button variant="outlined" className={CARD_BUTTON}>
           반려하기
         </Button>

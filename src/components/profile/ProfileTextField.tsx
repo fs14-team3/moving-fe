@@ -10,7 +10,9 @@ type ProfileTextFieldProps = {
   placeholder: string
   required?: boolean
   multiline?: boolean
+  type?: ComponentProps<'input'>['type']
   inputMode?: ComponentProps<'input'>['inputMode']
+  autoComplete?: string
   error?: string
   onChange: (value: string) => void
   onBlur: () => void

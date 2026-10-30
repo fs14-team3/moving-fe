@@ -2,6 +2,7 @@ import type {
   FavoriteMoverListFilters,
   MoverId,
   MoverListFilters,
+  MoverReviewListParams,
 } from './types'
 
 // TODO(#108): 병합 후 공통 queryKeys로 교체
@@ -14,6 +15,9 @@ export const moverQueryKeys = {
 
   detail: (moverId: MoverId) =>
     [...moverQueryKeys.all, 'detail', moverId] as const,
+
+  reviews: (moverId: MoverId, query: MoverReviewListParams = {}) =>
+    [...moverQueryKeys.all, 'reviews', moverId, query] as const,
 }
 
 // TODO(#108): 병합 후 공통 queryKeys로 교체

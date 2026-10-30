@@ -36,3 +36,9 @@ export type FavoriteMoverListParams = NonNullable<
 >
 
 export type FavoriteMoverListFilters = Omit<FavoriteMoverListParams, 'cursor'>
+
+export type MoverReviewListParams = NonNullable<
+  operations['listMoverReviews']['parameters']['query']
+>
+
+export type MoverReviewListResponse = Schemas['MoverReviewListResponse']

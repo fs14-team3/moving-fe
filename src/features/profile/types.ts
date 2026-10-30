@@ -15,3 +15,12 @@ export type ProfileUpdate =
   Schemas['CustomerProfileUpdate'] | Schemas['MoverProfileUpdate']
 
 export type ProfileFormMode = 'register' | 'edit'
+
+export type BasicInfoUpdate = Schemas['BasicInfoUpdate'] & {
+  currentPassword?: string
+  newPassword?: string
+}
+
+export type BasicInfoField = keyof BasicInfoUpdate
+
+export type BasicInfoFieldErrors = Partial<Record<BasicInfoField, string>>

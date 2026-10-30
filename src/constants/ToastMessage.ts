@@ -42,5 +42,8 @@ export const TOAST_MESSAGES = {
 
   common: {
     linkCopied: '링크가 복사되었습니다.',
+    linkCopyFailed: '링크 복사에 실패했습니다.',
+
+    shareFailed: '공유 기능을 불러오지 못했습니다.',
   },
 } as const

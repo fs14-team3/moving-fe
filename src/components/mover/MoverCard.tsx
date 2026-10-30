@@ -1,7 +1,7 @@
 'use client'
 
 import type { Mover } from '@/features/movers/types'
-import { Check } from 'lucide-react'
+import { Check, Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ServiceTypeChip from './ServiceTypeChip'
@@ -80,11 +80,9 @@ export default function MoverCard({
           </div>
           <div className="col-span-2 row-start-2 flex items-center gap-2 md:col-span-1 md:col-start-1">
             <div className="flex items-center gap-[2px]">
-              <Image
-                src="/assets/icons/star.png"
-                width={20}
-                height={20}
-                alt=""
+              <Star
+                aria-hidden="true"
+                className="size-[14px] fill-yellow-400 text-yellow-400"
               />
               <p className="text-xs leading-5 font-medium">
                 {mover.averageRating}
@@ -101,17 +99,19 @@ export default function MoverCard({
               <span className="text-gray-400">확정</span>
             </p>
           </div>
-          <div className="col-start-2 row-start-1 flex items-center justify-self-end md:row-start-2">
-            <button type="button" className="relative z-10 cursor-pointer">
-              <Image
-                src={
+          <div className="col-start-2 row-start-1 flex items-center gap-1 justify-self-end md:row-start-2">
+            <button
+              type="button"
+              aria-label={mover.isFavorite ? '찜 해제' : '찜하기'}
+              className="relative z-10 cursor-pointer"
+            >
+              <Heart
+                aria-hidden="true"
+                className={
                   mover.isFavorite
-                    ? '/assets/icons/like_active.png'
-                    : '/assets/icons/like_default.png'
+                    ? 'size-4 fill-red-500 text-red-500'
+                    : 'size-4 fill-transparent text-gray-300'
                 }
-                width={24}
-                height={24}
-                alt={mover.isFavorite ? '좋아요 취소' : '좋아요'}
               />
             </button>
             <p className="text-sm leading-6 font-normal text-gray-500">

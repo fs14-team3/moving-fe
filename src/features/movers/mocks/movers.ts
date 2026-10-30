@@ -1,4 +1,4 @@
-import type { Mover } from '../types'
+import type { Mover, MoverDetail } from '../types'
 
 export const MOCK_MOVERS = [
   {
@@ -58,3 +58,35 @@ export const MOCK_MOVERS = [
     favoriteCount: 20,
   },
 ] satisfies Mover[]
+
+const MOCK_MOVER_DETAIL_FIELDS: Record<
+  string,
+  Pick<MoverDetail, 'regions' | 'isDesignated'>
+> = {
+  '1': {
+    regions: ['서울', '경기'],
+    isDesignated: false,
+  },
+  '2': {
+    regions: ['서울', '인천'],
+    isDesignated: false,
+  },
+  '3': {
+    regions: ['경기', '인천'],
+    isDesignated: true,
+  },
+  '4': {
+    regions: ['서울'],
+    isDesignated: null,
+  },
+}
+
+export const MOCK_MOVER_DETAILS = MOCK_MOVERS.map((mover) => {
+  const detailFields = MOCK_MOVER_DETAIL_FIELDS[mover.id]
+
+  return {
+    ...mover,
+    regions: detailFields?.regions ?? null,
+    isDesignated: detailFields?.isDesignated ?? null,
+  }
+}) satisfies MoverDetail[]

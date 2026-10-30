@@ -1,4 +1,5 @@
 import type { Mover } from '@/features/movers/types'
+import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ServiceTypeChip from './ServiceTypeChip'
@@ -50,21 +51,17 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
               aria-label="찜 해제"
               className="relative z-10 cursor-pointer"
             >
-              <Image
-                src="/assets/icons/like_active.png"
-                width={23}
-                height={23}
-                alt=""
+              <Heart
+                aria-hidden="true"
+                className="size-3 fill-red-500 text-red-500"
               />
             </button>
           </div>
           <div className="flex items-center gap-[6px]">
-            <div className="flex gap-[2px]">
-              <Image
-                src="/assets/icons/star.png"
-                width={20}
-                height={20}
-                alt=""
+            <div className="flex items-center gap-[2px]">
+              <Star
+                aria-hidden="true"
+                className="size-[14px] fill-yellow-400 text-yellow-400"
               />
               <p className="text-xs leading-5 font-medium">
                 {mover.averageRating}

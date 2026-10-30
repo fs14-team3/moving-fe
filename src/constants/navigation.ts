@@ -19,9 +19,11 @@ export const NAV_ITEMS: Record<Role | 'GUEST', NavItem[]> = {
   ],
 }
 
+export const MOVER_MYPAGE_PATH = '/mover/mypage'
+
 export const PROFILE_EDIT_PATH: Record<Role, string> = {
   CUSTOMER: '/profile/edit',
-  MOVER: '/mover/mypage',
+  MOVER: MOVER_MYPAGE_PATH,
 }
 
 // TODO(#68): #11 · #24에서 페이지 경로가 정해지면 찜한 기사님 · 이사 리뷰 경로 맞추기

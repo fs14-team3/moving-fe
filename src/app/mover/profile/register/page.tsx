@@ -13,7 +13,7 @@ export default function MoverProfileRegisterPage() {
       description="추가 정보를 입력하여 회원가입을 완료해 주세요."
       className="lg:max-w-280"
     >
-      <MoverProfileForm />
+      <MoverProfileForm mode="register" />
     </ProfileLayout>
   )
 }

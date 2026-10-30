@@ -15,6 +15,7 @@ import {
   getPhoneError,
   toPhoneDigits,
 } from '@/features/auth/lib/validation'
+import type { Role } from '@/features/auth/types'
 import { useUpdateBasicInfo } from '@/features/profile/hooks/useUpdateBasicInfo'
 import type { BasicInfoUpdate } from '@/features/profile/types'
 
@@ -28,7 +29,11 @@ type FieldName =
 
 type FieldErrors = Partial<Record<FieldName, string>>
 
-export default function BasicInfoForm() {
+type BasicInfoFormProps = {
+  role: Role
+}
+
+export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   const router = useRouter()
   const { user } = useCurrentUser()
   const savedName = user?.name ?? ''
@@ -85,6 +90,19 @@ export default function BasicInfoForm() {
       (error) => !error,
     )
 
+  const submit = () =>
+    mutate(body, {
+      onSuccess: () => {
+        if (role === 'MOVER') router.push(MOVER_MYPAGE_PATH)
+        else setEdits({})
+      },
+    })
+
+  const cancel = () => {
+    if (role === 'MOVER') router.push(MOVER_MYPAGE_PATH)
+    else router.back()
+  }
+
   const fieldProps = (
     field: FieldName,
     normalize: (value: string) => string = (value) => value,
@@ -104,10 +122,8 @@ export default function BasicInfoForm() {
       submitLabel="수정하기"
       canSubmit={canSubmit}
       isSubmitting={isPending}
-      onSubmit={() =>
-        mutate(body, { onSuccess: () => router.push(MOVER_MYPAGE_PATH) })
-      }
-      onCancel={() => router.push(MOVER_MYPAGE_PATH)}
+      onSubmit={submit}
+      onCancel={cancel}
       className="lg:grid lg:grid-cols-2 lg:gap-x-30"
       actionsClassName="lg:mt-4 lg:w-125 lg:self-end"
     >

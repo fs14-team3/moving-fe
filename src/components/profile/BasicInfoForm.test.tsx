@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import BasicInfoForm from '@/components/profile/BasicInfoForm'
-import type { Me } from '@/features/auth/types'
+import type { Me, Role } from '@/features/auth/types'
 import type { BasicInfoFieldErrors } from '@/features/profile/types'
 
 const updateBasicInfoState = vi.hoisted(() => ({
@@ -13,7 +13,7 @@ const updateBasicInfoState = vi.hoisted(() => ({
 
 const currentUser = vi.hoisted(() => ({ user: null as Me | null }))
 
-const router = vi.hoisted(() => ({ push: vi.fn() }))
+const router = vi.hoisted(() => ({ push: vi.fn(), back: vi.fn() }))
 
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 
@@ -30,24 +30,26 @@ vi.mock('@/features/profile/hooks/useUpdateBasicInfo', () => ({
   },
 }))
 
-const mover: Me = {
-  id: 'user-1',
-  role: 'MOVER',
-  name: '김기사',
-  email: 'mover@example.com',
-  phone: '01012345678',
-  hasProfile: true,
-  customerProfile: null,
-  moverProfile: null,
+function createUser(role: Role): Me {
+  return {
+    id: 'user-1',
+    role,
+    name: '김기사',
+    email: 'mover@example.com',
+    phone: '01012345678',
+    hasProfile: true,
+    customerProfile: null,
+    moverProfile: null,
+  }
 }
 
-function renderBasicInfoForm() {
+function renderBasicInfoForm(role: Role = 'MOVER') {
   const user = userEvent.setup()
-  const { rerender } = render(<BasicInfoForm />)
+  const { rerender } = render(<BasicInfoForm role={role} />)
 
   return {
     user,
-    rerender: () => rerender(<BasicInfoForm />),
+    rerender: () => rerender(<BasicInfoForm role={role} />),
     fields: {
       name: screen.getByLabelText('이름'),
       email: screen.getByLabelText('이메일'),
@@ -65,7 +67,7 @@ describe('BasicInfoForm', () => {
     updateBasicInfoState.mutate.mockClear()
     updateBasicInfoState.isPending = false
     router.push.mockClear()
-    currentUser.user = mover
+    currentUser.user = createUser('MOVER')
   })
 
   it('현재 기본정보를 채우고 비밀번호는 비워 둔다', () => {
@@ -117,7 +119,7 @@ describe('BasicInfoForm', () => {
     await user.clear(fields.phone)
     await user.type(fields.phone, '01098765432')
 
-    currentUser.user = { ...mover, name: '김코드' }
+    currentUser.user = { ...createUser('MOVER'), name: '김코드' }
     rerender()
 
     expect(fields.name).toHaveValue('김코드')
@@ -224,5 +226,43 @@ describe('BasicInfoForm', () => {
     }
     expect(screen.getByRole('button', { name: '취소' })).toBeDisabled()
     expect(submit).toHaveAttribute('aria-busy', 'true')
+  })
+})
+
+describe('BasicInfoForm 일반 유저', () => {
+  beforeEach(() => {
+    updateBasicInfoState.mutate.mockClear()
+    updateBasicInfoState.isPending = false
+    router.push.mockClear()
+    router.back.mockClear()
+    currentUser.user = createUser('CUSTOMER')
+  })
+
+  it('수정에 성공하면 페이지에 머물고 저장된 정보로 입력란을 되돌린다', async () => {
+    const { user, fields, submit } = renderBasicInfoForm('CUSTOMER')
+    await user.type(fields.name, '님')
+    await user.type(fields.currentPassword, 'oldpass1!')
+    await user.type(fields.newPassword, 'newpass1!')
+    await user.type(fields.newPasswordConfirm, 'newpass1!')
+    await user.click(submit)
+
+    currentUser.user = { ...createUser('CUSTOMER'), name: '김기사님' }
+    act(() => updateBasicInfoState.mutate.mock.calls[0][1].onSuccess())
+
+    expect(router.push).not.toHaveBeenCalled()
+    expect(fields.name).toHaveValue('김기사님')
+    expect(fields.currentPassword).toHaveValue('')
+    expect(fields.newPassword).toHaveValue('')
+    expect(fields.newPasswordConfirm).toHaveValue('')
+    expect(submit).toBeDisabled()
+  })
+
+  it('취소하면 수정하지 않고 이전 페이지로 돌아간다', async () => {
+    const { user } = renderBasicInfoForm('CUSTOMER')
+
+    await user.click(screen.getByRole('button', { name: '취소' }))
+
+    expect(router.back).toHaveBeenCalled()
+    expect(updateBasicInfoState.mutate).not.toHaveBeenCalled()
   })
 })

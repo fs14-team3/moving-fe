@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function MoverBasicInfoEditPage() {
   return (
     <ProfileLayout title="기본정보 수정" className="lg:max-w-280">
-      <BasicInfoForm />
+      <BasicInfoForm role="MOVER" />
     </ProfileLayout>
   )
 }

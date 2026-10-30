@@ -5,11 +5,14 @@ type Schemas = components['schemas']
 
 export type ReceivedRequest = Schemas['RequestForMover']
 
+export type ReceivedRequestSort = Schemas['ReceivedRequestSort']
+
 export type ReceivedRequestQuery = NonNullable<
   operations['listReceivedRequests']['parameters']['query']
 >
 
 // TODO: 백엔드에 전체 건수(totalCount) 추가 요청. 명세에 들어오면 생성된 타입만 사용
+// 아직 명세에 없어서 응답에 있을 때만 '전체 N건'으로 보여준다.
 type ReceivedRequestPage = Schemas['ReceivedRequestListResponse'] & {
   totalCount?: number
 }

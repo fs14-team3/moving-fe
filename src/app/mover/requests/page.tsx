@@ -1,22 +1,42 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { FileText, LoaderCircle, MoveRight, Pencil } from 'lucide-react'
+import {
+  ArrowRightLeft,
+  FileText,
+  LoaderCircle,
+  MoveRight,
+  Pencil,
+} from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Badge from '@/components/common/Badge'
+import SelectChip from '@/components/common/SelectChip'
 import Button from '@/components/common/button/Button'
-import { MOVE_TYPE, type MoveType } from '@/components/common/modal/Modal'
+import Dropdown from '@/components/common/dropdown/Dropdown'
+import SearchInput from '@/components/common/input/SearchInput'
+import FilterModal, {
+  DEFAULT_REQUEST_FILTER,
+  FILTER_OPTIONS,
+  FilterCheckbox,
+  toggleMoveType,
+  type RequestFilter,
+} from '@/components/common/modal/FilterModal'
+import { MOVE_TYPE } from '@/components/common/modal/Modal'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import {
   getReceivedRequests,
   type ReceivedRequest,
   type ReceivedRequestQuery,
+  type ReceivedRequestSort,
 } from '@/features/received-requests/api'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
 
-// TODO(#82): 검색 · 필터 · 정렬이 생기면 이 값을 화면에서 바꾼다.
-const QUERY: ReceivedRequestQuery = {}
+const SORT_OPTIONS: { label: string; value: ReceivedRequestSort }[] = [
+  { label: '이사 빠른순', value: 'MOVE_DATE_ASC' },
+  { label: '요청일 빠른순', value: 'CREATED_DESC' },
+]
 
 // 헤더와 왼쪽 끝을 맞춘다. 데스크톱은 가운데 1200px이다.
 const CONTAINER = 'mx-auto w-full max-w-310 px-6 md:px-18 lg:px-5'
@@ -48,9 +68,27 @@ function formatTimeAgo(dateTime: string) {
 }
 
 // '서울특별시 중구 세종대로 110' → '서울특별시 중구'
-// TODO: 시안처럼 '서울시 중구'로 줄일지 지역 단위가 정해지면 맞추기
 function toShortAddress(address: string) {
   return address.split(' ').slice(0, 2).join(' ')
+}
+
+function toQuery(
+  filter: RequestFilter,
+  sort: ReceivedRequestSort,
+): ReceivedRequestQuery {
+  return {
+    moveTypes: filter.moveTypes.length ? filter.moveTypes : undefined,
+    designatedOnly: filter.designatedOnly || undefined,
+    sort,
+  }
+}
+
+function isFiltered(filter: RequestFilter) {
+  return (
+    filter.moveTypes.length > 0 ||
+    filter.designatedOnly ||
+    filter.serviceRegionOnly
+  )
 }
 
 function InfoItem({ label, value }: { label: string; value: string }) {
@@ -65,7 +103,7 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 }
 
 function RequestCard({ request }: { request: ReceivedRequest }) {
-  const { label, icon } = MOVE_TYPE[request.moveType.toLowerCase() as MoveType]
+  const { label, icon } = MOVE_TYPE[request.moveType]
   const name = request.customerName
     ? `${request.customerName} 고객님`
     : '고객님'
@@ -115,7 +153,6 @@ function RequestCard({ request }: { request: ReceivedRequest }) {
         <Button variant="outlined" className={CARD_BUTTON}>
           반려하기
         </Button>
-        {/* TODO(#83): 견적 보내기 모달 연결 */}
         <Button
           icon={<Pencil aria-hidden="true" className="size-4 lg:size-5" />}
           className={CARD_BUTTON}
@@ -140,8 +177,13 @@ function Loading() {
 }
 
 export default function ReceivedRequestsPage() {
+  const [filter, setFilter] = useState(DEFAULT_REQUEST_FILTER)
+  const [sort, setSort] = useState<ReceivedRequestSort>('MOVE_DATE_ASC')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
+  // 필터·정렬이 바뀌면 쿼리 키가 바뀌어 첫 페이지부터 다시 불러온다.
+  const query = toQuery(filter, sort)
   const {
     data,
     isPending,
@@ -152,9 +194,9 @@ export default function ReceivedRequestsPage() {
     isFetchNextPageError,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: receivedRequestKeys.list(QUERY),
+    queryKey: receivedRequestKeys.list(query),
     queryFn: ({ pageParam }) =>
-      getReceivedRequests({ ...QUERY, cursor: pageParam }),
+      getReceivedRequests({ ...query, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasNext ? (lastPage.nextCursor ?? undefined) : undefined,
@@ -181,6 +223,16 @@ export default function ReceivedRequestsPage() {
 
   const requests = data?.pages.flatMap((page) => page.items) ?? []
   const totalCount = data?.pages[0]?.totalCount
+
+  const sortDropdown = (
+    <Dropdown
+      placeholder="정렬"
+      options={SORT_OPTIONS}
+      variant="sort"
+      value={sort}
+      onChange={(value) => setSort(value as ReceivedRequestSort)}
+    />
+  )
 
   const renderList = () => {
     if (isPending) return <Loading />
@@ -265,12 +317,78 @@ export default function ReceivedRequestsPage() {
       </div>
 
       <div className={cn(CONTAINER, 'pt-2 pb-20 lg:pt-6')}>
-        <p className="mt-6 text-sm font-semibold text-black-400 lg:mt-10 lg:text-base">
-          {totalCount !== undefined && `전체 ${totalCount}건`}
-        </p>
+        <SearchInput placeholder="어떤 고객님을 찾고 계세요?" />
+
+        {/* 데스크톱은 필터를 화면에 바로 보여주고, 누르면 바로 적용한다. */}
+        <div
+          role="group"
+          aria-label="이사 유형"
+          className="mt-6 hidden flex-wrap gap-3 lg:flex"
+        >
+          {SERVICE_TYPE_OPTIONS.map(({ value, label }) => (
+            <SelectChip
+              key={value}
+              selected={filter.moveTypes.includes(value)}
+              onClick={() => setFilter((prev) => toggleMoveType(prev, value))}
+            >
+              {label}
+            </SelectChip>
+          ))}
+        </div>
+
+        <div className="mt-6 flex items-center justify-between lg:mt-10">
+          <p className="text-sm font-semibold text-black-400 lg:text-base">
+            {totalCount !== undefined && `전체 ${totalCount}건`}
+          </p>
+          {/* 태블릿·모바일은 필터 버튼을 눌러 모달에서 고른다. */}
+          <div className="flex items-center gap-2 lg:hidden">
+            {sortDropdown}
+            <button
+              type="button"
+              aria-label="필터"
+              aria-haspopup="dialog"
+              onClick={() => setIsFilterOpen(true)}
+              className={cn(
+                'flex size-8 items-center justify-center rounded-lg border transition-colors',
+                isFiltered(filter)
+                  ? 'border-primary-400 bg-primary-100 text-primary-400'
+                  : 'border-line-200 bg-white text-black-400',
+              )}
+            >
+              <ArrowRightLeft aria-hidden="true" className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-8 hidden items-center justify-between lg:flex">
+          <div className="flex items-center gap-6">
+            {FILTER_OPTIONS.map(({ key, label }) => (
+              <FilterCheckbox
+                key={key}
+                checked={filter[key]}
+                onChange={(checked) =>
+                  setFilter((prev) => ({ ...prev, [key]: checked }))
+                }
+              >
+                {label}
+              </FilterCheckbox>
+            ))}
+          </div>
+          {sortDropdown}
+        </div>
 
         <div className="mt-4 lg:mt-8">{renderList()}</div>
       </div>
+
+      <FilterModal
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        value={filter}
+        onSubmit={(next) => {
+          setFilter(next)
+          setIsFilterOpen(false)
+        }}
+      />
     </>
   )
 }

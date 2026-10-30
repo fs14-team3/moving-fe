@@ -22,7 +22,11 @@ import FilterModal, {
   toggleMoveType,
   type RequestFilter,
 } from '@/components/common/modal/FilterModal'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
+import {
+  MOVE_TYPE,
+  type RequestSummaryProps,
+} from '@/components/common/modal/Modal'
+import SendModal from '@/components/common/modal/SendModal'
 import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import {
   getReceivedRequests,
@@ -30,6 +34,7 @@ import {
   type ReceivedRequestQuery,
   type ReceivedRequestSort,
 } from '@/features/received-requests/api'
+import { useSendQuote } from '@/features/received-requests/hooks/useSendQuote'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
 
@@ -72,6 +77,22 @@ function toShortAddress(address: string) {
   return address.split(' ').slice(0, 2).join(' ')
 }
 
+function toCustomerName(request: ReceivedRequest) {
+  return request.customerName ? `${request.customerName} 고객님` : '고객님'
+}
+
+// 견적 보내기 모달 위쪽에 보여줄 요청 정보
+function toRequestSummary(request: ReceivedRequest): RequestSummaryProps {
+  return {
+    moveType: request.moveType,
+    isDesignated: request.isDesignated,
+    name: toCustomerName(request),
+    from: toShortAddress(request.from.address),
+    to: toShortAddress(request.to.address),
+    movingDate: formatMoveDate(request.moveDate),
+  }
+}
+
 function toQuery(
   filter: RequestFilter,
   sort: ReceivedRequestSort,
@@ -102,11 +123,14 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function RequestCard({ request }: { request: ReceivedRequest }) {
+type RequestCardProps = {
+  request: ReceivedRequest
+  onSendQuote: () => void
+}
+
+function RequestCard({ request, onSendQuote }: RequestCardProps) {
   const { label, icon } = MOVE_TYPE[request.moveType]
-  const name = request.customerName
-    ? `${request.customerName} 고객님`
-    : '고객님'
+  const name = toCustomerName(request)
 
   return (
     <article className="rounded-2xl border border-line-100 bg-white px-5 py-6 shadow-sm lg:px-6 lg:py-7">
@@ -154,6 +178,7 @@ function RequestCard({ request }: { request: ReceivedRequest }) {
         </Button>
         <Button
           icon={<Pencil aria-hidden="true" className="size-4 lg:size-5" />}
+          onClick={onSendQuote}
           className={CARD_BUTTON}
         >
           견적 보내기
@@ -179,7 +204,10 @@ export default function ReceivedRequestsPage() {
   const [filter, setFilter] = useState(DEFAULT_REQUEST_FILTER)
   const [sort, setSort] = useState<ReceivedRequestSort>('MOVE_DATE_ASC')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  // 견적 보내기 모달을 연 요청. null이면 모달이 닫혀 있다.
+  const [quoteTarget, setQuoteTarget] = useState<ReceivedRequest | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
+  const sendQuote = useSendQuote()
 
   // 필터·정렬이 바뀌면 쿼리 키가 바뀌어 첫 페이지부터 다시 불러온다.
   const query = toQuery(filter, sort)
@@ -271,7 +299,10 @@ export default function ReceivedRequestsPage() {
         <ul className="grid gap-4 lg:grid-cols-2 lg:gap-6">
           {requests.map((request) => (
             <li key={request.id}>
-              <RequestCard request={request} />
+              <RequestCard
+                request={request}
+                onSendQuote={() => setQuoteTarget(request)}
+              />
             </li>
           ))}
         </ul>
@@ -388,6 +419,22 @@ export default function ReceivedRequestsPage() {
           setIsFilterOpen(false)
         }}
       />
+
+      {quoteTarget && (
+        <SendModal
+          open
+          onClose={() => setQuoteTarget(null)}
+          request={toRequestSummary(quoteTarget)}
+          isSubmitting={sendQuote.isPending}
+          // 코멘트는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
+          onSubmit={({ price }) =>
+            sendQuote.mutate(
+              { requestId: quoteTarget.id, price },
+              { onSuccess: () => setQuoteTarget(null) },
+            )
+          }
+        />
+      )}
     </>
   )
 }

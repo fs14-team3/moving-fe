@@ -16,6 +16,8 @@ type ReceivedRequestPage = Schemas['ReceivedRequestListResponse'] & {
   totalCount?: number
 }
 
+export type QuoteCreate = Schemas['QuoteCreate']
+
 export async function getReceivedRequests(query: ReceivedRequestQuery) {
   const { data } = await api.get<ReceivedRequestPage>(
     '/movers/me/received-requests',
@@ -27,3 +29,14 @@ export async function getReceivedRequests(query: ReceivedRequestQuery) {
   )
   return data
 }
+
+export async function sendQuote(requestId: string, body: QuoteCreate) {
+  const { data } = await api.post<Schemas['SentQuote']>(
+    `/move-requests/${requestId}/quotes`,
+    body,
+  )
+  return data
+}
+
+// TODO: 견적 보내기 명세(QuoteCreate)에 코멘트가 없어 지금은 견적가만 보낸다.
+// BE 명세에 comment가 추가되면 견적 보내기 모달에서 입력한 코멘트도 함께 보낸다.

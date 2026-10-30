@@ -81,6 +81,7 @@ export default function MoverProfileForm() {
 
   return (
     <ProfileForm
+      submitLabel="시작하기"
       canSubmit={canSubmit}
       isSubmitting={isPending || isSuccess}
       onSubmit={() =>
@@ -94,7 +95,7 @@ export default function MoverProfileForm() {
         })
       }
       className="lg:grid lg:grid-cols-2 lg:gap-x-30"
-      submitClassName="lg:mt-4 lg:w-125 lg:self-end"
+      actionsClassName="lg:mt-4 lg:w-125 lg:self-end"
     >
       <div className="lg:*:last:border-b-0">
         <ProfileImageField />

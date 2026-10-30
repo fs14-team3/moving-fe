@@ -8,8 +8,11 @@ export const metadata: Metadata = {
 
 export default function ProfileRegisterPage() {
   return (
-    <ProfileLayout title="프로필 등록">
-      <CustomerProfileForm />
+    <ProfileLayout
+      title="프로필 등록"
+      description="추가 정보를 입력하여 회원가입을 완료해 주세요."
+    >
+      <CustomerProfileForm mode="register" />
     </ProfileLayout>
   )
 }

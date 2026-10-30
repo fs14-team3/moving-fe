@@ -10,3 +10,8 @@ export type ProfileCreate =
 export type ProfileField = keyof ProfileCreate
 
 export type ProfileFieldErrors = Partial<Record<ProfileField, string>>
+
+export type ProfileUpdate =
+  Schemas['CustomerProfileUpdate'] | Schemas['MoverProfileUpdate']
+
+export type ProfileFormMode = 'register' | 'edit'

@@ -1,18 +1,18 @@
 'use client'
 
 import Pagination from '@/components/common/pagination/Pagination'
-import {
-  MOCK_RATING_COUNTS,
-  MOCK_REVIEWS,
-} from '@/features/movers/fixtures/reviews'
-import type { Mover } from '@/features/movers/types'
+import { useMoverReviews } from '@/features/movers/hooks/useMoverReviews'
+import type { MoverDetail } from '@/features/movers/types'
 import { useState } from 'react'
 import RatingDistribution from './RatingDistribution'
 import RatingStars from './RatingStars'
 import ReviewList from './ReviewList'
 
 type ReviewSectionProps = {
-  mover: Mover
+  mover: Pick<
+    MoverDetail,
+    'id' | 'averageRating' | 'reviewCount' | 'ratingCounts'
+  >
 }
 
 const PAGE_SIZE = 5
@@ -20,11 +20,19 @@ const PAGE_SIZE = 5
 export default function ReviewSection({ mover }: ReviewSectionProps) {
   const [page, setPage] = useState(1)
 
-  // TODO: 리뷰 API 연동 시 응답의 items, totalCount, totalPages, ratingCounts로 교체
-  const totalCount = MOCK_REVIEWS.length
-  const totalPage = Math.ceil(totalCount / PAGE_SIZE)
-  const startIndex = (page - 1) * PAGE_SIZE
-  const currentReviews = MOCK_REVIEWS.slice(startIndex, startIndex + PAGE_SIZE)
+  const { reviews, totalCount, totalPages, isPending, isError } =
+    useMoverReviews(mover.id, {
+      page,
+      pageSize: PAGE_SIZE,
+    })
+
+  if (isPending) {
+    return <p>리뷰를 불러오고 있습니다.</p>
+  }
+
+  if (isError) {
+    return <p>리뷰를 불러오지 못했습니 다.</p>
+  }
 
   return (
     <section className="flex flex-col gap-4 lg:border-t lg:border-line-100 lg:pt-10">
@@ -45,16 +53,19 @@ export default function ReviewSection({ mover }: ReviewSectionProps) {
               </div>
             </div>
 
-            <RatingDistribution ratingCounts={MOCK_RATING_COUNTS} />
+            <RatingDistribution
+              ratingCounts={mover.ratingCounts}
+              totalCount={mover.reviewCount}
+            />
           </div>
 
-          <ReviewList reviews={currentReviews} />
+          <ReviewList reviews={reviews} />
 
           <div className="mt-9 mb-6 flex justify-center lg:mt-27 lg:mb-38">
             <Pagination
               page={page}
               onPageChange={setPage}
-              totalPage={totalPage}
+              totalPage={totalPages}
             />
           </div>
         </>

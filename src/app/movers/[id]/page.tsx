@@ -1,32 +1,44 @@
+'use client'
+
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import Chip from '@/components/common/Chip'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
-import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
+import { useMover } from '@/features/movers/hooks/useMover'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
-import { notFound } from 'next/navigation'
+import { useParams } from 'next/navigation'
 
-type MoverDetailPageProps = {
-  params: Promise<{ id: string }>
-}
+export default function MoverDetailPage() {
+  const { id } = useParams<{ id: string }>()
 
-export default async function MoverDetailPage({
-  params,
-}: MoverDetailPageProps) {
-  const { id } = await params
-  const mover = MOCK_MOVER_DETAILS.find((mover) => mover.id === id)
+  const { mover, isPending, isError } = useMover(id)
 
-  if (!mover) {
-    notFound()
+  if (isPending) {
+    return (
+      <main>
+        <span>기사님 정보를 불러오고 있습니다.</span>
+      </main>
+    )
   }
+
+  if (isError) {
+    return (
+      <main>
+        <p>기사님 정보를 불러오지 못했습니다.</p>
+      </main>
+    )
+  }
+
+  if (!mover) return null
 
   const nickname = mover.nickname?.trim() || '익명'
   const imageUrl = mover.imageUrl || '/assets/images/profile.png'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const description =
     mover.description?.trim() || '등록된 상세 설명이 없습니다.'
+  const favoriteCount = mover.favoriteCount ?? '-'
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
   const serviceTypes = mover.serviceTypes ?? []
@@ -82,7 +94,7 @@ export default async function MoverDetailPage({
                 className="flex cursor-pointer items-center gap-[6px]"
               >
                 <span className="text-sm leading-6 font-medium text-gray-500 md:text-lg">
-                  {mover.favoriteCount}
+                  {favoriteCount}
                 </span>
                 <Heart
                   aria-hidden="true"

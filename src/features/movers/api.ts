@@ -1,6 +1,8 @@
 import api from '@/lib/api'
 import type {
   FavoriteMoverListParams,
+  MoverDetail,
+  MoverId,
   MoverListParams,
   MoverListResponse,
 } from './types'
@@ -9,6 +11,12 @@ export async function getMovers(params?: MoverListParams) {
   const { data } = await api.get<MoverListResponse>('/movers', {
     params,
   })
+
+  return data
+}
+
+export async function getMover(moverId: MoverId) {
+  const { data } = await api.get<MoverDetail>(`/movers/${moverId}`)
 
   return data
 }

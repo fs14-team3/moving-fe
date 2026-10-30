@@ -2,6 +2,16 @@ import { withSentryConfig } from '@sentry/nextjs/config'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // TODO: 실제 이미지 호스트 확정 후 목데이터 이미지 호스트 제거
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
+        pathname: '/**',
+      },
+    ],
+  },
   /* config options here */
   turbopack: {
     rules: {

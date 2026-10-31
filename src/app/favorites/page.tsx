@@ -2,7 +2,6 @@
 
 import Button from '@/components/common/button/Button'
 import MoverCard from '@/components/mover/MoverCard'
-import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
 import { Check, LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
@@ -10,9 +9,6 @@ import { useEffect, useRef, useState } from 'react'
 
 export default function FavoritesPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
-
-  const { user } = useCurrentUser()
-  const isCustomer = user?.role === 'CUSTOMER'
 
   const {
     favoriteMovers,
@@ -24,7 +20,7 @@ export default function FavoritesPage() {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useFavoriteMovers({}, { enabled: isCustomer })
+  } = useFavoriteMovers()
   const isInitialError = isError && favoriteMovers.length === 0
 
   useEffect(() => {

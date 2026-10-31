@@ -11,7 +11,6 @@ export default function RatingStars({
   rating,
   isDecorative = false,
 }: RatingStarsProps) {
-  // TODO: 리뷰 평점 입력 단위(정수 또는 0.5) 확정 후 표시 기준 확인
   // 평점을 가장 가까운 0.5 단위로 반올림해 반쪽 별까지 표시
   const normalizedRating = Math.round(rating * 2) / 2
   const fullCount = Math.floor(normalizedRating)

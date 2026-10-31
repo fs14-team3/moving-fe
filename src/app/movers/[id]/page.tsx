@@ -1,8 +1,8 @@
 'use client'
 
+import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
-import Badge from '@/components/common/Badge'
 import KakaoScript from '@/components/mover/KakaoScript'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
@@ -72,15 +72,17 @@ export default function MoverDetailPage() {
   }
   if (!mover) return null
 
-  const nickname = mover.nickname?.trim() || '익명'
   const imageUrl = mover.imageUrl || '/assets/images/profile.png'
+  const serviceTypes = mover.serviceTypes ?? []
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
+  const nickname = mover.nickname?.trim() || '익명'
+  const favoriteCount = mover.favoriteCount ?? '-'
   const description =
     mover.description?.trim() || '등록된 상세 설명이 없습니다.'
-  const favoriteCount = mover.favoriteCount ?? '-'
+  const rating = mover.averageRating.toFixed(1)
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
-  const serviceTypes = mover.serviceTypes ?? []
+
   const regions = mover.regions ?? []
 
   async function handleCopyLink() {
@@ -220,7 +222,7 @@ export default function MoverDetailPage() {
                   진행
                 </dt>
                 <dd className="text-base leading-6 font-semibold md:text-xl md:font-bold">
-                  {mover.confirmedCount}
+                  {mover.confirmedCount}건
                 </dd>
               </div>
 
@@ -233,7 +235,7 @@ export default function MoverDetailPage() {
                     aria-hidden="true"
                     className="size-5 fill-yellow-400 text-yellow-400"
                   />
-                  <span>{mover.averageRating}</span>
+                  <span>{rating}</span>
                   <span className="text-sm leading-6 font-medium text-gray-400 md:text-base">
                     ({mover.reviewCount})
                   </span>

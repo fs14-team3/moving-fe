@@ -73,7 +73,9 @@ export default function ReviewSection({ mover }: ReviewSectionProps) {
         <>
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="flex items-center gap-[18px]">
-              <p className="text-4xl font-medium">{mover.averageRating}</p>
+              <p className="text-4xl font-medium">
+                {mover.averageRating.toFixed(1)}
+              </p>
               <div>
                 <RatingStars rating={mover.averageRating} isDecorative />
                 <p className="text-sm leading-6 font-normal text-gray-500">

@@ -1,12 +1,44 @@
 'use client'
 
 import MoverCard from '@/components/mover/MoverCard'
-import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function FavoritesPage() {
-  const favoriteMovers = MOCK_MOVERS.filter((mover) => mover.isFavorite)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  const { user } = useCurrentUser()
+  const isCustomer = user?.role === 'CUSTOMER'
+
+  const {
+    favoriteMovers,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    hasNextPage,
+    fetchNextPage,
+  } = useFavoriteMovers({}, { enabled: isCustomer })
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || !hasNextPage || isFetchingNextPage || isFetchNextPageError)
+      return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          fetchNextPage()
+        }
+      },
+      {
+        rootMargin: '200px 0px',
+      },
+    )
+    observer.observe(sentinel)
+
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage])
 
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
@@ -76,6 +108,10 @@ export default function FavoritesPage() {
             </li>
           ))}
         </ul>
+
+        {hasNextPage && !isFetchingNextPage && !isFetchNextPageError && (
+          <div ref={sentinelRef} aria-hidden className="h-px" />
+        )}
       </main>
     </div>
   )

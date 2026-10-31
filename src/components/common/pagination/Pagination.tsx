@@ -2,12 +2,14 @@ interface PaginationProps {
   page: number
   onPageChange: (page: number) => void
   totalPage: number
+  disabled?: boolean
 }
 
 export default function Pagination({
   page,
   onPageChange,
   totalPage,
+  disabled = false,
 }: PaginationProps) {
   const pageGroupSize = 5
 
@@ -27,7 +29,7 @@ export default function Pagination({
     <nav aria-label="페이지 탐색" className="flex gap-2 lg:gap-[10px]">
       <button
         type="button"
-        disabled={currentPage <= 1}
+        disabled={disabled || currentPage <= 1}
         onClick={() => onPageChange(currentPage - 1)}
         aria-label="이전 페이지"
         className="size-[34px] cursor-pointer rounded-lg bg-gray-50 font-semibold disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12"
@@ -39,10 +41,11 @@ export default function Pagination({
         {visiblePages.map((pageNumber) => (
           <button
             type="button"
+            disabled={disabled}
             key={pageNumber}
             onClick={() => onPageChange(pageNumber)}
             aria-current={currentPage === pageNumber ? 'page' : undefined}
-            className={`size-[34px] cursor-pointer rounded-lg bg-gray-50 lg:size-12 ${currentPage === pageNumber ? 'font-semibold text-black-400' : 'text-gray-300'} hover:text-black-400`}
+            className={`size-[34px] cursor-pointer rounded-lg bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12 ${currentPage === pageNumber ? 'font-semibold text-black-400' : 'text-gray-300'} enabled:hover:text-black-400`}
           >
             {pageNumber}
           </button>
@@ -51,7 +54,7 @@ export default function Pagination({
 
       <button
         type="button"
-        disabled={currentPage >= totalPage}
+        disabled={disabled || currentPage >= totalPage}
         onClick={() => onPageChange(currentPage + 1)}
         aria-label="다음 페이지"
         className="size-[34px] cursor-pointer rounded-lg bg-gray-50 font-semibold disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12"

@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getFavoriteMovers, getMovers } from '@/features/movers/api'
-import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
+import {
+  getFavoriteMovers,
+  getMover,
+  getMoverReviews,
+  getMovers,
+} from '@/features/movers/api'
+import {
+  MOCK_MOVER_DETAILS,
+  MOCK_MOVERS,
+} from '@/features/movers/fixtures/movers'
+import { MOCK_REVIEWS } from '@/features/movers/fixtures/reviews'
 import api from '@/lib/api'
 
 const response = {
@@ -37,5 +46,34 @@ describe('getFavoriteMovers', () => {
 
     await expect(getFavoriteMovers(params)).resolves.toEqual(response)
     expect(get).toHaveBeenCalledWith('/customers/me/favorites', { params })
+  })
+})
+
+describe('getMover', () => {
+  it('기사님 ID로 상세 정보를 조회한다', async () => {
+    const mover = MOCK_MOVER_DETAILS[0]
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: mover })
+
+    await expect(getMover(mover.id)).resolves.toEqual(mover)
+    expect(get).toHaveBeenCalledWith(`/movers/${mover.id}`)
+  })
+})
+
+describe('getMoverReviews', () => {
+  it('기사님 ID와 페이지 조건으로 리뷰를 조회한다', async () => {
+    const params = { page: 2, pageSize: 5 }
+    const reviewResponse = {
+      items: MOCK_REVIEWS,
+      page: 2,
+      pageSize: 5,
+      totalCount: MOCK_REVIEWS.length,
+      totalPages: 2,
+    }
+    const get = vi.spyOn(api, 'get').mockResolvedValue({
+      data: reviewResponse,
+    })
+
+    await expect(getMoverReviews('1', params)).resolves.toEqual(reviewResponse)
+    expect(get).toHaveBeenCalledWith('/movers/1/reviews', { params })
   })
 })

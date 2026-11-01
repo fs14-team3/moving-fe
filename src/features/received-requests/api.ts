@@ -28,3 +28,13 @@ export async function getReceivedRequests(query: ReceivedRequestQuery) {
   )
   return data
 }
+
+export async function rejectRequest(requestId: string) {
+  const { data } = await api.post<Schemas['RejectedRequest']>(
+    `/move-requests/${requestId}/rejections`,
+  )
+  return data
+}
+
+// TODO: 요청 반려 명세에 반려 사유가 없어 지금은 사유 없이 반려한다. (BE 명세 작성 중)
+// BE 명세에 반려 사유가 추가되면 반려요청 모달에서 입력한 사유도 함께 보낸다.

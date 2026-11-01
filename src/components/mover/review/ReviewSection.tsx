@@ -4,7 +4,7 @@ import Pagination from '@/components/common/pagination/Pagination'
 import {
   MOCK_RATING_COUNTS,
   MOCK_REVIEWS,
-} from '@/features/movers/mocks/reviews'
+} from '@/features/movers/fixtures/reviews'
 import type { Mover } from '@/features/movers/types'
 import { useState } from 'react'
 import RatingDistribution from './RatingDistribution'

@@ -14,14 +14,13 @@ import {
   getNewPasswordError,
   getPasswordConfirmError,
   getPhoneError,
+  toPhoneDigits,
 } from '@/features/auth/lib/validation'
 
 const TITLE: Record<Role, string> = {
   CUSTOMER: '일반 유저 회원가입',
   MOVER: '기사님 회원가입',
 }
-
-const PHONE_MAX_LENGTH = 11
 
 type FieldName = 'name' | 'email' | 'phone' | 'password' | 'passwordConfirm'
 
@@ -33,10 +32,6 @@ const INITIAL_VALUES: Record<FieldName, string> = {
   phone: '',
   password: '',
   passwordConfirm: '',
-}
-
-function toPhoneDigits(value: string) {
-  return value.replace(/\D/g, '').slice(0, PHONE_MAX_LENGTH)
 }
 
 export default function SignupForm({ role }: { role: Role }) {

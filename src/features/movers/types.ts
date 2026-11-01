@@ -1,11 +1,11 @@
-import type { components } from '@/lib/api-schema'
+import type { components, operations } from '@/lib/api-schema'
 
 type Schemas = components['schemas']
 
 export type Mover = Schemas['MoverSummary'] & {
-  // TODO: 목록 API 응답에 포함되는지 BE 명세 확정 후 확인
-  description: string | null
-  favoriteCount: number
+  // TODO: BE 응답 반영 후 임시 확장 타입 제거
+  description?: string | null
+  favoriteCount?: number
 }
 
 export type MoverDetail = Schemas['MoverDetail'] & {
@@ -14,3 +14,19 @@ export type MoverDetail = Schemas['MoverDetail'] & {
 }
 
 export type Review = Schemas['Review']
+
+export type MoverListParams = NonNullable<
+  operations['listMovers']['parameters']['query']
+>
+
+export type MoverListFilters = Omit<MoverListParams, 'cursor'>
+
+export type MoverListResponse = Omit<Schemas['MoverListResponse'], 'items'> & {
+  items: Mover[]
+}
+
+export type FavoriteMoverListParams = NonNullable<
+  operations['listMyFavorites']['parameters']['query']
+>
+
+export type FavoriteMoverListFilters = Omit<FavoriteMoverListParams, 'cursor'>

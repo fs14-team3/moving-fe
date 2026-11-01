@@ -1,5 +1,6 @@
-import type { Role } from '@/features/auth/types'
+import type { Me, Role } from '@/features/auth/types'
 import type {
+  BasicInfoUpdate,
   Profile,
   ProfileCreate,
   ProfileUpdate,
@@ -18,5 +19,10 @@ export async function createProfile(role: Role, body: ProfileCreate) {
 
 export async function updateProfile(role: Role, body: ProfileUpdate) {
   const { data } = await api.patch<Profile>(MY_PROFILE_PATH[role], body)
+  return data
+}
+
+export async function updateBasicInfo(body: BasicInfoUpdate) {
+  const { data } = await api.patch<Me>('/users/me', body)
   return data
 }

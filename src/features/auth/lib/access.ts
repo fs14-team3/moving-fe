@@ -8,6 +8,7 @@ const ROUTE_ACCESS: Record<string, RouteAccess> = {
   '/signup': 'GUEST',
   '/profile/register': { role: 'CUSTOMER', hasProfile: false },
   '/profile/edit': { role: 'CUSTOMER', hasProfile: true },
+  '/basic-info/edit': { role: 'CUSTOMER', hasProfile: true },
   '/mover': { role: 'MOVER', hasProfile: true },
   '/mover/login': 'GUEST',
   '/mover/signup': 'GUEST',

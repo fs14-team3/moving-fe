@@ -1,9 +1,9 @@
-import { MOVER_SORT_OPTIONS } from '@/constants/moverSort'
+import { MOVER_SORT_OPTIONS, type MoverSort } from '@/constants/moverSort'
 import Dropdown from './Dropdown'
 
 type SortDropdownProps = {
-  value?: string
-  onChange?: (value: string) => void
+  value?: MoverSort
+  onChange?: (value: MoverSort) => void
 }
 
 export default function SortDropdown({ value, onChange }: SortDropdownProps) {
@@ -13,7 +13,7 @@ export default function SortDropdown({ value, onChange }: SortDropdownProps) {
       options={MOVER_SORT_OPTIONS}
       variant="sort"
       value={value}
-      onChange={onChange}
+      onChange={(nextValue) => onChange?.(nextValue as MoverSort)}
     />
   )
 }

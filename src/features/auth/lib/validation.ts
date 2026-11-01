@@ -4,6 +4,7 @@ const LETTER_PATTERN = /[A-Za-z]/
 const DIGIT_PATTERN = /\d/
 const SPECIAL_CHARACTER_PATTERN = /[!-/:-@[-`{-~]/
 const PASSWORD_MIN_LENGTH = 8
+const PHONE_MAX_LENGTH = 11
 
 export const PASSWORD_RULE_MESSAGE =
   '영문, 숫자, 특수문자를 포함해 8자 이상 입력해 주세요.'
@@ -25,6 +26,10 @@ export function getPhoneError(phone: string) {
     return '올바른 휴대전화 번호를 입력해 주세요.'
   }
   return undefined
+}
+
+export function toPhoneDigits(value: string) {
+  return value.replace(/\D/g, '').slice(0, PHONE_MAX_LENGTH)
 }
 
 export function getPasswordError(password: string) {

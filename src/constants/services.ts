@@ -7,3 +7,10 @@ export const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
   { value: 'HOME', label: '가정이사' },
   { value: 'OFFICE', label: '사무실이사' },
 ]
+
+export function getServiceTypeLabel(serviceType: ServiceType) {
+  return (
+    SERVICE_TYPE_OPTIONS.find((option) => option.value === serviceType)
+      ?.label ?? serviceType
+  )
+}

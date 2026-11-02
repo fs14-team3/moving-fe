@@ -7,6 +7,10 @@ export const TOAST_MESSAGES = {
     logoutFailed: '로그아웃에 실패했습니다.',
   },
 
+  mover: {
+    notFound: '기사님 정보를 찾을 수 없습니다.',
+  },
+
   favorite: {
     updateFailed: '찜 처리에 실패했습니다.',
   },
@@ -20,6 +24,9 @@ export const TOAST_MESSAGES = {
 
     sendSuccess: '견적을 보냈습니다.',
     sendFailed: '견적 전송에 실패했습니다.',
+    quoteLimitReached: '이 요청은 견적을 더 받을 수 없습니다.',
+    requestNotPending: '이미 마감된 요청입니다.',
+    notInServiceArea: '서비스 가능 지역의 요청에만 견적을 보낼 수 있습니다.',
 
     rejectSuccess: '견적 요청을 반려했습니다.',
     rejectFailed: '견적 요청 반려에 실패했습니다.',
@@ -42,5 +49,8 @@ export const TOAST_MESSAGES = {
 
   common: {
     linkCopied: '링크가 복사되었습니다.',
+    linkCopyFailed: '링크 복사에 실패했습니다.',
+
+    shareFailed: '공유 기능을 불러오지 못했습니다.',
   },
 } as const

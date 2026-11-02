@@ -18,9 +18,11 @@ export default function MoverCard({
   onSelect,
 }: MoverCardProps) {
   const serviceTypes = mover.serviceTypes ?? []
-  const nickname = mover.nickname?.trim() || '익명'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const description = mover.description?.trim() || '등록된 설명이 없습니다.'
+  const nickname = mover.nickname?.trim() || '익명'
+  const favoriteCount = mover.favoriteCount ?? '-'
+  const rating = mover.averageRating.toFixed(1)
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
 
@@ -84,9 +86,7 @@ export default function MoverCard({
                 aria-hidden="true"
                 className="size-[14px] fill-yellow-400 text-yellow-400"
               />
-              <p className="text-xs leading-5 font-medium">
-                {mover.averageRating}
-              </p>
+              <p className="text-xs leading-5 font-medium">{rating}</p>
               <p className="text-xs leading-5 font-medium text-gray-400">
                 ({mover.reviewCount})
               </p>
@@ -115,7 +115,7 @@ export default function MoverCard({
               />
             </button>
             <p className="text-sm leading-6 font-normal text-gray-500">
-              {mover.favoriteCount}
+              {favoriteCount}
             </p>
           </div>
         </div>

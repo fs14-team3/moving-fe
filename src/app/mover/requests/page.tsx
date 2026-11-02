@@ -27,6 +27,7 @@ import {
   type RequestSummaryProps,
 } from '@/components/common/modal/Modal'
 import RejectModal from '@/components/common/modal/RejectModal'
+import SendModal from '@/components/common/modal/SendModal'
 import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import {
   getReceivedRequests,
@@ -35,6 +36,10 @@ import {
   type ReceivedRequestSort,
 } from '@/features/received-requests/api'
 import { useRejectRequest } from '@/features/received-requests/hooks/useRejectRequest'
+import {
+  isStaleRequestError,
+  useSendQuote,
+} from '@/features/received-requests/hooks/useSendQuote'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
 
@@ -126,9 +131,10 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 type RequestCardProps = {
   request: ReceivedRequest
   onReject: () => void
+  onSendQuote: () => void
 }
 
-function RequestCard({ request, onReject }: RequestCardProps) {
+function RequestCard({ request, onReject, onSendQuote }: RequestCardProps) {
   const { label, icon } = MOVE_TYPE[request.moveType]
   const name = toCustomerName(request)
 
@@ -178,6 +184,7 @@ function RequestCard({ request, onReject }: RequestCardProps) {
         </Button>
         <Button
           icon={<Pencil aria-hidden="true" className="size-4 lg:size-5" />}
+          onClick={onSendQuote}
           className={CARD_BUTTON}
         >
           견적 보내기
@@ -203,9 +210,12 @@ export default function ReceivedRequestsPage() {
   const [filter, setFilter] = useState(DEFAULT_REQUEST_FILTER)
   const [sort, setSort] = useState<ReceivedRequestSort>('MOVE_DATE_ASC')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  // 견적 보내기 모달을 연 요청. null이면 모달이 닫혀 있다.
+  const [quoteTarget, setQuoteTarget] = useState<ReceivedRequest | null>(null)
   // 반려요청 모달을 연 요청. null이면 모달이 닫혀 있다.
   const [rejectTarget, setRejectTarget] = useState<ReceivedRequest | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
+  const sendQuote = useSendQuote()
   const rejectRequest = useRejectRequest()
 
   // 필터·정렬이 바뀌면 쿼리 키가 바뀌어 첫 페이지부터 다시 불러온다.
@@ -301,6 +311,7 @@ export default function ReceivedRequestsPage() {
               <RequestCard
                 request={request}
                 onReject={() => setRejectTarget(request)}
+                onSendQuote={() => setQuoteTarget(request)}
               />
             </li>
           ))}
@@ -418,6 +429,31 @@ export default function ReceivedRequestsPage() {
           setIsFilterOpen(false)
         }}
       />
+
+      {quoteTarget && (
+        <SendModal
+          open
+          // 보내는 중에 닫으면 결과를 모달에서 볼 수 없어서, 끝날 때까지 닫지 않는다.
+          onClose={() => {
+            if (!sendQuote.isPending) setQuoteTarget(null)
+          }}
+          request={toRequestSummary(quoteTarget)}
+          isSubmitting={sendQuote.isPending}
+          // 코멘트는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
+          onSubmit={({ price }) =>
+            sendQuote.mutate(
+              { requestId: quoteTarget.id, price },
+              {
+                onSuccess: () => setQuoteTarget(null),
+                // 다시 보내도 같은 오류가 나는 요청은 목록에서 사라지므로 모달도 닫는다.
+                onError: (error) => {
+                  if (isStaleRequestError(error)) setQuoteTarget(null)
+                },
+              },
+            )
+          }
+        />
+      )}
 
       {rejectTarget && (
         <RejectModal

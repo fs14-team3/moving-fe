@@ -1,24 +1,20 @@
-type RatingCount = {
-  rating: number
-  count: number
-}
+import type { MoverDetail } from '@/features/movers/types'
 
 type RatingDistributionProps = {
-  ratingCounts: RatingCount[]
+  ratingCounts: MoverDetail['ratingCounts']
+  totalCount: number
 }
 
 const RATING_VALUES = [5, 4, 3, 2, 1] as const
 
 export default function RatingDistribution({
   ratingCounts,
+  totalCount,
 }: RatingDistributionProps) {
-  const totalCount = ratingCounts.reduce((total, item) => total + item.count, 0)
-
   return (
     <ul aria-label="평점별 리뷰 분포">
       {RATING_VALUES.map((rating) => {
-        const count =
-          ratingCounts.find((item) => item.rating === rating)?.count ?? 0
+        const count = ratingCounts[rating]
         const percent = totalCount > 0 ? (count / totalCount) * 100 : 0
 
         return (

@@ -26,6 +26,7 @@ import {
   MOVE_TYPE,
   type RequestSummaryProps,
 } from '@/components/common/modal/Modal'
+import RejectModal from '@/components/common/modal/RejectModal'
 import SendModal from '@/components/common/modal/SendModal'
 import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import {
@@ -34,6 +35,7 @@ import {
   type ReceivedRequestQuery,
   type ReceivedRequestSort,
 } from '@/features/received-requests/api'
+import { useRejectRequest } from '@/features/received-requests/hooks/useRejectRequest'
 import {
   isStaleRequestError,
   useSendQuote,
@@ -128,10 +130,11 @@ function InfoItem({ label, value }: { label: string; value: string }) {
 
 type RequestCardProps = {
   request: ReceivedRequest
+  onReject: () => void
   onSendQuote: () => void
 }
 
-function RequestCard({ request, onSendQuote }: RequestCardProps) {
+function RequestCard({ request, onReject, onSendQuote }: RequestCardProps) {
   const { label, icon } = MOVE_TYPE[request.moveType]
   const name = toCustomerName(request)
 
@@ -176,8 +179,7 @@ function RequestCard({ request, onSendQuote }: RequestCardProps) {
 
       {/* 모바일은 견적 보내기가 위, 태블릿 이상은 반려하기가 왼쪽이다. */}
       <div className="mt-5 flex flex-col-reverse gap-2 md:grid md:grid-cols-2 lg:mt-6">
-        {/* TODO(#84): 반려요청 모달 연결 */}
-        <Button variant="outlined" className={CARD_BUTTON}>
+        <Button variant="outlined" onClick={onReject} className={CARD_BUTTON}>
           반려하기
         </Button>
         <Button
@@ -210,8 +212,11 @@ export default function ReceivedRequestsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   // 견적 보내기 모달을 연 요청. null이면 모달이 닫혀 있다.
   const [quoteTarget, setQuoteTarget] = useState<ReceivedRequest | null>(null)
+  // 반려요청 모달을 연 요청. null이면 모달이 닫혀 있다.
+  const [rejectTarget, setRejectTarget] = useState<ReceivedRequest | null>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
   const sendQuote = useSendQuote()
+  const rejectRequest = useRejectRequest()
 
   // 필터·정렬이 바뀌면 쿼리 키가 바뀌어 첫 페이지부터 다시 불러온다.
   const query = toQuery(filter, sort)
@@ -305,6 +310,7 @@ export default function ReceivedRequestsPage() {
             <li key={request.id}>
               <RequestCard
                 request={request}
+                onReject={() => setRejectTarget(request)}
                 onSendQuote={() => setQuoteTarget(request)}
               />
             </li>
@@ -445,6 +451,24 @@ export default function ReceivedRequestsPage() {
                 },
               },
             )
+          }
+        />
+      )}
+
+      {rejectTarget && (
+        <RejectModal
+          open
+          // 반려하는 중에 닫으면 결과를 모달에서 볼 수 없어서, 끝날 때까지 닫지 않는다.
+          onClose={() => {
+            if (!rejectRequest.isPending) setRejectTarget(null)
+          }}
+          request={toRequestSummary(rejectTarget)}
+          isSubmitting={rejectRequest.isPending}
+          // 반려 사유는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
+          onSubmit={() =>
+            rejectRequest.mutate(rejectTarget.id, {
+              onSuccess: () => setRejectTarget(null),
+            })
           }
         />
       )}

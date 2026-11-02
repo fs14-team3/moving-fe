@@ -18,6 +18,10 @@ export function useRejectRequest() {
       toast.success(TOAST_MESSAGES.estimate.rejectSuccess)
       // 반려한 요청은 받은 요청 목록에서 사라지므로 목록을 다시 불러온다.
       void refreshRequests()
+      // 내 견적 관리의 반려 요청 목록에는 새로 생기므로 함께 다시 불러온다.
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.receivedRequests.rejected(),
+      })
     },
     onError: (error) => {
       if (isUnauthorized(error)) return

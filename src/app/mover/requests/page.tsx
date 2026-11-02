@@ -34,7 +34,10 @@ import {
   type ReceivedRequestQuery,
   type ReceivedRequestSort,
 } from '@/features/received-requests/api'
-import { useSendQuote } from '@/features/received-requests/hooks/useSendQuote'
+import {
+  isStaleRequestError,
+  useSendQuote,
+} from '@/features/received-requests/hooks/useSendQuote'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
 
@@ -424,14 +427,23 @@ export default function ReceivedRequestsPage() {
       {quoteTarget && (
         <SendModal
           open
-          onClose={() => setQuoteTarget(null)}
+          // 보내는 중에 닫으면 결과를 모달에서 볼 수 없어서, 끝날 때까지 닫지 않는다.
+          onClose={() => {
+            if (!sendQuote.isPending) setQuoteTarget(null)
+          }}
           request={toRequestSummary(quoteTarget)}
           isSubmitting={sendQuote.isPending}
           // 코멘트는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
           onSubmit={({ price }) =>
             sendQuote.mutate(
               { requestId: quoteTarget.id, price },
-              { onSuccess: () => setQuoteTarget(null) },
+              {
+                onSuccess: () => setQuoteTarget(null),
+                // 다시 보내도 같은 오류가 나는 요청은 목록에서 사라지므로 모달도 닫는다.
+                onError: (error) => {
+                  if (isStaleRequestError(error)) setQuoteTarget(null)
+                },
+              },
             )
           }
         />

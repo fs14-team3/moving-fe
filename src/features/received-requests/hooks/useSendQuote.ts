@@ -24,6 +24,13 @@ const STALE_REQUEST_CODES: ErrorCode[] = [
   'REQUEST_NOT_PENDING',
 ]
 
+// 다시 보내도 같은 오류가 나는 요청인지 확인한다. (견적 모달을 닫을 때 쓴다)
+export function isStaleRequestError(error: unknown) {
+  return (
+    isApiError(error) && STALE_REQUEST_CODES.includes(error.code as ErrorCode)
+  )
+}
+
 export function useSendQuote() {
   const queryClient = useQueryClient()
   const refreshRequests = () =>
@@ -45,7 +52,7 @@ export function useSendQuote() {
       toast.error(
         (code && ERROR_MESSAGE[code]) ?? TOAST_MESSAGES.estimate.sendFailed,
       )
-      if (code && STALE_REQUEST_CODES.includes(code)) void refreshRequests()
+      if (isStaleRequestError(error)) void refreshRequests()
     },
   })
 }

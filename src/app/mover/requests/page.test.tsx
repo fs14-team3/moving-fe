@@ -157,7 +157,7 @@ describe('ReceivedRequestsPage', () => {
     )
   })
 
-  it('보내는 중에는 다시 누를 수 없고, 실패하면 알리고 입력을 고칠 수 있게 모달을 열어 둔다', async () => {
+  it('보내는 중에는 다시 누르거나 닫을 수 없고, 실패하면 알리고 입력을 고칠 수 있게 모달을 열어 둔다', async () => {
     let rejectSend: (error: unknown) => void = () => {}
     mockSendQuote.mockImplementation(
       () =>
@@ -175,6 +175,10 @@ describe('ReceivedRequestsPage', () => {
     await waitFor(() => expect(submitButton).toBeDisabled())
     await user.click(submitButton)
     expect(mockSendQuote).toHaveBeenCalledTimes(1)
+    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    expect(
+      screen.getByRole('dialog', { name: '견적 보내기' }),
+    ).toBeInTheDocument()
 
     rejectSend(new ApiError('INTERNAL_ERROR', 'Server Error', 500))
 
@@ -187,6 +191,25 @@ describe('ReceivedRequestsPage', () => {
       screen.getByRole('dialog', { name: '견적 보내기' }),
     ).toBeInTheDocument()
     expect(submitButton).toBeEnabled()
+  })
+
+  it('이미 견적을 받을 수 없는 요청이면 알리고 모달을 닫은 뒤 목록을 다시 불러온다', async () => {
+    mockSendQuote.mockRejectedValue(
+      new ApiError('REQUEST_NOT_PENDING', 'Conflict', 409),
+    )
+    const { submit } = await openSendModal()
+
+    await submit()
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.requestNotPending,
+    )
+    await waitFor(() =>
+      expect(mockGetReceivedRequests).toHaveBeenCalledTimes(2),
+    )
   })
 
   it('다음 페이지를 불러오지 못하면 다시 요청하지 않고, 다시 시도를 누르면 이어서 불러온다', async () => {

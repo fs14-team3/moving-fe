@@ -422,7 +422,10 @@ export default function ReceivedRequestsPage() {
       {rejectTarget && (
         <RejectModal
           open
-          onClose={() => setRejectTarget(null)}
+          // 반려하는 중에 닫으면 결과를 모달에서 볼 수 없어서, 끝날 때까지 닫지 않는다.
+          onClose={() => {
+            if (!rejectRequest.isPending) setRejectTarget(null)
+          }}
           request={toRequestSummary(rejectTarget)}
           isSubmitting={rejectRequest.isPending}
           // 반려 사유는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)

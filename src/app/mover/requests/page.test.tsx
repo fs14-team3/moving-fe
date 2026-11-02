@@ -153,7 +153,7 @@ describe('ReceivedRequestsPage', () => {
     )
   })
 
-  it('반려 중에는 다시 누를 수 없고, 실패하면 알리고 모달을 열어 둔다', async () => {
+  it('반려 중에는 다시 누르거나 닫을 수 없고, 실패하면 알리고 모달을 열어 둔다', async () => {
     let rejectReject: (error: unknown) => void = () => {}
     mockRejectRequest.mockImplementation(
       () =>
@@ -171,6 +171,8 @@ describe('ReceivedRequestsPage', () => {
     await waitFor(() => expect(submitButton).toBeDisabled())
     await user.click(submitButton)
     expect(mockRejectRequest).toHaveBeenCalledTimes(1)
+    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    expect(screen.getByRole('dialog', { name: '반려요청' })).toBeInTheDocument()
 
     rejectReject(new ApiError('INTERNAL_ERROR', 'Server Error', 500))
 

@@ -61,22 +61,26 @@ export const MOCK_MOVERS = [
 
 const MOCK_MOVER_DETAIL_FIELDS: Record<
   string,
-  Pick<MoverDetail, 'regions' | 'isDesignated'>
+  Pick<MoverDetail, 'regions' | 'ratingCounts' | 'isDesignated'>
 > = {
   '1': {
     regions: ['서울', '경기'],
+    ratingCounts: { 1: 2, 2: 6, 3: 18, 4: 42, 5: 180 },
     isDesignated: false,
   },
   '2': {
     regions: ['서울', '인천'],
+    ratingCounts: { 1: 1, 2: 4, 3: 12, 4: 35, 5: 80 },
     isDesignated: false,
   },
   '3': {
     regions: ['경기', '인천'],
+    ratingCounts: { 1: 5, 2: 10, 3: 25, 4: 75, 5: 200 },
     isDesignated: true,
   },
   '4': {
     regions: ['서울'],
+    ratingCounts: { 1: 1, 2: 3, 3: 8, 4: 20, 5: 35 },
     isDesignated: null,
   },
 }
@@ -87,6 +91,13 @@ export const MOCK_MOVER_DETAILS = MOCK_MOVERS.map((mover) => {
   return {
     ...mover,
     regions: detailFields?.regions ?? null,
+    ratingCounts: detailFields?.ratingCounts ?? {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    },
     isDesignated: detailFields?.isDesignated ?? null,
   }
 }) satisfies MoverDetail[]

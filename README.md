@@ -25,11 +25,12 @@ gitleaks 설치: macOS `brew install gitleaks`, Windows `winget install Gitleaks
 
 ## 환경 변수
 
-| 이름                     | 예시                        | 설명                                             |
-| ------------------------ | --------------------------- | ------------------------------------------------ |
-| `NEXT_PUBLIC_API_URL`    | `http://localhost:4000/api` | API 주소. 브라우저에 노출되므로 비밀값 금지      |
-| `NEXT_PUBLIC_SENTRY_DSN` |                             | Sentry 오류 수집을 위한 DSN                      |
-| `SENTRY_AUTH_TOKEN`      |                             | Sentry 소스맵 업로드용 인증 토큰. 외부 노출 금지 |
+| 이름                       | 예시                        | 설명                                             |
+| -------------------------- | --------------------------- | ------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`      | `http://localhost:4000/api` | API 주소. 브라우저에 노출되므로 비밀값 금지      |
+| `NEXT_PUBLIC_SENTRY_DSN`   |                             | Sentry 오류 수집을 위한 DSN                      |
+| `SENTRY_AUTH_TOKEN`        |                             | Sentry 소스맵 업로드용 인증 토큰. 외부 노출 금지 |
+| `NEXT_PUBLIC_KAKAO_JS_KEY` |                             | 카카오톡 공유를 위한 JavaScript SDK 키           |
 
 새 환경 변수를 추가하면 `.env.example`과 이 표도 수정합니다.
 

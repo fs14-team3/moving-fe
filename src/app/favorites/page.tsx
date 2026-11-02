@@ -1,7 +1,7 @@
 'use client'
 
 import MoverCard from '@/components/mover/MoverCard'
-import { MOCK_MOVERS } from '@/features/movers/mocks/movers'
+import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
 import { Check } from 'lucide-react'
 import { useState } from 'react'
 

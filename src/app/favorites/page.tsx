@@ -137,6 +137,7 @@ export default function FavoritesPage() {
               </span>
             </label>
 
+            {/* TODO: 일괄 찜 해제 API 추가 후 선택 항목 삭제 및 선택 상태 갱신 연결 */}
             <button
               type="button"
               disabled={selectedIds.length === 0}

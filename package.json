@@ -21,6 +21,7 @@
     "api:types": "openapi-typescript https://raw.githubusercontent.com/fs14-team3/moving-be/develop/docs/api/openapi.ko.yaml -o src/lib/api-schema.d.ts && prettier --write src/lib/api-schema.d.ts"
   },
   "dependencies": {
+    "@daypicker/react": "^10.0.2",
     "@sentry/nextjs": "^11.9.0",
     "@tanstack/react-query": "^5.104.5",
     "axios": "^1.20.0",

@@ -1,16 +1,9 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
-import {
-  ArrowRightLeft,
-  FileText,
-  LoaderCircle,
-  MoveRight,
-  Pencil,
-} from 'lucide-react'
+import { ArrowRightLeft, LoaderCircle, Pencil } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import Badge from '@/components/common/Badge'
 import SelectChip from '@/components/common/SelectChip'
 import Button from '@/components/common/button/Button'
 import Dropdown from '@/components/common/dropdown/Dropdown'
@@ -22,12 +15,10 @@ import FilterModal, {
   toggleMoveType,
   type RequestFilter,
 } from '@/components/common/modal/FilterModal'
-import {
-  MOVE_TYPE,
-  type RequestSummaryProps,
-} from '@/components/common/modal/Modal'
+import { type RequestSummaryProps } from '@/components/common/modal/Modal'
 import RejectModal from '@/components/common/modal/RejectModal'
 import SendModal from '@/components/common/modal/SendModal'
+import MoveRequestCard from '@/components/mover/MoveRequestCard'
 import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import {
   getReceivedRequests,
@@ -35,6 +26,11 @@ import {
   type ReceivedRequestQuery,
   type ReceivedRequestSort,
 } from '@/features/received-requests/api'
+import {
+  formatMoveDate,
+  toCustomerName,
+  toShortAddress,
+} from '@/features/received-requests/format'
 import { useRejectRequest } from '@/features/received-requests/hooks/useRejectRequest'
 import {
   isStaleRequestError,
@@ -53,20 +49,9 @@ const CONTAINER = 'mx-auto w-full max-w-310 px-6 md:px-18 lg:px-5'
 
 const CARD_BUTTON = 'h-12 w-full text-base lg:h-13 lg:w-full lg:text-base'
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
-
 const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
-
-// '2024-07-01' → '2024년 07월 01일 (월)'
-function formatMoveDate(date: string) {
-  const [year, month, day] = date.split('-').map(Number)
-  // 'YYYY-MM-DD'를 new Date에 그대로 넣으면 UTC로 읽혀 날짜가 하루 밀릴 수 있다.
-  const weekday = WEEKDAYS[new Date(year, month - 1, day).getDay()]
-  const pad = (value: number) => String(value).padStart(2, '0')
-  return `${year}년 ${pad(month)}월 ${pad(day)}일 (${weekday})`
-}
 
 // 요청이 들어온 뒤 얼마나 지났는지 '1시간 전'처럼 보여준다.
 function formatTimeAgo(dateTime: string) {
@@ -75,15 +60,6 @@ function formatTimeAgo(dateTime: string) {
   if (diff < HOUR) return `${Math.floor(diff / MINUTE)}분 전`
   if (diff < DAY) return `${Math.floor(diff / HOUR)}시간 전`
   return `${Math.floor(diff / DAY)}일 전`
-}
-
-// '서울특별시 중구 세종대로 110' → '서울특별시 중구'
-function toShortAddress(address: string) {
-  return address.split(' ').slice(0, 2).join(' ')
-}
-
-function toCustomerName(request: ReceivedRequest) {
-  return request.customerName ? `${request.customerName} 고객님` : '고객님'
 }
 
 // 견적 보내기 모달 위쪽에 보여줄 요청 정보
@@ -117,17 +93,6 @@ function isFiltered(filter: RequestFilter) {
   )
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <dt className="text-xs text-gray-500 lg:text-sm">{label}</dt>
-      <dd className="text-sm font-semibold text-black-400 lg:text-base">
-        {value}
-      </dd>
-    </div>
-  )
-}
-
 type RequestCardProps = {
   request: ReceivedRequest
   onReject: () => void
@@ -135,48 +100,18 @@ type RequestCardProps = {
 }
 
 function RequestCard({ request, onReject, onSendQuote }: RequestCardProps) {
-  const { label, icon } = MOVE_TYPE[request.moveType]
-  const name = toCustomerName(request)
-
   return (
-    <article className="rounded-2xl border border-line-100 bg-white px-5 py-6 shadow-sm lg:px-6 lg:py-7">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
-          <Badge icon={icon}>{label}</Badge>
-          {request.isDesignated && (
-            <Badge icon={<FileText className="size-3.5 md:size-4" />}>
-              지정 견적 요청
-            </Badge>
-          )}
-        </div>
+    <MoveRequestCard
+      request={request}
+      aside={
         <time
           dateTime={request.createdAt}
           className="shrink-0 text-xs text-gray-500 lg:text-sm"
         >
           {formatTimeAgo(request.createdAt)}
         </time>
-      </div>
-
-      <h2 className="mt-3 border-b border-line-100 pb-3 text-base font-semibold text-black-400 lg:mt-4 lg:pb-4 lg:text-lg">
-        {name}
-      </h2>
-
-      {/* 모바일은 출발지·도착지 아래에 이사일, 태블릿 이상은 한 줄 양 끝에 둔다. */}
-      <dl className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between lg:mt-4">
-        <div className="flex items-end gap-3">
-          <InfoItem
-            label="출발지"
-            value={toShortAddress(request.from.address)}
-          />
-          <MoveRight
-            aria-hidden="true"
-            className="mb-0.5 size-4 shrink-0 text-gray-500 lg:mb-1"
-          />
-          <InfoItem label="도착지" value={toShortAddress(request.to.address)} />
-        </div>
-        <InfoItem label="이사일" value={formatMoveDate(request.moveDate)} />
-      </dl>
-
+      }
+    >
       {/* 모바일은 견적 보내기가 위, 태블릿 이상은 반려하기가 왼쪽이다. */}
       <div className="mt-5 flex flex-col-reverse gap-2 md:grid md:grid-cols-2 lg:mt-6">
         <Button variant="outlined" onClick={onReject} className={CARD_BUTTON}>
@@ -190,7 +125,7 @@ function RequestCard({ request, onReject, onSendQuote }: RequestCardProps) {
           견적 보내기
         </Button>
       </div>
-    </article>
+    </MoveRequestCard>
   )
 }
 

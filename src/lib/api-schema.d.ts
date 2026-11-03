@@ -15,7 +15,7 @@ export interface paths {
     put?: never
     /**
      * 이메일 회원가입
-     * @description 요청한 역할의 이메일 계정을 생성합니다. 이메일·전화번호·비밀번호는 §3.2.1에 따라 검증합니다.
+     * @description 요청한 역할의 이메일 계정을 생성합니다. 이름·이메일·전화번호·비밀번호는 validator 기준에 따라 검증합니다.
      */
     post: operations['signup']
     delete?: never
@@ -35,29 +35,9 @@ export interface paths {
     put?: never
     /**
      * 이메일 로그인
-     * @description 역할별 로그인 페이지에서 요청한 역할로 인증합니다.
+     * @description 역할별 로그인 페이지에서 요청한 역할과 이메일·비밀번호를 확인하고 사용자 정보를 반환합니다.
      */
     post: operations['login']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/auth/logout': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * 로그아웃
-     * @description 현재 로그인 상태를 종료합니다. 세션 또는 토큰 종료 방식은 인증 구현 시 결정합니다.
-     */
-    post: operations['logout']
     delete?: never
     options?: never
     head?: never
@@ -73,7 +53,9 @@ export interface paths {
     }
     /**
      * 소셜 로그인 시작 (provider로 리다이렉트)
-     * @description 선택한 소셜 제공자의 로그인 페이지로 이동합니다. OAuth 검증 및 로그인 후 이동 방식은 인증 구현 시 결정합니다.
+     * @description 선택한 소셜 제공자(Google / Kakao / Naver) 인가 페이지로 이동합니다.
+     *     `role`은 OAuth `state`에 서명되어 콜백에서 복원됩니다.
+     *     제공자 앱 Client ID/Secret과 Redirect URI 환경 변수가 필요합니다.
      */
     get: operations['startSocialLogin']
     put?: never
@@ -93,7 +75,7 @@ export interface paths {
     }
     /**
      * 소셜 로그인 콜백 (등록된 redirect URI)
-     * @description 소셜 제공자의 응답을 검증한 뒤 가입 또는 로그인합니다. 기존 계정과의 연결 및 로그인 결과 전달 방식은 추후 결정합니다.
+     * @description 소셜 제공자의 응답을 검증한 뒤 가입 또는 로그인합니다. 동일 역할과 이메일을 가진 기존 계정이 있으면 소셜 계정을 연결하며, 처리 결과에 따라 프론트엔드로 리다이렉트합니다.
      */
     get: operations['socialLoginCallback']
     put?: never
@@ -690,14 +672,15 @@ export interface components {
     }
     SignupRequest: {
       role: components['schemas']['Role']
-      name?: string
+      /** @description 앞뒤 공백 제거 후 2~20자 */
+      name: string
       /** Format: email */
       email: string
       /** @description 지역에 맞는 전화번호 형식을 검증합니다(§3.2.1). */
       phone: string
       /**
        * Format: password
-       * @description 8자 이상, 영문·숫자·특수문자 포함
+       * @description 공백을 제외한 ASCII 문자 8~16자. 영문·숫자·특수문자를 각각 1자 이상 포함
        */
       password: string
     }
@@ -709,7 +692,6 @@ export interface components {
       password: string
     }
     AuthResponse: {
-      accessToken: string
       user: components['schemas']['Me']
     }
     Me: {
@@ -1200,24 +1182,6 @@ export interface operations {
       429: components['responses']['RateLimited']
     }
   }
-  logout: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description 로그아웃 완료 */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
   startSocialLogin: {
     parameters: {
       query: {
@@ -1239,6 +1203,15 @@ export interface operations {
         content?: never
       }
       400: components['responses']['ValidationError']
+      /** @description `SOCIAL_LOGIN_FAILED` (OAuth 설정 누락 등) */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   socialLoginCallback: {
@@ -1247,6 +1220,8 @@ export interface operations {
         code?: string
         state: string
         error?: string
+        /** @description OAuth 제공자가 전달하는 인증 실패 상세 설명 */
+        error_description?: string
       }
       header?: never
       path: {

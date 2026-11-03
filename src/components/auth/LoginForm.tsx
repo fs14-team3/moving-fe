@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import AuthField from '@/components/auth/AuthField'
+import AuthTextField from '@/components/auth/AuthTextField'
 import AuthForm from '@/components/auth/AuthForm'
 import AuthHeader from '@/components/auth/AuthHeader'
 import AuthPrompt from '@/components/auth/AuthPrompt'
@@ -36,7 +36,7 @@ export default function LoginForm({ role }: { role: Role }) {
         isSubmitting={isPending || isSuccess}
         onSubmit={() => mutate({ role, email: trimmedEmail, password })}
       >
-        <AuthField
+        <AuthTextField
           label="이메일"
           type="email"
           name="email"
@@ -47,7 +47,7 @@ export default function LoginForm({ role }: { role: Role }) {
           onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
           error={touched.email ? emailError : undefined}
         />
-        <AuthField
+        <AuthTextField
           label="비밀번호"
           type="password"
           name="password"

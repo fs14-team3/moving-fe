@@ -1,5 +1,9 @@
 'use client'
 
+import Badge from '@/components/common/Badge'
+import Button from '@/components/common/button/Button'
+import type { ServiceType } from '@/constants/services'
+import { cn } from '@/lib/cn'
 import { Building2, FileText, House, MoveRight, Package, X } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -9,10 +13,6 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react'
-import Badge from '@/components/common/Badge'
-import Button from '@/components/common/button/Button'
-import type { ServiceType } from '@/constants/services'
-import { cn } from '@/lib/cn'
 
 type ModalProps = {
   open: boolean
@@ -95,9 +95,9 @@ export default function Modal({
               type="button"
               aria-label="닫기"
               onClick={onClose}
-              className="text-gray-400"
+              className="flex size-6 items-center justify-center text-gray-400 md:size-9"
             >
-              <X strokeWidth={1.5} className="size-6 md:size-9" />
+              <X strokeWidth={1.5} className="size-6" />
             </button>
           </div>
           {children}

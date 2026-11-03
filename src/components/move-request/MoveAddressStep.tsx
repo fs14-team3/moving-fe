@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import Button from '../common/button/Button'
-import AddressSearchModal, { type AddressField } from './AddressSearchModal'
+import AddressSearchModal, {
+  type AddressField,
+  type SelectedAddress,
+} from './AddressSearchModal'
 
 type MoveAddressStepProps = {
-  departureAddress: string
-  arrivalAddress: string
-  onDepartureChange: (departureAddress: string) => void
-  onArrivalChange: (arrivalAddress: string) => void
+  departureAddress: SelectedAddress | null
+  arrivalAddress: SelectedAddress | null
+  onDepartureChange: (address: SelectedAddress) => void
+  onArrivalChange: (address: SelectedAddress) => void
 }
 
 export default function MoveAddressStep({
@@ -17,7 +20,7 @@ export default function MoveAddressStep({
 }: MoveAddressStepProps) {
   const [activeField, setActiveField] = useState<AddressField | null>(null)
 
-  function handleAddressSelect(address: string) {
+  function handleAddressSelect(address: SelectedAddress) {
     if (activeField === 'departure') {
       onDepartureChange(address)
     }
@@ -39,7 +42,7 @@ export default function MoveAddressStep({
           onClick={() => setActiveField('departure')}
           className="w-full cursor-pointer justify-start truncate px-6 py-4 md:w-100 lg:w-[252px]"
         >
-          {departureAddress || '출발지 선택하기'}
+          {departureAddress?.address || '출발지 선택하기'}
         </Button>
       </div>
 
@@ -51,7 +54,7 @@ export default function MoveAddressStep({
           onClick={() => setActiveField('arrival')}
           className="w-full cursor-pointer justify-start truncate px-6 py-4 md:w-100 lg:w-[252px]"
         >
-          {arrivalAddress || '도착지 선택하기'}
+          {arrivalAddress?.address || '도착지 선택하기'}
         </Button>
       </div>
 

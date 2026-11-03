@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { PASSWORD_RULE_MESSAGE } from '@/features/auth/lib/validation'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { updateBasicInfo } from '@/features/profile/api'
 import type {
@@ -40,8 +40,11 @@ export function useUpdateBasicInfo(
   return useMutation({
     mutationFn: updateBasicInfo,
     onSuccess: async (me) => {
-      await queryClient.cancelQueries({ queryKey: meQueryKey, exact: true })
-      queryClient.setQueryData<Me | null>(meQueryKey, me)
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.user.me(),
+        exact: true,
+      })
+      queryClient.setQueryData<Me | null>(queryKeys.user.me(), me)
       toast.success(TOAST_MESSAGES.profile.basicInfoUpdateSuccess)
     },
     onError: (error) => {

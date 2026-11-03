@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { login } from '@/features/auth/api'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { ApiError } from '@/lib/api-error'
@@ -38,7 +38,7 @@ function createApiError(status: number) {
 
 function renderUseLogin() {
   const queryClient = new QueryClient()
-  queryClient.setQueryData(meQueryKey, null)
+  queryClient.setQueryData(queryKeys.user.me(), null)
 
   const { result } = renderHook(() => useLogin(), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -61,7 +61,7 @@ describe('useLogin', () => {
     act(() => result.current.mutate(credentials))
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(queryClient.getQueryData(meQueryKey)).toEqual(user)
+    expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(user)
     expect(toastError).not.toHaveBeenCalled()
   })
 
@@ -76,6 +76,6 @@ describe('useLogin', () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith(message))
     expect(toastError).toHaveBeenCalledOnce()
-    expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+    expect(queryClient.getQueryData(queryKeys.user.me())).toBeNull()
   })
 })

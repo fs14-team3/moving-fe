@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import type { Profile } from '@/features/profile/types'
 
@@ -13,9 +13,12 @@ export async function setMyProfile(
   role: Role,
   profile: Profile,
 ) {
-  await queryClient.cancelQueries({ queryKey: meQueryKey, exact: true })
+  await queryClient.cancelQueries({
+    queryKey: queryKeys.user.me(),
+    exact: true,
+  })
   queryClient.setQueryData<Me | null>(
-    meQueryKey,
+    queryKeys.user.me(),
     (me) => me && { ...me, hasProfile: true, [PROFILE_FIELD[role]]: profile },
   )
 }

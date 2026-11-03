@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SocialLoginCallback from '@/components/auth/SocialLoginCallback'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { saveSocialLoginState } from '@/features/auth/lib/social'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 
 const mocks = vi.hoisted(() => ({ replace: vi.fn(), toastError: vi.fn() }))
@@ -44,7 +44,7 @@ function renderCallback(query: string, user?: Me | null) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   })
-  if (user !== undefined) queryClient.setQueryData(meQueryKey, user)
+  if (user !== undefined) queryClient.setQueryData(queryKeys.user.me(), user)
 
   render(
     <StrictMode>
@@ -93,7 +93,7 @@ describe('SocialLoginCallback', () => {
     expect(mocks.replace).not.toHaveBeenCalled()
 
     act(() => {
-      queryClient.setQueryData(meQueryKey, createUser('CUSTOMER'))
+      queryClient.setQueryData(queryKeys.user.me(), createUser('CUSTOMER'))
     })
     await waitFor(() =>
       expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/'),

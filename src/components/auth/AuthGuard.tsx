@@ -1,8 +1,8 @@
 'use client'
 
-import { LoaderCircle } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, type ReactNode } from 'react'
+import SessionPending from '@/components/auth/SessionPending'
 import Button from '@/components/common/button/Button'
 import { canAccess, getRouteAccess } from '@/features/auth/lib/access'
 import { getRedirectPath } from '@/features/auth/lib/paths'
@@ -30,18 +30,6 @@ function SessionError({ isRetrying, onRetry }: SessionErrorProps) {
       >
         다시 시도
       </Button>
-    </div>
-  )
-}
-
-function SessionPending() {
-  return (
-    <div role="status" className="flex min-h-page items-center justify-center">
-      <LoaderCircle
-        aria-hidden="true"
-        className="size-8 animate-spin text-primary-400"
-      />
-      <span className="sr-only">로그인 정보를 확인하고 있습니다.</span>
     </div>
   )
 }

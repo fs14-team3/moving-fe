@@ -2,7 +2,9 @@ import type {
   AuthResponse,
   LoginRequest,
   Me,
+  Role,
   SignupRequest,
+  SocialProvider,
 } from '@/features/auth/types'
 import api from '@/lib/api'
 import { isUnauthorized } from '@/lib/api-error'
@@ -15,6 +17,10 @@ export async function signup(body: SignupRequest) {
 export async function login(body: LoginRequest) {
   const { data } = await api.post<AuthResponse>('/auth/login', body)
   return data.user
+}
+
+export function getSocialLoginUrl(provider: SocialProvider, role: Role) {
+  return api.getUri({ url: `/auth/${provider}`, params: { role } })
 }
 
 export async function getMe() {

@@ -42,7 +42,7 @@ export function getCurrentPath() {
   return toPath(window.location)
 }
 
-function getRedirectParam() {
+export function getRedirectParam() {
   return new URLSearchParams(window.location.search).get('redirect')
 }
 

@@ -10,6 +10,7 @@ import type {
   ProfileUpdate,
 } from '@/features/profile/types'
 import { isUnauthorized } from '@/lib/api-error'
+import { queryKeys } from '@/lib/queryKeys'
 
 export function useUpdateProfile(
   role: Role,
@@ -21,6 +22,9 @@ export function useUpdateProfile(
     mutationFn: (body: ProfileUpdate) => updateProfile(role, body),
     onSuccess: async (profile) => {
       await setMyProfile(queryClient, role, profile)
+      if (role === 'MOVER') {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.movers.all })
+      }
       toast.success(TOAST_MESSAGES.profile.updateSuccess)
     },
     onError: (error) => {

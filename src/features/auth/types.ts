@@ -12,5 +12,4 @@ export type LoginRequest = Schemas['LoginRequest']
 
 export type SignupRequest = Schemas['SignupRequest']
 
-// TODO(#61): 명세에서 accessToken이 빠지면 Omit 없이 생성된 타입 사용
-export type AuthResponse = Omit<Schemas['AuthResponse'], 'accessToken'>
+export type AuthResponse = Schemas['AuthResponse']

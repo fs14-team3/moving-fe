@@ -16,6 +16,12 @@ vi.mock('@/features/auth/api', () => ({
   logout: vi.fn(),
 }))
 
+vi.mock('@/features/notifications/api', () => ({
+  getNotifications: () => new Promise(() => {}),
+  getUnreadNotificationCount: () => new Promise(() => {}),
+  readAllNotifications: vi.fn(),
+}))
+
 function createUser(role: Role): Me {
   return {
     id: 'user-1',
@@ -81,6 +87,21 @@ describe('Header', () => {
       const links = items.map(({ label, href }) => [label, href])
       expect(getMenuLinks()).toEqual(links)
       expect(getMobileMenuLinks()).toEqual(links)
+    },
+  )
+
+  it('로그인한 사용자에게만 알림 아이콘을 보여 준다', () => {
+    renderHeader(null)
+    expect(
+      screen.queryByRole('button', { name: /알림/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it.each<Role>(['CUSTOMER', 'MOVER'])(
+    '%s에게는 알림 아이콘을 보여 준다',
+    (role) => {
+      renderHeader(createUser(role))
+      expect(screen.getByRole('button', { name: '알림' })).toBeInTheDocument()
     },
   )
 })

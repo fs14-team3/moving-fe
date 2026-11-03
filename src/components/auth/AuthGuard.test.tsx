@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AuthGuard from '@/components/auth/AuthGuard'
 import { getMe } from '@/features/auth/api'
 import { getPathAfterLogin } from '@/features/auth/lib/paths'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 
 const navigation = vi.hoisted(() => ({
@@ -47,7 +47,7 @@ function renderGuard(url: string, user?: Me | null) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   })
-  if (user !== undefined) queryClient.setQueryData(meQueryKey, user)
+  if (user !== undefined) queryClient.setQueryData(queryKeys.user.me(), user)
 
   render(
     <QueryClientProvider client={queryClient}>
@@ -62,7 +62,7 @@ function renderGuard(url: string, user?: Me | null) {
 
 function setUser(queryClient: QueryClient, user: Me | null) {
   act(() => {
-    queryClient.setQueryData(meQueryKey, user)
+    queryClient.setQueryData(queryKeys.user.me(), user)
   })
 }
 
@@ -193,7 +193,9 @@ describe('AuthGuard', () => {
     const queryClient = renderGuard('/mover/requests', mover)
     expect(screen.getByRole('heading')).toBeInTheDocument()
 
-    await act(() => queryClient.refetchQueries({ queryKey: meQueryKey }))
+    await act(() =>
+      queryClient.refetchQueries({ queryKey: queryKeys.user.me() }),
+    )
 
     const retry = await screen.findByRole('button', { name: '다시 시도' })
     expect(screen.getByRole('alert')).toBeInTheDocument()

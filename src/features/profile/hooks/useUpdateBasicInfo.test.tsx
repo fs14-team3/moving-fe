@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { updateBasicInfo } from '@/features/profile/api'
 import { useUpdateBasicInfo } from '@/features/profile/hooks/useUpdateBasicInfo'
@@ -29,7 +29,7 @@ const me: Me = {
 function renderUseUpdateBasicInfo() {
   const onFieldErrors = vi.fn()
   const queryClient = new QueryClient()
-  queryClient.setQueryData(meQueryKey, me)
+  queryClient.setQueryData(queryKeys.user.me(), me)
 
   const { result } = renderHook(() => useUpdateBasicInfo(onFieldErrors), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -57,7 +57,7 @@ describe('useUpdateBasicInfo', () => {
       { name: '김코드' },
       expect.anything(),
     )
-    expect(queryClient.getQueryData(meQueryKey)).toEqual(updated)
+    expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(updated)
     expect(toast.success).toHaveBeenCalledWith(
       TOAST_MESSAGES.profile.basicInfoUpdateSuccess,
     )
@@ -113,7 +113,7 @@ describe('useUpdateBasicInfo', () => {
         ),
       )
       expect(onFieldErrors).not.toHaveBeenCalled()
-      expect(queryClient.getQueryData(meQueryKey)).toEqual(me)
+      expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(me)
     },
   )
 })

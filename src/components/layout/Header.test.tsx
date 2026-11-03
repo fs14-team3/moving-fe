@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import Header from '@/components/layout/Header'
 import { NAV_ITEMS } from '@/constants/navigation'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 
 vi.mock('next/navigation', () => ({
@@ -33,7 +33,7 @@ function renderHeader(user?: Me | null) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   })
-  if (user !== undefined) queryClient.setQueryData(meQueryKey, user)
+  if (user !== undefined) queryClient.setQueryData(queryKeys.user.me(), user)
 
   render(
     <QueryClientProvider client={queryClient}>

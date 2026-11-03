@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import { handleUnauthorized, resetSession } from '@/features/auth/lib/session'
 import type { Me, Role } from '@/features/auth/types'
 
@@ -24,7 +24,7 @@ const quotesQueryKey = ['quotes']
 
 function createQueryClient(me?: Me) {
   const queryClient = new QueryClient()
-  if (me) queryClient.setQueryData(meQueryKey, me)
+  if (me) queryClient.setQueryData(queryKeys.user.me(), me)
   queryClient.setQueryData(quotesQueryKey, [])
   return queryClient
 }
@@ -43,7 +43,7 @@ describe('resetSession', () => {
 
     await resetSession(queryClient, null)
 
-    expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+    expect(queryClient.getQueryData(queryKeys.user.me())).toBeNull()
     expect(
       queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
     ).toBeUndefined()
@@ -53,7 +53,7 @@ describe('resetSession', () => {
     const queryClient = createQueryClient()
     let resolveMe: (me: Me) => void = () => {}
     const request = queryClient.fetchQuery({
-      queryKey: meQueryKey,
+      queryKey: queryKeys.user.me(),
       queryFn: () =>
         new Promise<Me>((resolve) => {
           resolveMe = resolve
@@ -64,7 +64,7 @@ describe('resetSession', () => {
     resolveMe(user)
     await request.catch(() => {})
 
-    expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+    expect(queryClient.getQueryData(queryKeys.user.me())).toBeNull()
   })
 
   it('이전 세션의 쿼리를 지우고 새 내 정보로 시작한다', async () => {
@@ -73,7 +73,7 @@ describe('resetSession', () => {
 
     await resetSession(queryClient, mover)
 
-    expect(queryClient.getQueryData(meQueryKey)).toEqual(mover)
+    expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(mover)
     expect(
       queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
     ).toBeUndefined()
@@ -91,7 +91,7 @@ describe('handleUnauthorized', () => {
 
     await handleUnauthorized(queryClient, router)
 
-    expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+    expect(queryClient.getQueryData(queryKeys.user.me())).toBeNull()
     expect(
       queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
     ).toBeDefined()
@@ -111,7 +111,7 @@ describe('handleUnauthorized', () => {
 
       await handleUnauthorized(queryClient, router)
 
-      expect(queryClient.getQueryData(meQueryKey)).toBeNull()
+      expect(queryClient.getQueryData(queryKeys.user.me())).toBeNull()
       expect(
         queryClient.getQueryCache().find({ queryKey: quotesQueryKey }),
       ).toBeUndefined()

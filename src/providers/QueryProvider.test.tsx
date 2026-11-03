@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { ApiError } from '@/lib/api-error'
 import QueryProvider from '@/providers/QueryProvider'
@@ -32,7 +32,7 @@ function renderWithProvider<T>(hook: () => T) {
     () => ({ queryClient: useQueryClient(), value: hook() }),
     { wrapper: QueryProvider },
   )
-  result.current.queryClient.setQueryData(meQueryKey, user)
+  result.current.queryClient.setQueryData(queryKeys.user.me(), user)
   return result
 }
 

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { signup } from '@/features/auth/api'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { PASSWORD_RULE_MESSAGE } from '@/features/auth/lib/validation'
@@ -43,7 +43,7 @@ function createApiError(status: number, fields: string[] = []) {
 function renderUseSignup() {
   const onFieldErrors = vi.fn()
   const queryClient = new QueryClient()
-  queryClient.setQueryData(meQueryKey, null)
+  queryClient.setQueryData(queryKeys.user.me(), null)
 
   const { result } = renderHook(() => useSignup(onFieldErrors), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -66,7 +66,7 @@ describe('useSignup', () => {
     act(() => result.current.mutate(body))
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(queryClient.getQueryData(meQueryKey)).toEqual(user)
+    expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(user)
   })
 
   it('서버가 알려 준 입력란에만 오류를 표시하고 모르는 필드는 무시한다', async () => {

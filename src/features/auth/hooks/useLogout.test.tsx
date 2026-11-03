@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { logout } from '@/features/auth/api'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { useLogout } from '@/features/auth/hooks/useLogout'
 
@@ -27,7 +27,7 @@ const user: Me = {
 
 function renderUseLogout() {
   const queryClient = new QueryClient()
-  queryClient.setQueryData(meQueryKey, user)
+  queryClient.setQueryData(queryKeys.user.me(), user)
 
   const { result } = renderHook(() => useLogout(), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -68,7 +68,7 @@ describe('useLogout', () => {
         TOAST_MESSAGES.auth.logoutFailed,
       ),
     )
-    expect(queryClient.getQueryData(meQueryKey)).toEqual(user)
+    expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(user)
     expect(mocks.replace).not.toHaveBeenCalled()
   })
 })

@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import { createProfile } from '@/features/profile/api'
 import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile'
@@ -42,7 +42,7 @@ const body = { serviceTypes: ['SMALL' as const], regions: ['서울'] }
 function renderUseCreateProfile(role: Role) {
   const onFieldErrors = vi.fn()
   const queryClient = new QueryClient()
-  queryClient.setQueryData(meQueryKey, createUser(role))
+  queryClient.setQueryData(queryKeys.user.me(), createUser(role))
 
   const { result } = renderHook(() => useCreateProfile(role, onFieldErrors), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -74,7 +74,7 @@ describe('useCreateProfile', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(createProfile).toHaveBeenCalledWith(role, body)
-    expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
+    expect(queryClient.getQueryData(queryKeys.user.me())).toMatchObject({
       hasProfile: true,
       [profileField]: body,
     })
@@ -85,7 +85,7 @@ describe('useCreateProfile', () => {
     vi.mocked(createProfile).mockResolvedValue(body)
     const { result, queryClient } = renderUseCreateProfile('CUSTOMER')
     void queryClient.prefetchQuery({
-      queryKey: meQueryKey,
+      queryKey: queryKeys.user.me(),
       queryFn: () => staleMe.promise,
     })
 
@@ -94,7 +94,7 @@ describe('useCreateProfile', () => {
 
     await act(async () => staleMe.resolve(createUser('CUSTOMER')))
 
-    expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
+    expect(queryClient.getQueryData(queryKeys.user.me())).toMatchObject({
       hasProfile: true,
       customerProfile: body,
     })
@@ -181,7 +181,7 @@ describe('useCreateProfile', () => {
       ),
     )
     expect(onFieldErrors).not.toHaveBeenCalled()
-    expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
+    expect(queryClient.getQueryData(queryKeys.user.me())).toMatchObject({
       hasProfile: false,
     })
   })

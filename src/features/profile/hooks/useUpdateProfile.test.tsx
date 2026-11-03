@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { meQueryKey } from '@/features/auth/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import { updateProfile } from '@/features/profile/api'
 import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile'
@@ -35,7 +35,7 @@ function createUser(role: Role): Me {
 function renderUseUpdateProfile(role: Role) {
   const onFieldErrors = vi.fn()
   const queryClient = new QueryClient()
-  queryClient.setQueryData(meQueryKey, createUser(role))
+  queryClient.setQueryData(queryKeys.user.me(), createUser(role))
 
   const { result } = renderHook(() => useUpdateProfile(role, onFieldErrors), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -64,7 +64,7 @@ describe('useUpdateProfile', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(updateProfile).toHaveBeenCalledWith(role, body)
-      expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
+      expect(queryClient.getQueryData(queryKeys.user.me())).toMatchObject({
         [profileField]: body,
       })
       expect(toast.success).toHaveBeenCalledWith(
@@ -122,7 +122,7 @@ describe('useUpdateProfile', () => {
         ),
       )
       expect(onFieldErrors).not.toHaveBeenCalled()
-      expect(queryClient.getQueryData(meQueryKey)).toMatchObject({
+      expect(queryClient.getQueryData(queryKeys.user.me())).toMatchObject({
         customerProfile: savedProfile,
       })
     },

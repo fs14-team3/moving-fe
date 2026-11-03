@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, type ChangeEvent } from 'react'
-import AuthField from '@/components/auth/AuthField'
+import AuthTextField from '@/components/auth/AuthTextField'
 import AuthForm from '@/components/auth/AuthForm'
 import AuthHeader from '@/components/auth/AuthHeader'
 import AuthPrompt from '@/components/auth/AuthPrompt'
@@ -92,21 +92,21 @@ export default function SignupForm({ role }: { role: Role }) {
           })
         }
       >
-        <AuthField
+        <AuthTextField
           label="이름"
           type="text"
           autoComplete="name"
           placeholder="성함을 입력해 주세요"
           {...fieldProps('name')}
         />
-        <AuthField
+        <AuthTextField
           label="이메일"
           type="email"
           autoComplete="email"
           placeholder="이메일을 입력해 주세요"
           {...fieldProps('email')}
         />
-        <AuthField
+        <AuthTextField
           label="전화번호"
           type="tel"
           inputMode="numeric"
@@ -114,14 +114,14 @@ export default function SignupForm({ role }: { role: Role }) {
           placeholder="숫자만 입력해 주세요"
           {...fieldProps('phone', toPhoneDigits)}
         />
-        <AuthField
+        <AuthTextField
           label="비밀번호"
           type="password"
           autoComplete="new-password"
           placeholder="비밀번호를 입력해 주세요"
           {...fieldProps('password')}
         />
-        <AuthField
+        <AuthTextField
           label="비밀번호 확인"
           type="password"
           autoComplete="new-password"

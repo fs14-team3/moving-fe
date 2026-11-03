@@ -5,6 +5,7 @@ import AuthField from '@/components/auth/AuthField'
 import AuthForm from '@/components/auth/AuthForm'
 import AuthHeader from '@/components/auth/AuthHeader'
 import AuthPrompt from '@/components/auth/AuthPrompt'
+import SocialLogin from '@/components/auth/SocialLogin'
 import { LOGIN_PATH, SIGNUP_PATH } from '@/features/auth/lib/paths'
 import type { Role } from '@/features/auth/types'
 import { useSignup } from '@/features/auth/hooks/useSignup'
@@ -135,6 +136,8 @@ export default function SignupForm({ role }: { role: Role }) {
         href={LOGIN_PATH[role]}
         className="mt-4 md:mt-6"
       />
+
+      <SocialLogin role={role} />
     </>
   )
 }

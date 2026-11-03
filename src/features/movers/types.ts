@@ -42,3 +42,5 @@ export type MoverReviewListParams = NonNullable<
 >
 
 export type MoverReviewListResponse = Schemas['MoverReviewListResponse']
+
+export type FavoriteState = Schemas['FavoriteState']

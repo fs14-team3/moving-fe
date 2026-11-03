@@ -4,6 +4,8 @@ type Schemas = components['schemas']
 
 export type Role = Schemas['Role']
 
+export type SocialProvider = components['parameters']['ProviderPath']
+
 export type Me = Schemas['Me']
 
 export type LoginRequest = Schemas['LoginRequest']

@@ -2,6 +2,7 @@ export const TOAST_MESSAGES = {
   auth: {
     loginFailed: '로그인에 실패했습니다.',
     invalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다.',
+    socialLoginFailed: '소셜 로그인에 실패했습니다.',
     signupFailed: '계정 생성에 실패했습니다.',
     sessionExpired: '로그인이 만료되었습니다. 다시 로그인해 주세요.',
     logoutFailed: '로그아웃에 실패했습니다.',
@@ -12,6 +13,9 @@ export const TOAST_MESSAGES = {
   },
 
   favorite: {
+    loginRequired: '로그인 후 이용할 수 있습니다.',
+    customerOnly: '일반 회원만 이용할 수 있습니다.',
+    profileRequired: '프로필 등록 후 이용할 수 있습니다.',
     updateFailed: '찜 처리에 실패했습니다.',
   },
 
@@ -24,6 +28,9 @@ export const TOAST_MESSAGES = {
 
     sendSuccess: '견적을 보냈습니다.',
     sendFailed: '견적 전송에 실패했습니다.',
+    quoteLimitReached: '이 요청은 견적을 더 받을 수 없습니다.',
+    requestNotPending: '이미 마감된 요청입니다.',
+    notInServiceArea: '서비스 가능 지역의 요청에만 견적을 보낼 수 있습니다.',
 
     rejectSuccess: '견적 요청을 반려했습니다.',
     rejectFailed: '견적 요청 반려에 실패했습니다.',

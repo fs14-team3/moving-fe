@@ -1,9 +1,14 @@
 'use client'
 
+import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
+import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
 import type { Mover } from '@/features/movers/types'
 import { Check, Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import ServiceTypeChip from './ServiceTypeChip'
 
 type MoverCardProps = {
@@ -17,14 +22,52 @@ export default function MoverCard({
   selected = false,
   onSelect,
 }: MoverCardProps) {
+  // API 상태
+  const { user, isPending: isUserPending } = useCurrentUser()
+  const { mutate: addFavorite, isPending: isAddingFavorite } = useAddFavorite(
+    mover.id,
+  )
+  const { mutate: removeFavorite, isPending: isRemovingFavorite } =
+    useRemoveFavorite(mover.id)
+
+  const isFavoritePending = isAddingFavorite || isRemovingFavorite
+  const isFavoriteDisabled = isUserPending || isFavoritePending
+
+  // 화면 표시용 데이터
   const serviceTypes = mover.serviceTypes ?? []
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const description = mover.description?.trim() || '등록된 설명이 없습니다.'
   const nickname = mover.nickname?.trim() || '익명'
+  const isFavorite = mover.isFavorite
   const favoriteCount = mover.favoriteCount ?? '-'
   const rating = mover.averageRating.toFixed(1)
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
+
+  // 핸들러
+  function handleFavorite() {
+    if (!user) {
+      toast.info(TOAST_MESSAGES.favorite.loginRequired)
+      return
+    }
+
+    if (user.role !== 'CUSTOMER') {
+      toast.info(TOAST_MESSAGES.favorite.customerOnly)
+      return
+    }
+
+    if (!user.hasProfile) {
+      toast.info(TOAST_MESSAGES.favorite.profileRequired)
+      return
+    }
+
+    if (isFavorite) {
+      removeFavorite()
+      return
+    }
+
+    addFavorite()
+  }
 
   return (
     <div className="relative flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] md:px-7 md:py-6">
@@ -102,13 +145,15 @@ export default function MoverCard({
           <div className="col-start-2 row-start-1 flex items-center gap-1 justify-self-end md:row-start-2">
             <button
               type="button"
-              aria-label={mover.isFavorite ? '찜 해제' : '찜하기'}
-              className="relative z-10 cursor-pointer"
+              aria-label={isFavorite ? '찜 해제' : '찜하기'}
+              disabled={isFavoriteDisabled}
+              onClick={handleFavorite}
+              className="relative z-10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Heart
                 aria-hidden="true"
                 className={
-                  mover.isFavorite
+                  isFavorite
                     ? 'size-4 fill-red-500 text-red-500'
                     : 'size-4 fill-transparent text-gray-300'
                 }

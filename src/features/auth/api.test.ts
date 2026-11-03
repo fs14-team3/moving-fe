@@ -1,6 +1,12 @@
 import type { AxiosAdapter } from 'axios'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getMe, login, logout, signup } from '@/features/auth/api'
+import {
+  getMe,
+  getSocialLoginUrl,
+  login,
+  logout,
+  signup,
+} from '@/features/auth/api'
 import type { Me } from '@/features/auth/types'
 import api from '@/lib/api'
 import { ApiError } from '@/lib/api-error'
@@ -60,6 +66,21 @@ describe('login', () => {
 
     await expect(login(body)).resolves.toEqual(user)
     expect(post).toHaveBeenCalledWith('/auth/login', body)
+  })
+})
+
+describe('getSocialLoginUrl', () => {
+  it('API 주소 아래 소셜 로그인 시작 주소에 유저 타입을 담는다', () => {
+    const { baseURL } = api.defaults
+    api.defaults.baseURL = 'https://api.example.com/api'
+
+    try {
+      expect(getSocialLoginUrl('kakao', 'MOVER')).toBe(
+        'https://api.example.com/api/auth/kakao?role=MOVER',
+      )
+    } finally {
+      api.defaults.baseURL = baseURL
+    }
   })
 })
 

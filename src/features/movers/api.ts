@@ -24,6 +24,12 @@ export async function getMover(moverId: MoverId) {
   return data
 }
 
+export async function getMyMover() {
+  const { data } = await api.get<MoverDetail>('/movers/me')
+
+  return data
+}
+
 export async function getFavoriteMovers(params?: FavoriteMoverListParams) {
   const { data } = await api.get<MoverListResponse>('/customers/me/favorites', {
     params,

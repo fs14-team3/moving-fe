@@ -1,6 +1,6 @@
 'use client'
 
-import { LoaderCircle, X } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
 import {
   useCallback,
@@ -224,9 +224,15 @@ export default function NotificationMenu() {
                 close()
                 triggerRef.current?.focus()
               }}
-              className="flex size-6 items-center justify-center text-gray-500"
+              className="flex size-6 items-center justify-center"
             >
-              <X strokeWidth={1.5} className="size-6" />
+              <Image
+                src="/assets/icons/Xicon.png"
+                alt=""
+                width={72}
+                height={72}
+                className="size-6"
+              />
             </button>
           </div>
           {renderContent()}

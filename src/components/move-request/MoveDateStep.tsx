@@ -9,14 +9,30 @@ import {
 import { ko } from '@daypicker/react/locale'
 import '@daypicker/react/style.css'
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '../common/button/Button'
 
 export default function MoveDateStep() {
   const defaultClassNames = getDefaultClassNames()
+  const calendarRef = useRef<HTMLDivElement>(null)
 
   const [isOpen, setIsOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>()
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!calendarRef.current?.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
   function CalendarChevron({ orientation }: ChevronProps) {
     const Icon = orientation === 'left' ? ChevronLeft : ChevronRight
@@ -49,7 +65,7 @@ export default function MoveDateStep() {
   }
 
   return (
-    <div className="w-full md:relative md:w-100 md:shrink-0">
+    <div ref={calendarRef} className="w-full md:relative md:w-100 md:shrink-0">
       <button
         type="button"
         aria-haspopup="dialog"

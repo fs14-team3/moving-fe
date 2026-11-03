@@ -76,8 +76,8 @@ export default function MoveTypeStep() {
             <div className="mt-auto flex h-30 items-end justify-end md:w-full">
               <Image
                 src={imageSrc}
-                width={value === 'HOME' ? 100 : 120}
-                height={value === 'HOME' ? 100 : 120}
+                width={value === 'HOME' ? 110 : 120}
+                height={value === 'HOME' ? 110 : 120}
                 alt=""
               />
             </div>

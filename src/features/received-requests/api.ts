@@ -19,6 +19,12 @@ type ReceivedRequestPage = Schemas['ReceivedRequestListResponse'] & {
 
 export type QuoteCreate = Schemas['QuoteCreate']
 
+export type RejectedRequest = Schemas['RejectedRequest']
+
+type RejectedRequestQuery = NonNullable<
+  operations['listMyRejectedRequests']['parameters']['query']
+>
+
 export async function getReceivedRequests(query: ReceivedRequestQuery) {
   const { data } = await api.get<ReceivedRequestPage>(
     '/movers/me/received-requests',
@@ -40,8 +46,16 @@ export async function sendQuote(requestId: string, body: QuoteCreate) {
 }
 
 export async function rejectRequest(requestId: string) {
-  const { data } = await api.post<Schemas['RejectedRequest']>(
+  const { data } = await api.post<RejectedRequest>(
     `/move-requests/${requestId}/rejections`,
+  )
+  return data
+}
+
+export async function getRejectedRequests(query: RejectedRequestQuery = {}) {
+  const { data } = await api.get<Schemas['RejectedRequestListResponse']>(
+    '/movers/me/rejected-requests',
+    { params: query },
   )
   return data
 }

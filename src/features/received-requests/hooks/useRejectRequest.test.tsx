@@ -34,7 +34,7 @@ describe('useRejectRequest', () => {
     vi.clearAllMocks()
   })
 
-  it('반려하면 알리고 받은 요청 목록을 다시 불러온다', async () => {
+  it('반려하면 알리고 받은 요청 목록과 반려한 요청 목록을 다시 불러온다', async () => {
     vi.mocked(rejectRequest).mockResolvedValue({} as RejectedRequest)
     const { result, invalidateQueries } = renderUseRejectRequest()
 
@@ -47,6 +47,9 @@ describe('useRejectRequest', () => {
     )
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.receivedRequests.lists(),
+    })
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.receivedRequests.rejected(),
     })
   })
 

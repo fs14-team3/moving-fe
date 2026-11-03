@@ -38,7 +38,7 @@ export default function AddressSearchModal({
         extraAddress +=
           extraAddress !== '' ? `, ${data.buildingName}` : data.buildingName
       }
-      fullAddress += extraAddress !== '' ? `(${extraAddress})` : ''
+      fullAddress += extraAddress !== '' ? ` (${extraAddress})` : ''
     }
 
     onSelect({ address: fullAddress, zonecode: data.zonecode })
@@ -50,10 +50,9 @@ export default function AddressSearchModal({
       open={open}
       onClose={onClose}
       title={title}
-      mobileSheet={false}
-      className="h-[446px] shadow-[4px_4px_10px_0_rgba(169,169,169,0.20)]"
+      className="shadow-[4px_4px_10px_0_rgba(169,169,169,0.20)]"
     >
-      <KakaoPostcodeEmbed onComplete={handleComplete} />
+      <KakaoPostcodeEmbed style={{ height: 400 }} onComplete={handleComplete} />
     </Modal>
   )
 }

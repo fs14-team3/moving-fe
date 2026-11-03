@@ -1,10 +1,14 @@
+import MoverDetailPage from '@/app/movers/[id]/page'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import type { Me } from '@/features/auth/types'
+import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
+import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
+import { useMover } from '@/features/movers/hooks/useMover'
+import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
+import { ApiError } from '@/lib/api-error'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import MoverDetailPage from '@/app/movers/[id]/page'
-import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
-import { useMover } from '@/features/movers/hooks/useMover'
-import { ApiError } from '@/lib/api-error'
 
 const navigation = vi.hoisted(() => ({
   moverId: '1',
@@ -31,6 +35,18 @@ vi.mock('@/features/movers/hooks/useMover', () => ({
   useMover: vi.fn(),
 }))
 
+vi.mock('@/features/auth/hooks/useCurrentUser', () => ({
+  useCurrentUser: vi.fn(),
+}))
+
+vi.mock('@/features/movers/hooks/useAddFavorite', () => ({
+  useAddFavorite: vi.fn(),
+}))
+
+vi.mock('@/features/movers/hooks/useRemoveFavorite', () => ({
+  useRemoveFavorite: vi.fn(),
+}))
+
 vi.mock('@/components/mover/KakaoScript', () => ({
   default: () => null,
 }))
@@ -53,11 +69,37 @@ function createMoverResult(
   }
 }
 
+const customer: Me = {
+  id: 'customer-1',
+  role: 'CUSTOMER',
+  name: '김고객',
+  email: null,
+  phone: null,
+  hasProfile: true,
+  customerProfile: null,
+  moverProfile: null,
+}
+
 describe('MoverDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     navigation.moverId = '1'
     vi.mocked(useMover).mockReturnValue(createMoverResult())
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: null,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useAddFavorite).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    })
+    vi.mocked(useRemoveFavorite).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    })
   })
 
   it('기사님 상세 정보를 보여 준다', () => {
@@ -118,5 +160,50 @@ describe('MoverDetailPage', () => {
       '기사님 정보를 찾을 수 없습니다.',
       { id: 'mover-not-found' },
     )
+  })
+
+  it('찜한 기사님은 찜을 해제한다', async () => {
+    const removeFavorite = vi.fn()
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useRemoveFavorite).mockReturnValue({
+      mutate: removeFavorite,
+      isPending: false,
+    })
+
+    const user = userEvent.setup()
+    render(<MoverDetailPage />)
+    await user.click(screen.getByRole('button', { name: '찜 해제' }))
+
+    expect(removeFavorite).toHaveBeenCalled()
+  })
+
+  it('찜하지 않은 기사님은 찜한다', async () => {
+    const addFavorite = vi.fn()
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useMover).mockReturnValue(
+      createMoverResult({ mover: MOCK_MOVER_DETAILS[1] }),
+    )
+    vi.mocked(useAddFavorite).mockReturnValue({
+      mutate: addFavorite,
+      isPending: false,
+    })
+
+    const user = userEvent.setup()
+    render(<MoverDetailPage />)
+    await user.click(screen.getByRole('button', { name: '기사님 찜하기' }))
+
+    expect(addFavorite).toHaveBeenCalled()
   })
 })

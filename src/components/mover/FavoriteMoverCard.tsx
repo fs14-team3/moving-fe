@@ -1,3 +1,6 @@
+'use client'
+
+import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
 import type { Mover } from '@/features/movers/types'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
@@ -9,9 +12,15 @@ type FavoriteMoverCardProps = {
 }
 
 export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
+  // API 상태
+  const { mutate: removeFavorite, isPending: isRemovingFavorite } =
+    useRemoveFavorite(mover.id)
+
+  // 화면 표시 데이터
   const serviceTypes = mover.serviceTypes ?? []
-  const nickname = mover.nickname?.trim() || '익명'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
+  const nickname = mover.nickname?.trim() || '익명'
+  const rating = mover.averageRating.toFixed(1)
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
 
@@ -49,7 +58,9 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
             <button
               type="button"
               aria-label="찜 해제"
-              className="relative z-10 cursor-pointer"
+              disabled={isRemovingFavorite}
+              onClick={() => removeFavorite()}
+              className="relative z-10 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Heart
                 aria-hidden="true"
@@ -63,9 +74,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
                 aria-hidden="true"
                 className="size-[14px] fill-yellow-400 text-yellow-400"
               />
-              <p className="text-xs leading-5 font-medium">
-                {mover.averageRating}
-              </p>
+              <p className="text-xs leading-5 font-medium">{rating}</p>
               <p className="text-xs leading-5 font-medium text-gray-400">
                 ({mover.reviewCount})
               </p>

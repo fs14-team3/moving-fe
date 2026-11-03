@@ -12,6 +12,9 @@ export const TOAST_MESSAGES = {
   },
 
   favorite: {
+    loginRequired: '로그인 후 이용할 수 있습니다.',
+    customerOnly: '일반 회원만 이용할 수 있습니다.',
+    profileRequired: '프로필 등록 후 이용할 수 있습니다.',
     updateFailed: '찜 처리에 실패했습니다.',
   },
 

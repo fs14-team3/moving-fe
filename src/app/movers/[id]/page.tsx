@@ -8,7 +8,10 @@ import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { getServiceTypeLabel } from '@/constants/services'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
 import { useMover } from '@/features/movers/hooks/useMover'
+import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
 import { isApiError } from '@/lib/api-error'
 import { Heart, LoaderCircle, Star } from 'lucide-react'
 import Image from 'next/image'
@@ -17,14 +20,28 @@ import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 export default function MoverDetailPage() {
+  // 라우팅 및 API 상태
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
+
+  const { user, isPending: isUserPending } = useCurrentUser()
+
   const { mover, error, isPending, isError, refetch, isRefetching } =
     useMover(id)
+
+  const { mutate: addFavorite, isPending: isAddingFavorite } =
+    useAddFavorite(id)
+
+  const { mutate: removeFavorite, isPending: isRemovingFavorite } =
+    useRemoveFavorite(id)
 
   const isNotFound =
     isApiError(error) && (error.status === 400 || error.status === 404)
 
+  const isFavoritePending = isAddingFavorite || isRemovingFavorite
+  const isFavoriteDisabled = isUserPending || isFavoritePending
+
+  // 부수 효과
   useEffect(() => {
     if (!isNotFound) return
 
@@ -34,6 +51,7 @@ export default function MoverDetailPage() {
     router.replace('/movers')
   }, [isNotFound, router])
 
+  // 비동기 상태 처리
   if (isPending) {
     return (
       <main
@@ -70,21 +88,26 @@ export default function MoverDetailPage() {
       </main>
     )
   }
+
   if (!mover) return null
 
+  // 화면 표시 데이터
   const imageUrl = mover.imageUrl || '/assets/images/profile.png'
   const serviceTypes = mover.serviceTypes ?? []
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const nickname = mover.nickname?.trim() || '익명'
+  const isFavorite = mover.isFavorite
   const favoriteCount = mover.favoriteCount ?? '-'
   const description =
     mover.description?.trim() || '등록된 상세 설명이 없습니다.'
+  const confirmedCount = mover.confirmedCount
   const rating = mover.averageRating.toFixed(1)
+  const reviewCount = mover.reviewCount
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
-
   const regions = mover.regions ?? []
 
+  // 이벤트 핸들러
   async function handleCopyLink() {
     try {
       const currentUrl = window.location.href
@@ -94,6 +117,7 @@ export default function MoverDetailPage() {
       toast.error(TOAST_MESSAGES.common.linkCopyFailed)
     }
   }
+
   function handleKakaoShare() {
     const Kakao = window.Kakao
 
@@ -129,6 +153,7 @@ export default function MoverDetailPage() {
       ],
     })
   }
+
   function handleFacebookShare() {
     const shareUrl = encodeURIComponent(window.location.href)
 
@@ -137,6 +162,30 @@ export default function MoverDetailPage() {
       '_blank',
       'noopener,noreferrer,width=600,height=400',
     )
+  }
+
+  function handleFavorite() {
+    if (!user) {
+      toast.info(TOAST_MESSAGES.favorite.loginRequired)
+      return
+    }
+
+    if (user.role !== 'CUSTOMER') {
+      toast.info(TOAST_MESSAGES.favorite.customerOnly)
+      return
+    }
+
+    if (!user.hasProfile) {
+      toast.info(TOAST_MESSAGES.favorite.profileRequired)
+      return
+    }
+
+    if (isFavorite) {
+      removeFavorite()
+      return
+    }
+
+    addFavorite()
   }
 
   return (
@@ -191,8 +240,10 @@ export default function MoverDetailPage() {
 
                 <button
                   type="button"
-                  aria-label={mover.isFavorite ? '찜 해제' : '찜하기'}
-                  className="flex cursor-pointer items-center gap-[6px]"
+                  aria-label={isFavorite ? '찜 해제하기' : '찜하기'}
+                  disabled={isFavoriteDisabled}
+                  onClick={handleFavorite}
+                  className="flex cursor-pointer items-center gap-[6px] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span className="text-sm leading-6 font-medium text-gray-500 md:text-lg">
                     {favoriteCount}
@@ -200,7 +251,7 @@ export default function MoverDetailPage() {
                   <Heart
                     aria-hidden="true"
                     className={
-                      mover.isFavorite
+                      isFavorite
                         ? 'size-4 fill-red-500 text-red-500'
                         : 'size-4 fill-transparent text-gray-300'
                     }
@@ -222,7 +273,7 @@ export default function MoverDetailPage() {
                   진행
                 </dt>
                 <dd className="text-base leading-6 font-semibold md:text-xl md:font-bold">
-                  {mover.confirmedCount}건
+                  {confirmedCount}건
                 </dd>
               </div>
 
@@ -237,7 +288,7 @@ export default function MoverDetailPage() {
                   />
                   <span>{rating}</span>
                   <span className="text-sm leading-6 font-medium text-gray-400 md:text-base">
-                    ({mover.reviewCount})
+                    ({reviewCount})
                   </span>
                 </dd>
               </div>
@@ -295,8 +346,10 @@ export default function MoverDetailPage() {
               <div className="flex w-full items-center gap-2 lg:flex-col lg:gap-4">
                 <IconButton
                   icon="like"
-                  aria-label={mover.isFavorite ? '찜 해제' : '찜하기'}
-                  className="size-[54px] lg:hidden"
+                  aria-label={isFavorite ? '찜 해제' : '찜하기'}
+                  disabled={isFavoriteDisabled}
+                  onClick={handleFavorite}
+                  className="size-[54px] disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
                 />
                 <Button className="w-auto min-w-0 flex-1 lg:w-full lg:flex-none">
                   지정 견적 요청하기
@@ -309,9 +362,11 @@ export default function MoverDetailPage() {
                     />
                   }
                   variant="outlined"
-                  className="hidden border-line-200 text-black lg:flex lg:w-full"
+                  disabled={isFavoriteDisabled}
+                  onClick={handleFavorite}
+                  className="hidden border-line-200 text-black disabled:cursor-not-allowed disabled:opacity-50 lg:flex lg:w-full"
                 >
-                  기사님 찜하기
+                  {isFavorite ? '찜 해제하기' : '기사님 찜하기'}
                 </Button>
               </div>
             </aside>

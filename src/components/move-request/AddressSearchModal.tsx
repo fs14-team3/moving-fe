@@ -28,7 +28,7 @@ export default function AddressSearchModal({
       mobileSheet={false}
       className="h-[446px] shadow-[4px_4px_10px_0_rgba(169,169,169,0.20)]"
     >
-      p
+      {`TODO: 카카오 우편번호 연동`}
     </Modal>
   )
 }

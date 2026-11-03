@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import type { ServiceType } from '@/constants/services'
+import { type SubmitEvent, useState } from 'react'
 import Button from '../common/button/Button'
 import MoveAddressStep from './MoveAddressStep'
 import MoveDateStep from './MoveDateStep'
@@ -16,8 +17,35 @@ const STEP_TITLES = [
 export default function MoveRequestForm() {
   const [currentStep, setCurrentStep] = useState(1)
 
+  const [moveType, setMoveType] = useState<ServiceType | null>(null)
+  const [moveDate, setMoveDate] = useState<Date>()
+  const [departureAddress, setDepartureAddress] = useState('')
+  const [arrivalAddress, setArrivalAddress] = useState('')
+
+  const isFormComplete = Boolean(
+    moveType && moveDate && departureAddress && arrivalAddress,
+  )
+
+  const canMoveNext =
+    currentStep === 1
+      ? Boolean(moveType)
+      : currentStep === 2
+        ? Boolean(moveDate)
+        : isFormComplete
+
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!isFormComplete) return
+
+    // TODO: 견적 요청 API 연결
+  }
+
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-54px)] w-full flex-col bg-white px-6 py-9 md:min-h-[1005px] md:w-175 md:rounded-[40px] md:px-10 lg:w-[894px] lg:px-[47px]">
+    <form
+      onSubmit={handleSubmit}
+      className="mx-auto flex min-h-[calc(100dvh-54px)] w-full flex-col bg-white px-6 py-9 md:min-h-[1005px] md:w-175 md:rounded-[40px] md:px-10 lg:w-[894px] lg:px-[47px]"
+    >
       <header className="flex flex-col items-center gap-2">
         <div className="flex items-center gap-2 md:hidden">
           {[1, 2, 3].map((step) => (
@@ -46,7 +74,7 @@ export default function MoveRequestForm() {
       </header>
 
       <MoveRequestStep title="이사 유형" isActive={currentStep === 1}>
-        <MoveTypeStep />
+        <MoveTypeStep value={moveType} onChange={setMoveType} />
       </MoveRequestStep>
 
       <MoveRequestStep
@@ -54,7 +82,7 @@ export default function MoveRequestForm() {
         isActive={currentStep === 2}
         direction="row"
       >
-        <MoveDateStep />
+        <MoveDateStep value={moveDate} onChange={setMoveDate} />
       </MoveRequestStep>
 
       <MoveRequestStep
@@ -62,7 +90,12 @@ export default function MoveRequestForm() {
         isActive={currentStep === 3}
         direction="row"
       >
-        <MoveAddressStep />
+        <MoveAddressStep
+          departureAddress={departureAddress}
+          arrivalAddress={arrivalAddress}
+          onDepartureChange={setDepartureAddress}
+          onArrivalChange={setArrivalAddress}
+        />
       </MoveRequestStep>
 
       <section className="mt-auto flex gap-4 md:hidden">
@@ -70,7 +103,7 @@ export default function MoveRequestForm() {
           variant="outlined"
           type="button"
           disabled={currentStep === 1}
-          onClick={() => setCurrentStep(currentStep - 1)}
+          onClick={() => setCurrentStep((prev) => prev - 1)}
           className="cursor-pointer disabled:cursor-not-allowed"
         >
           이전
@@ -79,13 +112,25 @@ export default function MoveRequestForm() {
         <Button
           variant="solid"
           type={currentStep === 3 ? 'submit' : 'button'}
-          disabled={currentStep === 3}
-          onClick={() => setCurrentStep(currentStep + 1)}
+          disabled={!canMoveNext}
+          onClick={
+            currentStep < 3
+              ? () => setCurrentStep((prev) => prev + 1)
+              : undefined
+          }
           className="cursor-pointer disabled:cursor-not-allowed"
         >
           {currentStep === 3 ? '견적 요청하기' : '다음'}
         </Button>
       </section>
-    </div>
+
+      <Button
+        type="submit"
+        disabled={!isFormComplete}
+        className="mt-auto hidden self-end md:flex md:h-14 md:w-50 lg:h-14 lg:w-50"
+      >
+        견적 요청하기
+      </Button>
+    </form>
   )
 }

@@ -3,7 +3,11 @@
 import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import { Check, Circle } from 'lucide-react'
 import Image from 'next/image'
-import { useState } from 'react'
+
+type MoveTypeStepProps = {
+  value: ServiceType | null
+  onChange: (value: ServiceType | null) => void
+}
 
 const MOVE_TYPE_DETAILS: Record<
   ServiceType,
@@ -26,21 +30,19 @@ const MOVE_TYPE_DETAILS: Record<
   },
 }
 
-export default function MoveTypeStep() {
-  const [selectedType, setSelectedType] = useState<ServiceType | null>(null)
-
+export default function MoveTypeStep({ value, onChange }: MoveTypeStepProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row">
-      {SERVICE_TYPE_OPTIONS.map(({ value, label }) => {
-        const isSelected = selectedType === value
-        const { description, imageSrc } = MOVE_TYPE_DETAILS[value]
+      {SERVICE_TYPE_OPTIONS.map(({ value: optionValue, label }) => {
+        const isSelected = value === optionValue
+        const { description, imageSrc } = MOVE_TYPE_DETAILS[optionValue]
 
         return (
           <button
-            key={value}
+            key={optionValue}
             type="button"
             aria-pressed={isSelected}
-            onClick={() => setSelectedType(value)}
+            onClick={() => onChange(optionValue)}
             className={`relative flex cursor-pointer items-center justify-between rounded-2xl bg-gray-100 p-4 md:h-[222px] md:w-full md:flex-col md:items-start md:gap-3 md:px-4 md:py-5 ${isSelected ? 'border border-primary-400 bg-primary-100' : ''}`}
           >
             <div className="md:flex md:gap-2">
@@ -76,8 +78,8 @@ export default function MoveTypeStep() {
             <div className="mt-auto flex h-30 items-end justify-end md:w-full">
               <Image
                 src={imageSrc}
-                width={value === 'HOME' ? 110 : 120}
-                height={value === 'HOME' ? 110 : 120}
+                width={optionValue === 'HOME' ? 110 : 120}
+                height={optionValue === 'HOME' ? 110 : 120}
                 alt=""
               />
             </div>

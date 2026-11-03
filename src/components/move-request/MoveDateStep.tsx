@@ -1,23 +1,22 @@
 'use client'
 
-import {
-  ChevronProps,
-  DayButtonProps,
-  DayPicker,
-  getDefaultClassNames,
-} from '@daypicker/react'
+import { ChevronProps, DayPicker, getDefaultClassNames } from '@daypicker/react'
 import { ko } from '@daypicker/react/locale'
 import '@daypicker/react/style.css'
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import Button from '../common/button/Button'
 
-export default function MoveDateStep() {
+type MoveDateStepProps = {
+  value: Date | undefined
+  onChange: (value: Date | undefined) => void
+}
+
+export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
   const defaultClassNames = getDefaultClassNames()
   const calendarRef = useRef<HTMLDivElement>(null)
 
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date>()
 
   useEffect(() => {
     if (!isOpen) return
@@ -39,30 +38,13 @@ export default function MoveDateStep() {
     return <Icon aria-hidden="true" className="text-gray-400" strokeWidth={2} />
   }
 
-  function CalendarDayButton({
-    day,
-    modifiers,
-    children,
-    ...props
-  }: DayButtonProps) {
-    return (
-      <button type="button" {...props}>
-        <span>{children}</span>
-      </button>
-    )
-  }
-
-  const formattedDate = selectedDate
+  const formattedDate = value
     ? new Intl.DateTimeFormat('ko-KR', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
-      }).format(selectedDate)
+      }).format(value)
     : '이사 예정일 선택하기'
-
-  function handleSelect(date: Date | undefined) {
-    setSelectedDate(date)
-  }
 
   return (
     <div ref={calendarRef} className="w-full md:relative md:w-100 md:shrink-0">
@@ -91,8 +73,8 @@ export default function MoveDateStep() {
           locale={ko}
           mode="single"
           navLayout="around"
-          selected={selectedDate}
-          onSelect={handleSelect}
+          selected={value}
+          onSelect={onChange}
           disabled={{ before: new Date() }}
           formatters={{
             formatCaption: (date) =>
@@ -100,7 +82,6 @@ export default function MoveDateStep() {
           }}
           components={{
             Chevron: CalendarChevron,
-            DayButton: CalendarDayButton,
           }}
           className="w-full [--rdp-day-height:48px] [--rdp-day-width:48px] [--rdp-day_button-border-radius:12px] [--rdp-day_button-border:none] [--rdp-day_button-height:48px] [--rdp-day_button-width:48px] [--rdp-nav-height:32px] [--rdp-nav_button-height:32px] [--rdp-nav_button-width:32px]"
           classNames={{
@@ -125,7 +106,7 @@ export default function MoveDateStep() {
         />
         <Button
           type="button"
-          disabled={!selectedDate}
+          disabled={!value}
           onClick={() => setIsOpen(false)}
           className="mt-6 hidden md:flex md:h-[54px] md:w-[279px] lg:h-[54px] lg:w-[279px]"
         >

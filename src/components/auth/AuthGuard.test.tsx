@@ -208,6 +208,42 @@ describe('AuthGuard', () => {
     expect(navigation.router.replace).not.toHaveBeenCalled()
   })
 
+  it.each(['/login', '/signup', '/mover/login', '/mover/signup'])(
+    '%s는 세션을 확인하는 동안 로딩을 표시하고, 확인에 실패하면 페이지 내용을 보여 준다',
+    async (url) => {
+      const me = Promise.withResolvers<Me>()
+      vi.mocked(getMe).mockReturnValueOnce(me.promise)
+      renderGuard(url)
+
+      expect(screen.getByRole('status')).toBeInTheDocument()
+      expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+
+      me.reject(new Error('Network Error'))
+
+      expect(await screen.findByRole('heading')).toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(navigation.router.replace).not.toHaveBeenCalled()
+    },
+  )
+
+  it('세션 확인에 실패한 로그인 페이지로 돌아왔을 때 로그인 상태이면 기본 페이지로 보낸다', async () => {
+    vi.mocked(getMe)
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockResolvedValueOnce(mover)
+    renderGuard('/mover/login')
+    expect(await screen.findByRole('heading')).toBeInTheDocument()
+
+    act(() => {
+      window.dispatchEvent(new Event('visibilitychange'))
+    })
+
+    await waitFor(() =>
+      expect(navigation.router.replace).toHaveBeenCalledWith(
+        getPathAfterLogin(mover),
+      ),
+    )
+  })
+
   it.each<[string, Me, string]>([
     ['/mover/requests', newMover, '/mover/profile/register'],
     ['/mover/profile/register', newCustomer, '/profile/register'],

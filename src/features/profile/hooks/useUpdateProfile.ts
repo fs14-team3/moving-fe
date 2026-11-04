@@ -23,7 +23,7 @@ export function useUpdateProfile(
     onSuccess: async (profile) => {
       await setMyProfile(queryClient, role, profile)
       if (role === 'MOVER') {
-        await queryClient.invalidateQueries({ queryKey: queryKeys.movers.all })
+        await queryClient.invalidateQueries({ queryKey: queryKeys.movers.me() })
       }
       toast.success(TOAST_MESSAGES.profile.updateSuccess)
     },

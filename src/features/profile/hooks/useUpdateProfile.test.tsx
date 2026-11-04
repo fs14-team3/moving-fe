@@ -6,6 +6,7 @@ import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import { updateProfile } from '@/features/profile/api'
+import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
 import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile'
 import { ApiError } from '@/lib/api-error'
 
@@ -72,6 +73,32 @@ describe('useUpdateProfile', () => {
       )
     },
   )
+
+  it('기사님 프로필을 수정하면 기사님 정보를 다시 불러온다', async () => {
+    vi.mocked(updateProfile).mockResolvedValue(body)
+    const { result, queryClient } = renderUseUpdateProfile('MOVER')
+    queryClient.setQueryData(queryKeys.movers.me(), MOCK_MOVER_DETAILS[0])
+
+    act(() => result.current.mutate(body))
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(
+      queryClient.getQueryState(queryKeys.movers.me())?.isInvalidated,
+    ).toBe(true)
+  })
+
+  it('일반 유저 프로필을 수정하면 기사님 정보는 그대로 둔다', async () => {
+    vi.mocked(updateProfile).mockResolvedValue(body)
+    const { result, queryClient } = renderUseUpdateProfile('CUSTOMER')
+    queryClient.setQueryData(queryKeys.movers.me(), MOCK_MOVER_DETAILS[0])
+
+    act(() => result.current.mutate(body))
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(
+      queryClient.getQueryState(queryKeys.movers.me())?.isInvalidated,
+    ).toBe(false)
+  })
 
   it('세션이 만료되면 로그인 이동에 맡기고 따로 알리지 않는다', async () => {
     vi.mocked(updateProfile).mockRejectedValue(

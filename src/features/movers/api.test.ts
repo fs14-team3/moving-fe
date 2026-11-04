@@ -4,6 +4,7 @@ import {
   getMover,
   getMoverReviews,
   getMovers,
+  getMyMover,
   removeFavorite,
 } from '@/features/movers/api'
 import {
@@ -58,6 +59,16 @@ describe('getMover', () => {
 
     await expect(getMover(mover.id)).resolves.toEqual(mover)
     expect(get).toHaveBeenCalledWith(`/movers/${mover.id}`)
+  })
+})
+
+describe('getMyMover', () => {
+  it('로그인한 기사님의 프로필을 조회한다', async () => {
+    const mover = MOCK_MOVER_DETAILS[0]
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: mover })
+
+    await expect(getMyMover()).resolves.toEqual(mover)
+    expect(get).toHaveBeenCalledWith('/movers/me')
   })
 })
 

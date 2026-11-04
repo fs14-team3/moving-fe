@@ -47,7 +47,7 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     if (redirectPath) router.replace(redirectPath)
   }, [isBlocked, access, user, router])
 
-  if (access === 'PUBLIC') return children
+  if (access === 'PUBLIC' || (access === 'GUEST' && isError)) return children
   if (isError) {
     return <SessionError isRetrying={isRefetching} onRetry={() => refetch()} />
   }

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   getNotifications,
   getUnreadNotificationCount,
-  readAllNotifications,
+  readNotification,
 } from '@/features/notifications/api'
 import api from '@/lib/api'
 
@@ -35,13 +35,15 @@ describe('getUnreadNotificationCount', () => {
   })
 })
 
-describe('readAllNotifications', () => {
-  it('전체 알림을 읽음 처리한다', async () => {
+describe('readNotification', () => {
+  it('알림 id 경로로 읽음 처리한다', async () => {
     const patch = vi
       .spyOn(api, 'patch')
-      .mockResolvedValue({ data: { updatedCount: 2 } })
+      .mockResolvedValue({ data: { updated: true } })
 
-    await expect(readAllNotifications()).resolves.toEqual({ updatedCount: 2 })
-    expect(patch).toHaveBeenCalledWith('/notifications/read-all')
+    await expect(readNotification('notification-1')).resolves.toEqual({
+      updated: true,
+    })
+    expect(patch).toHaveBeenCalledWith('/notifications/notification-1/read')
   })
 })

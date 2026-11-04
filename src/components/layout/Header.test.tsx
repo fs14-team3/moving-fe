@@ -19,7 +19,7 @@ vi.mock('@/features/auth/api', () => ({
 vi.mock('@/features/notifications/api', () => ({
   getNotifications: () => new Promise(() => {}),
   getUnreadNotificationCount: () => new Promise(() => {}),
-  readAllNotifications: vi.fn(),
+  readNotification: vi.fn(),
 }))
 
 function createUser(role: Role): Me {

@@ -6,19 +6,19 @@ import NotificationMenu from '@/components/layout/NotificationMenu'
 import {
   getNotifications,
   getUnreadNotificationCount,
-  readAllNotifications,
+  readNotification,
   type Notification,
 } from '@/features/notifications/api'
 
 vi.mock('@/features/notifications/api', () => ({
   getNotifications: vi.fn(),
   getUnreadNotificationCount: vi.fn(),
-  readAllNotifications: vi.fn(),
+  readNotification: vi.fn(),
 }))
 
 const mockGetNotifications = vi.mocked(getNotifications)
 const mockGetUnreadCount = vi.mocked(getUnreadNotificationCount)
-const mockReadAll = vi.mocked(readAllNotifications)
+const mockRead = vi.mocked(readNotification)
 
 function createNotification(
   overrides: Partial<Notification> & Pick<Notification, 'id'>,
@@ -69,7 +69,7 @@ function queryPanel() {
 describe('NotificationMenu', () => {
   beforeEach(() => {
     mockGetUnreadCount.mockResolvedValue(0)
-    mockReadAll.mockResolvedValue({ updatedCount: 0 })
+    mockRead.mockResolvedValue({ updated: true })
   })
 
   afterEach(() => {
@@ -131,9 +131,9 @@ describe('NotificationMenu', () => {
   })
 
   it('알림 목록을 확인하고 닫으면 읽음 처리하고 새 알림 표시를 지운다', async () => {
-    mockGetUnreadCount.mockResolvedValue(1)
+    mockGetUnreadCount.mockResolvedValueOnce(1).mockResolvedValue(0)
     mockPage([createNotification({ id: '1' })])
-    mockReadAll.mockResolvedValue({ updatedCount: 1 })
+    mockRead.mockResolvedValue({ updated: true })
     const { user, open } = renderMenu()
     await screen.findByRole('button', { name: '알림, 새 알림 있음' })
 
@@ -142,18 +142,52 @@ describe('NotificationMenu', () => {
       '김코드 기사님의 소형이사 견적이 도착했어요',
     )
     // 열어 둔 동안에는 읽음 처리하지 않는다.
-    expect(mockReadAll).not.toHaveBeenCalled()
+    expect(mockRead).not.toHaveBeenCalled()
 
     await user.click(screen.getByText('바깥 영역'))
 
-    expect(mockReadAll).toHaveBeenCalledOnce()
+    expect(mockRead).toHaveBeenCalledOnce()
+    expect(mockRead).toHaveBeenCalledWith('1')
     expect(
       await screen.findByRole('button', { name: '알림' }),
     ).toBeInTheDocument()
   })
 
+  it('패널에 보여 준 알림만 읽음 처리하고, 불러오지 않은 다음 페이지는 남겨 둔다', async () => {
+    // 목록 끝까지 스크롤하지 않은 상황: 다음 페이지를 부르지 않는다.
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    )
+    mockGetUnreadCount.mockResolvedValueOnce(3).mockResolvedValue(1)
+    mockGetNotifications.mockResolvedValue({
+      items: [createNotification({ id: '1' }), createNotification({ id: '2' })],
+      hasNext: true,
+      nextCursor: 'cursor-2',
+    })
+    mockRead.mockResolvedValue({ updated: true })
+    const { user, open } = renderMenu()
+
+    await open()
+    expect(await within(getPanel()).findAllByRole('listitem')).toHaveLength(3)
+    await user.click(screen.getByText('바깥 영역'))
+
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2))
+    expect(mockRead).toHaveBeenCalledWith('1')
+    expect(mockRead).toHaveBeenCalledWith('2')
+    expect(mockGetNotifications).toHaveBeenCalledOnce()
+    // 아직 보지 않은 알림이 남아 있으면 새 알림 표시를 유지한다.
+    expect(
+      await screen.findByRole('button', { name: '알림, 새 알림 있음' }),
+    ).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
   it('확인한 알림은 다시 열었을 때 목록에서 빠진다', async () => {
-    mockGetUnreadCount.mockResolvedValue(1)
+    mockGetUnreadCount.mockResolvedValueOnce(1).mockResolvedValue(0)
     mockGetNotifications
       .mockResolvedValueOnce({
         items: [createNotification({ id: '1' })],
@@ -161,7 +195,7 @@ describe('NotificationMenu', () => {
         nextCursor: null,
       })
       .mockResolvedValue({ items: [], hasNext: false, nextCursor: null })
-    mockReadAll.mockResolvedValue({ updatedCount: 1 })
+    mockRead.mockResolvedValue({ updated: true })
     const { getTrigger, open } = renderMenu()
 
     await open()
@@ -192,7 +226,7 @@ describe('NotificationMenu', () => {
     await user.keyboard('{Escape}')
 
     expect(queryPanel()).toBeNull()
-    expect(mockReadAll).not.toHaveBeenCalled()
+    expect(mockRead).not.toHaveBeenCalled()
   })
 
   it('Esc를 누르면 닫고 알림 아이콘으로 포커스를 돌려준다', async () => {

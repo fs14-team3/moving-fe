@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -15,7 +16,7 @@ import type {
   NotificationType,
 } from '@/features/notifications/api'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
-import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
+import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
 import { useDismiss } from '@/hooks/useDismiss'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
@@ -50,7 +51,7 @@ export default function NotificationMenu() {
   const panelId = useId()
   const titleId = useId()
   const { hasUnread } = useUnreadNotificationCount()
-  const { mutate: readAll } = useReadAllNotifications()
+  const { mutate: readNotifications } = useReadNotifications()
   const {
     notifications,
     hasData,
@@ -62,13 +63,17 @@ export default function NotificationMenu() {
     fetchNextPage,
     refetch,
   } = useNotifications({ enabled: isOpen })
-  const hasShownUnread = notifications.some(({ readAt }) => !readAt)
+  // 패널에 그려진 알림 중 읽지 않은 것. 닫을 때 이 알림들만 읽음 처리한다.
+  const shownUnreadIds = useMemo(
+    () => notifications.filter(({ readAt }) => !readAt).map(({ id }) => id),
+    [notifications],
+  )
 
-  // 열어 둔 동안 읽음 처리하면 다음 페이지(읽지 않은 알림만)가 비어 버려서, 닫을 때 한 번에 읽음 처리한다.
+  // 열어 둔 동안 읽음 처리하면 다음 페이지(읽지 않은 알림만)가 어긋나서, 닫을 때 한 번에 읽음 처리한다.
   const close = useCallback(() => {
     setIsOpen(false)
-    if (hasShownUnread) readAll()
-  }, [hasShownUnread, readAll])
+    if (shownUnreadIds.length > 0) readNotifications(shownUnreadIds)
+  }, [shownUnreadIds, readNotifications])
 
   useDismiss({ isOpen, onDismiss: close, containerRef, triggerRef })
 

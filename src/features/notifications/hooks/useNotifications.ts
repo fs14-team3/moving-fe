@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { getNotifications } from '@/features/notifications/api'
 import { queryKeys } from '@/lib/queryKeys'
 
@@ -25,7 +26,10 @@ export function useNotifications({
     staleTime: 0,
   })
 
-  const notifications = data?.pages.flatMap((page) => page.items) ?? []
+  const notifications = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data],
+  )
 
   return {
     notifications,

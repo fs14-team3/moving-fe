@@ -303,8 +303,12 @@ export interface paths {
     /**
      * 일반 견적 요청 생성
      * @description §4.2에 따라 이사일이 지나기 전에는 새 요청을 만들 수 없으며 활성 요청은 한 번에 하나입니다.
-     *     서버는 요청 상태와 이사일을 함께 확인합니다. 이사 완료 처리만으로 이사일 이전에 새 요청을 허용하지 않습니다.
-     *     새 요청을 모든 서비스 지역의 기사님들에게 알립니다. 날짜 기준 시간대와 주소의 지역 매핑 방식은 추후 결정합니다.
+     *     활성 요청은 상태가 `PENDING`, `CONFIRMED`, `COMPLETED` 중 하나이고 이사일이 지나지 않은 요청입니다.
+     *     서버는 요청 상태와 이사일을 함께 확인하며, 이사일이 지난 요청은 새 요청을 만들 때 `EXPIRED` 또는 `COMPLETED`로 바꿉니다.
+     *     이사 완료 처리만으로 이사일 이전에 새 요청을 허용하지 않습니다.
+     *     날짜는 한국 시간(Asia/Seoul) 기준이며 오늘 날짜로도 요청할 수 있습니다.
+     *     출발지와 도착지의 지역은 서버가 주소의 첫 단어(시/도)로 판별하며, 강원도, 전라북도, 제주도처럼 바뀌기 전 명칭과 줄임 명칭도 인식합니다.
+     *     새 요청을 모든 서비스 지역의 기사님들에게 알립니다.
      *     입력 중 수정(§4.1.4)은 제출 전 프론트엔드 폼에서 처리합니다.
      */
     post: operations['createMoveRequest']
@@ -582,8 +586,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * 알림 목록
-     * @description §13의 역할별 알림을 조회합니다. 새 견적·새 요청·견적 확정·이사 당일 알림을 제공하며, 전달 방식과 갱신 주기는 추후 결정합니다.
+     * 미읽음 알림 목록 조회
+     * @description 현재 사용자의 미읽음 알림을 최신순으로 3개씩 조회합니다.
      */
     get: operations['listNotifications']
     put?: never
@@ -592,6 +596,57 @@ export interface paths {
     options?: never
     head?: never
     patch?: never
+    trace?: never
+  }
+  '/notifications/unread-count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 미읽음 알림 개수 조회 */
+    get: operations['getUnreadNotificationCount']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/notifications/read-all': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** 전체 알림 읽음 처리 */
+    patch: operations['readAllNotifications']
+    trace?: never
+  }
+  '/notifications/{id}/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** 개별 알림 읽음 처리 */
+    patch: operations['readNotification']
     trace?: never
   }
 }
@@ -605,7 +660,7 @@ export interface components {
      * @enum {string}
      */
     ServiceType: 'SMALL' | 'HOME' | 'OFFICE'
-    /** @description 서비스 지역 식별값. 지역 단위와 코드 목록은 추후 결정합니다. */
+    /** @description 시/도 줄임 명칭: 서울, 경기, 인천, 강원, 충북, 충남, 세종, 대전, 전북, 전남, 광주, 경북, 경남, 대구, 울산, 부산, 제주 */
     Region: string
     /** @enum {string} */
     MoveRequestStatus: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'EXPIRED'
@@ -613,7 +668,11 @@ export interface components {
     QuoteStatus: 'SUBMITTED' | 'CONFIRMED' | 'NOT_SELECTED'
     /** @enum {string} */
     NotificationType:
-      'NEW_REQUEST' | 'NEW_QUOTE' | 'QUOTE_CONFIRMED' | 'MOVE_DAY'
+      | 'NEW_REQUEST'
+      | 'NEW_DESIGNATED_REQUEST'
+      | 'NEW_QUOTE'
+      | 'QUOTE_CONFIRMED'
+      | 'MOVE_DAY'
     /**
      * @description 리뷰 많은 순 / 평점 높은 순 / 경력 많은 순 / 확정 많은 순. 값이 같으면 기사님 id 순서이며, 경력순에서는 경력을 입력하지 않은 기사님이 마지막에 옵니다.
      * @enum {string}
@@ -850,12 +909,15 @@ export interface components {
       /** @description 기사님이 받은 전체 찜 수 */
       favoriteCount: number
     }
-    /** @description 우편번호 서비스로 입력한 주소. 제공자는 특정하지 않습니다. */
+    /** @description 우편번호 서비스로 입력한 주소. 제공자는 특정하지 않으며, 지역은 서버가 주소로 판별합니다. */
     AddressInput: {
+      /**
+       * @description 시/도로 시작하는 주소
+       * @example 서울 강남구 테헤란로 152
+       */
       address: string
       /** @description 우편번호 */
       zonecode?: string
-      region: components['schemas']['Region']
     }
     Address: {
       address: string
@@ -866,7 +928,7 @@ export interface components {
       moveType: components['schemas']['ServiceType']
       /**
        * Format: date
-       * @description 이사 날짜
+       * @description 이사 날짜. 한국 시간 기준 오늘 또는 이후
        */
       moveDate: string
       from: components['schemas']['AddressInput']
@@ -1671,10 +1733,18 @@ export interface operations {
           'application/json': components['schemas']['MoveRequest']
         }
       }
-      400: components['responses']['ValidationError']
+      /** @description `VALIDATION_ERROR`. 필수 정보가 없거나, 이사 날짜가 한국 시간 기준으로 지났거나, 주소에서 시/도를 판별할 수 없는 경우 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
-      /** @description `ACTIVE_REQUEST_EXISTS` */
+      /** @description `ACTIVE_REQUEST_EXISTS`. 활성 요청이 이미 있는 경우. 여러 번 또는 동시에 제출해도 요청은 하나만 생성됩니다. */
       409: {
         headers: {
           [name: string]: unknown
@@ -2107,7 +2177,6 @@ export interface operations {
       query?: {
         /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
         cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
       }
       header?: never
       path?: never
@@ -2115,7 +2184,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 알림 목록 페이지 */
+      /** @description 미읽음 알림 목록 */
       200: {
         headers: {
           [name: string]: unknown
@@ -2124,6 +2193,79 @@ export interface operations {
           'application/json': components['schemas']['NotificationListResponse']
         }
       }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+    }
+  }
+  getUnreadNotificationCount: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 미읽음 알림 개수 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            unreadCount: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+    }
+  }
+  readAllNotifications: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 전체 알림 읽음 처리 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            updatedCount: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+    }
+  }
+  readNotification: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 개별 알림 읽음 처리 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            updated: boolean
+          }
+        }
+      }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
     }
   }

@@ -1,4 +1,8 @@
-import KakaoPostcodeEmbed, { type Address } from 'react-daum-postcode'
+import { useEffect } from 'react'
+import KakaoPostcodeEmbed, {
+  loadPostcode,
+  type Address,
+} from 'react-daum-postcode'
 import Modal from '../common/modal/Modal'
 
 export type AddressField = 'departure' | 'arrival'
@@ -21,6 +25,12 @@ export default function AddressSearchModal({
   onClose,
   onSelect,
 }: AddressSearchModalProps) {
+  useEffect(() => {
+    void loadPostcode().catch(() => {
+      // 오류 문구는 KakaoPostcodeEmbed의 errorMessage에서 표시
+    })
+  }, [])
+
   const title =
     addressField === 'departure'
       ? '출발지를 입력해주세요'
@@ -52,7 +62,19 @@ export default function AddressSearchModal({
       title={title}
       className="shadow-[4px_4px_10px_0_rgba(169,169,169,0.20)]"
     >
-      <KakaoPostcodeEmbed style={{ height: 400 }} onComplete={handleComplete} />
+      <KakaoPostcodeEmbed
+        style={{ height: 400 }}
+        onComplete={handleComplete}
+        errorMessage={
+          <div
+            role="alert"
+            className="flex h-full flex-col items-center justify-center text-sm leading-6 text-gray-400"
+          >
+            <p>주소 검색을 불러오지 못했습니다.</p>
+            <p>잠시 후 다시 시도해 주세요.</p>
+          </div>
+        }
+      />
     </Modal>
   )
 }

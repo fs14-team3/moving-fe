@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Button from '@/components/common/button/Button'
 import MobileMenu from '@/components/layout/MobileMenu'
+import NotificationMenu from '@/components/layout/NotificationMenu'
 import ProfileMenu from '@/components/layout/ProfileMenu'
 import { isActivePath, NAV_ITEMS } from '@/constants/navigation'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
@@ -65,14 +66,7 @@ export default function Header() {
           <div className="flex items-center gap-6 lg:gap-8">
             {user ? (
               <>
-                {/* TODO(#68): #23에서 알림 목록이 생기면 알림 아이콘에 연결 */}
-                <Image
-                  src="/assets/icons/alarm.svg"
-                  alt=""
-                  width={24}
-                  height={24}
-                  className="size-6 lg:size-9"
-                />
+                <NotificationMenu />
                 <ProfileMenu user={user} />
               </>
             ) : (

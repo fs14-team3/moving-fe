@@ -93,5 +93,7 @@ export const queryKeys = {
     // GET /notifications
     list: (query: ListQuery<'listNotifications'> = {}) =>
       [...queryKeys.notifications.all, 'list', query] as const,
+    // GET /notifications/unread-count
+    unreadCount: () => [...queryKeys.notifications.all, 'unreadCount'] as const,
   },
 }

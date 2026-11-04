@@ -38,6 +38,7 @@ import {
 } from '@/features/received-requests/hooks/useSendQuote'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
+import { formatTimeAgo } from '@/lib/formatTimeAgo'
 
 const SORT_OPTIONS: { label: string; value: ReceivedRequestSort }[] = [
   { label: '이사 빠른순', value: 'MOVE_DATE_ASC' },
@@ -48,19 +49,6 @@ const SORT_OPTIONS: { label: string; value: ReceivedRequestSort }[] = [
 const CONTAINER = 'mx-auto w-full max-w-310 px-6 md:px-18 lg:px-5'
 
 const CARD_BUTTON = 'h-12 w-full text-base lg:h-13 lg:w-full lg:text-base'
-
-const MINUTE = 60 * 1000
-const HOUR = 60 * MINUTE
-const DAY = 24 * HOUR
-
-// 요청이 들어온 뒤 얼마나 지났는지 '1시간 전'처럼 보여준다.
-function formatTimeAgo(dateTime: string) {
-  const diff = Math.max(0, Date.now() - new Date(dateTime).getTime())
-  if (diff < MINUTE) return '방금 전'
-  if (diff < HOUR) return `${Math.floor(diff / MINUTE)}분 전`
-  if (diff < DAY) return `${Math.floor(diff / HOUR)}시간 전`
-  return `${Math.floor(diff / DAY)}일 전`
-}
 
 // 견적 보내기 모달 위쪽에 보여줄 요청 정보
 function toRequestSummary(request: ReceivedRequest): RequestSummaryProps {

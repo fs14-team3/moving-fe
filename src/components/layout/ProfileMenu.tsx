@@ -2,10 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState } from 'react'
 import { PROFILE_MENU_ITEMS } from '@/constants/navigation'
 import type { Me, Role } from '@/features/auth/types'
 import { useLogout } from '@/features/auth/hooks/useLogout'
+import { useDismiss } from '@/hooks/useDismiss'
 
 const NAME_SUFFIX: Record<Role, string> = {
   CUSTOMER: '고객님',
@@ -23,31 +24,9 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const panelId = useId()
   const { mutate: logout, isPending } = useLogout()
 
-  const close = () => setIsOpen(false)
+  const close = useCallback(() => setIsOpen(false), [])
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      setIsOpen(false)
-      triggerRef.current?.focus()
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen])
+  useDismiss({ isOpen, onDismiss: close, containerRef, triggerRef })
 
   return (
     <div ref={containerRef}>

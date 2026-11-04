@@ -1,5 +1,5 @@
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { isUnauthorized } from '@/lib/api-error'
+import { isApiError, isUnauthorized } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -19,6 +19,11 @@ export function useCreateMoveRequest() {
     },
     onError: (error) => {
       if (isUnauthorized(error)) return
+
+      if (isApiError(error) && error.code === 'ACTIVE_REQUEST_EXISTS') {
+        toast.error(TOAST_MESSAGES.estimate.activeRequestExists)
+        return
+      }
 
       toast.error(TOAST_MESSAGES.estimate.requestFailed)
     },

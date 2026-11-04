@@ -3,6 +3,7 @@
 import type { ServiceType } from '@/constants/services'
 import { type SubmitEvent, useState } from 'react'
 import Button from '../common/button/Button'
+import type { SelectedAddress } from './AddressSearchModal'
 import MoveAddressStep from './MoveAddressStep'
 import MoveDateStep from './MoveDateStep'
 import MoveRequestStep from './MoveRequestStep'
@@ -19,8 +20,11 @@ export default function MoveRequestForm() {
 
   const [moveType, setMoveType] = useState<ServiceType | null>(null)
   const [moveDate, setMoveDate] = useState<Date>()
-  const [departureAddress, setDepartureAddress] = useState('')
-  const [arrivalAddress, setArrivalAddress] = useState('')
+  const [departureAddress, setDepartureAddress] =
+    useState<SelectedAddress | null>(null)
+  const [arrivalAddress, setArrivalAddress] = useState<SelectedAddress | null>(
+    null,
+  )
 
   const isFormComplete = Boolean(
     moveType && moveDate && departureAddress && arrivalAddress,

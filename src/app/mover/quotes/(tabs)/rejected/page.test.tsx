@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import RejectedRequestsPage from '@/app/mover/quotes/rejected/page'
+import RejectedRequestsPage from '@/app/mover/quotes/(tabs)/rejected/page'
 import {
   getRejectedRequests,
   type RejectedRequest,

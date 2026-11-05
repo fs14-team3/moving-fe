@@ -9,3 +9,8 @@ export type FavoriteMoverListParams = NonNullable<
 >
 
 export type FavoriteMoverListFilters = Omit<FavoriteMoverListParams, 'cursor'>
+
+// TODO: BE 머지 후 생성된 스키마 타입으로 교체
+export type RemoveFavoritesResponse = {
+  removedCount: number
+}

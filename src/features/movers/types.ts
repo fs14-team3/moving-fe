@@ -31,16 +31,8 @@ export type MoverListResponse = Omit<Schemas['MoverListResponse'], 'items'> & {
   items: Mover[]
 }
 
-export type FavoriteMoverListParams = NonNullable<
-  operations['listMyFavorites']['parameters']['query']
->
-
-export type FavoriteMoverListFilters = Omit<FavoriteMoverListParams, 'cursor'>
-
 export type MoverReviewListParams = NonNullable<
   operations['listMoverReviews']['parameters']['query']
 >
 
 export type MoverReviewListResponse = Schemas['MoverReviewListResponse']
-
-export type FavoriteState = Schemas['FavoriteState']

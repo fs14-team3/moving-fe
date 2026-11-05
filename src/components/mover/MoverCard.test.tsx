@@ -1,9 +1,9 @@
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import type { Me } from '@/features/auth/types'
+import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
+import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
 import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
-import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
-import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,11 +23,11 @@ vi.mock('@/features/auth/hooks/useCurrentUser', () => ({
   useCurrentUser: vi.fn(),
 }))
 
-vi.mock('@/features/movers/hooks/useAddFavorite', () => ({
+vi.mock('@/features/favorites/hooks/useAddFavorite', () => ({
   useAddFavorite: vi.fn(),
 }))
 
-vi.mock('@/features/movers/hooks/useRemoveFavorite', () => ({
+vi.mock('@/features/favorites/hooks/useRemoveFavorite', () => ({
   useRemoveFavorite: vi.fn(),
 }))
 

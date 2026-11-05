@@ -1,16 +1,16 @@
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import type { MoverId } from '@/features/movers/types'
 import { isUnauthorized } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { removeFavorite } from '../api'
-import type { MoverId } from '../types'
+import { addFavorite } from '../api'
 
-export function useRemoveFavorite(moverId: MoverId) {
+export function useAddFavorite(moverId: MoverId) {
   const queryClient = useQueryClient()
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => removeFavorite(moverId),
+    mutationFn: () => addFavorite(moverId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.favorites.all }),

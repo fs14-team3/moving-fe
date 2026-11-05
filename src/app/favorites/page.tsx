@@ -2,7 +2,7 @@
 
 import Button from '@/components/common/button/Button'
 import MoverCard from '@/components/mover/MoverCard'
-import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
+import { useFavoriteMovers } from '@/features/favorites/hooks/useFavoriteMovers'
 import { Check, LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MoversPage from '@/app/movers/page'
 import type { Me } from '@/features/auth/types'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
-import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
+import { useFavoriteMovers } from '@/features/favorites/hooks/useFavoriteMovers'
 import { useMovers } from '@/features/movers/hooks/useMovers'
 import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
 
@@ -28,7 +28,7 @@ vi.mock('@/features/movers/hooks/useMovers', () => ({
   useMovers: vi.fn(),
 }))
 
-vi.mock('@/features/movers/hooks/useFavoriteMovers', () => ({
+vi.mock('@/features/favorites/hooks/useFavoriteMovers', () => ({
   useFavoriteMovers: vi.fn(),
 }))
 

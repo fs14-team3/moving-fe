@@ -2,11 +2,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getFavoriteMovers } from '@/features/movers/api'
-import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
+import { getFavoriteMovers } from '@/features/favorites/api'
+import { useFavoriteMovers } from '@/features/favorites/hooks/useFavoriteMovers'
 import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
 
-vi.mock('@/features/movers/api', () => ({ getFavoriteMovers: vi.fn() }))
+vi.mock('@/features/favorites/api', () => ({ getFavoriteMovers: vi.fn() }))
 
 function renderUseFavoriteMovers(enabled = true) {
   const queryClient = new QueryClient({

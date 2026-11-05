@@ -1,6 +1,6 @@
 import FavoritesPage from '@/app/favorites/page'
 import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
-import { useFavoriteMovers } from '@/features/movers/hooks/useFavoriteMovers'
+import { useFavoriteMovers } from '@/features/favorites/hooks/useFavoriteMovers'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,7 +9,7 @@ vi.mock('next/image', () => ({
   default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
 }))
 
-vi.mock('@/features/movers/hooks/useFavoriteMovers', () => ({
+vi.mock('@/features/favorites/hooks/useFavoriteMovers', () => ({
   useFavoriteMovers: vi.fn(),
 }))
 

@@ -3,13 +3,13 @@
 import Button from '@/components/common/button/Button'
 import MoverCard from '@/components/mover/MoverCard'
 import { useFavoriteMovers } from '@/features/favorites/hooks/useFavoriteMovers'
+import { useRemoveFavorites } from '@/features/favorites/hooks/useRemoveFavorites'
 import { Check, LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
 export default function FavoritesPage() {
-  const sentinelRef = useRef<HTMLDivElement>(null)
-
+  // Hooks
   const {
     favoriteMovers,
     isPending,
@@ -22,6 +22,12 @@ export default function FavoritesPage() {
     refetch,
   } = useFavoriteMovers()
   const isInitialError = isError && favoriteMovers.length === 0
+
+  const { mutate: removeFavorites, isPending: isRemovingFavorites } =
+    useRemoveFavorites()
+
+  // 무한스크롤
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -43,6 +49,7 @@ export default function FavoritesPage() {
     return () => observer.disconnect()
   }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage])
 
+  // 기사님 카드 선택
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const allSelected =
@@ -58,6 +65,12 @@ export default function FavoritesPage() {
         ? prev.filter((id) => id !== moverId)
         : [...prev, moverId],
     )
+  }
+
+  function handleDeleteSelected() {
+    removeFavorites(selectedIds, {
+      onSuccess: () => setSelectedIds([]),
+    })
   }
 
   return (
@@ -137,10 +150,10 @@ export default function FavoritesPage() {
               </span>
             </label>
 
-            {/* TODO: 일괄 찜 해제 API 추가 후 선택 항목 삭제 및 선택 상태 갱신 연결 */}
             <button
               type="button"
-              disabled={selectedIds.length === 0}
+              disabled={selectedIds.length === 0 || isRemovingFavorites}
+              onClick={handleDeleteSelected}
               className="text-sm leading-6 font-normal text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 md:text-base"
             >
               선택 항목 삭제

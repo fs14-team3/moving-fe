@@ -19,10 +19,9 @@ export const SIGNUP_PATH: Record<Role, string> = {
   MOVER: '/mover/signup',
 }
 
-// TODO(#67): #13 · #23의 기본 페이지가 생기면 '/request' · '/mover/requests'로 변경
 const HOME_PATH: Record<Role, string> = {
-  CUSTOMER: '/',
-  MOVER: '/',
+  CUSTOMER: '/request',
+  MOVER: '/mover/requests',
 }
 
 const PROFILE_REGISTER_PATH: Record<Role, string> = {

@@ -1,6 +1,7 @@
 import FavoritesPage from '@/app/favorites/page'
-import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
 import { useFavoriteMovers } from '@/features/favorites/hooks/useFavoriteMovers'
+import { useRemoveFavorites } from '@/features/favorites/hooks/useRemoveFavorites'
+import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -13,9 +14,31 @@ vi.mock('@/features/favorites/hooks/useFavoriteMovers', () => ({
   useFavoriteMovers: vi.fn(),
 }))
 
+vi.mock('@/features/favorites/hooks/useRemoveFavorites', () => ({
+  useRemoveFavorites: vi.fn(),
+}))
+
 vi.mock('@/components/mover/MoverCard', () => ({
-  default: ({ mover }: { mover: { nickname: string | null } }) => (
-    <article>{mover.nickname}</article>
+  default: ({
+    mover,
+    selected,
+    onSelect,
+  }: {
+    mover: { nickname: string | null }
+    selected: boolean
+    onSelect?: () => void
+  }) => (
+    <article>
+      {onSelect && (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onSelect}
+          aria-label={`${mover.nickname} 기사님 선택`}
+        />
+      )}
+      {mover.nickname}
+    </article>
   ),
 }))
 
@@ -40,6 +63,10 @@ describe('FavoritesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useFavoriteMovers).mockReturnValue(createFavoritesResult())
+    vi.mocked(useRemoveFavorites).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    })
   })
 
   it('찜한 기사님 목록을 보여 준다', () => {
@@ -106,5 +133,31 @@ describe('FavoritesPage', () => {
 
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
     expect(fetchNextPage).toHaveBeenCalledOnce()
+  })
+
+  it('선택한 기사님이 없으면 찜 삭제 버튼을 누를 수 없다', () => {
+    render(<FavoritesPage />)
+
+    expect(
+      screen.getByRole('button', { name: '선택 항목 삭제' }),
+    ).toBeDisabled()
+  })
+
+  it('찜 삭제 버튼을 누르면 선택한 기사님을 일괄 해제한다', async () => {
+    const mutate = vi.fn()
+    vi.mocked(useRemoveFavorites).mockReturnValue({ mutate, isPending: false })
+    const user = userEvent.setup()
+
+    render(<FavoritesPage />)
+
+    await user.click(
+      screen.getByRole('checkbox', { name: '김무빙 기사님 선택' }),
+    )
+    await user.click(screen.getByRole('button', { name: '선택 항목 삭제' }))
+
+    expect(mutate).toHaveBeenCalledWith(
+      [MOCK_MOVERS[0].id],
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
   })
 })

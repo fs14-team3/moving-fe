@@ -2,6 +2,7 @@ import {
   addFavorite,
   getFavoriteMovers,
   removeFavorite,
+  removeFavorites,
 } from '@/features/favorites/api'
 import { MOCK_MOVERS } from '@/features/movers/fixtures/movers'
 import api from '@/lib/api'
@@ -56,5 +57,22 @@ describe('removeFavorite', () => {
 
     await expect(removeFavorite('mover-1')).resolves.toEqual(favoriteResponse)
     expect(deleteRequest).toHaveBeenCalledWith('/movers/mover-1/favorite')
+  })
+})
+
+describe('removeFavorites', () => {
+  it('기사님 찜을 일괄 해제한다', async () => {
+    const moverIds = ['mover-1', 'mover-2']
+    const response = {
+      removedCount: 2,
+    }
+    const deleteRequest = vi
+      .spyOn(api, 'delete')
+      .mockResolvedValue({ data: response })
+
+    await expect(removeFavorites(moverIds)).resolves.toEqual(response)
+    expect(deleteRequest).toHaveBeenCalledWith('/customers/me/favorites', {
+      data: { moverIds },
+    })
   })
 })

@@ -35,9 +35,13 @@ const body = {
   password: 'moving1!',
 }
 
-function createApiError(status: number, fields: string[] = []) {
+function createApiError(
+  status: number,
+  fields: string[] = [],
+  code = 'UNKNOWN_ERROR',
+) {
   const details = fields.map((field) => ({ field, reason: 'INVALID' }))
-  return new ApiError('UNKNOWN_ERROR', 'Request failed', status, details)
+  return new ApiError(code, 'Request failed', status, details)
 }
 
 function renderUseSignup() {
@@ -79,8 +83,24 @@ describe('useSignup', () => {
 
     await waitFor(() =>
       expect(onFieldErrors).toHaveBeenCalledWith({
-        email: '이미 가입된 이메일입니다.',
+        email: '이메일을 다시 확인해 주세요.',
         password: PASSWORD_RULE_MESSAGE,
+      }),
+    )
+    expect(toastError).not.toHaveBeenCalled()
+  })
+
+  it('이미 가입된 이메일이면 이메일 입력란에 안내한다', async () => {
+    vi.mocked(signup).mockRejectedValue(
+      createApiError(409, ['email'], 'EMAIL_ALREADY_EXISTS'),
+    )
+    const { result, onFieldErrors } = renderUseSignup()
+
+    act(() => result.current.mutate(body))
+
+    await waitFor(() =>
+      expect(onFieldErrors).toHaveBeenCalledWith({
+        email: '이미 가입된 이메일입니다.',
       }),
     )
     expect(toastError).not.toHaveBeenCalled()

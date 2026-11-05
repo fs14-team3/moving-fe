@@ -22,6 +22,10 @@ export function useCreateMoveRequest() {
 
       if (isApiError(error) && error.code === 'ACTIVE_REQUEST_EXISTS') {
         toast.error(TOAST_MESSAGES.estimate.activeRequestExists)
+
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.moveRequests.active(),
+        })
         return
       }
 

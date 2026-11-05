@@ -88,7 +88,7 @@ describe('useCreateMoveRequest', () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it('이미 진행 중인 요청이 있으면 안내 토스트를 표시한다', async () => {
+  it('이미 진행 중인 요청이 있으면 안내하고 활성 견적 요청을 다시 불러온다', async () => {
     vi.mocked(createMoveRequest).mockRejectedValue(
       new ApiError('ACTIVE_REQUEST_EXISTS', 'Conflict', 409),
     )
@@ -98,11 +98,12 @@ describe('useCreateMoveRequest', () => {
     act(() => result.current.mutate(MOCK_CREATE_MOVE_REQUEST_BODY))
 
     await waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(
-        TOAST_MESSAGES.estimate.activeRequestExists,
-      ),
+      expect(invalidateQueries).toHaveBeenCalledWith({
+        queryKey: queryKeys.moveRequests.active(),
+      }),
     )
-
-    expect(invalidateQueries).not.toHaveBeenCalled()
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.activeRequestExists,
+    )
   })
 })

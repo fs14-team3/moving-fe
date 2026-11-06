@@ -10,12 +10,12 @@ vi.mock('@/features/move-request/api', () => ({
   getActiveMoveRequest: vi.fn(),
 }))
 
-function renderUseActiveMoveRequest() {
+function renderUseActiveMoveRequest(enabled = true) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
 
-  return renderHook(() => useActiveMoveRequest(), {
+  return renderHook(() => useActiveMoveRequest({ enabled }), {
     wrapper: ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
@@ -25,6 +25,12 @@ function renderUseActiveMoveRequest() {
 describe('useActiveMoveRequest', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('enabled가 false면 진행 중인 요청을 조회하지 않는다', () => {
+    renderUseActiveMoveRequest(false)
+
+    expect(getActiveMoveRequest).not.toHaveBeenCalled()
   })
 
   it('활성 견적 요청을 반환한다', async () => {

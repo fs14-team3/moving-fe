@@ -1,4 +1,8 @@
-import type { CreateMoveRequestBody, MoveRequestResponse } from '../types'
+import type {
+  CreateMoveRequestBody,
+  Designation,
+  MoveRequestResponse,
+} from '../types'
 
 export const MOCK_CREATE_MOVE_REQUEST_BODY: CreateMoveRequestBody = {
   moveType: 'SMALL' as const,
@@ -26,4 +30,10 @@ export const MOCK_MOVE_REQUEST: MoveRequestResponse = {
   designatedMoverIds: [],
   createdAt: '2026-11-04T12:00:00.000Z',
   confirmedAt: null,
+}
+
+export const MOCK_DESIGNATION: Designation = {
+  moveRequestId: 'request-1',
+  moverId: '1',
+  createdAt: '2026-11-04T12:00:00.000Z',
 }

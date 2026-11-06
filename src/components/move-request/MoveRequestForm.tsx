@@ -1,6 +1,8 @@
 'use client'
 
 import type { ServiceType } from '@/constants/services'
+import { useCreateMoveRequest } from '@/features/move-request/hooks/useCreateMoveRequest'
+import { useRouter } from 'next/navigation'
 import { type SubmitEvent, useState } from 'react'
 import Button from '../common/button/Button'
 import type { SelectedAddress } from './AddressSearchModal'
@@ -26,6 +28,9 @@ export default function MoveRequestForm() {
     null,
   )
 
+  const router = useRouter()
+  const { mutate, isPending } = useCreateMoveRequest()
+
   const isFormComplete = Boolean(
     moveType && moveDate && departureAddress && arrivalAddress,
   )
@@ -37,12 +42,41 @@ export default function MoveRequestForm() {
         ? Boolean(moveDate)
         : isFormComplete
 
+  function formatMoveDate(date: Date) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+
+    return `${year}-${month}-${day}`
+  }
+
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!isFormComplete) return
+    if (
+      !moveType ||
+      !moveDate ||
+      !departureAddress ||
+      !arrivalAddress ||
+      isPending
+    ) {
+      return
+    }
 
-    // TODO: 견적 요청 API 연결
+    mutate(
+      {
+        moveType,
+        moveDate: formatMoveDate(moveDate),
+        from: departureAddress,
+        to: arrivalAddress,
+      },
+      {
+        onSuccess: () => {
+          // TODO: 내 견적 관리 페이지가 생기면 그 경로로 이동
+          router.push('/my-quotes')
+        },
+      },
+    )
   }
 
   return (
@@ -116,7 +150,7 @@ export default function MoveRequestForm() {
         <Button
           variant="solid"
           type={currentStep === 3 ? 'submit' : 'button'}
-          disabled={!canMoveNext}
+          disabled={!canMoveNext || isPending}
           onClick={
             currentStep < 3
               ? () => setCurrentStep((prev) => prev + 1)
@@ -124,16 +158,20 @@ export default function MoveRequestForm() {
           }
           className="cursor-pointer disabled:cursor-not-allowed"
         >
-          {currentStep === 3 ? '견적 요청하기' : '다음'}
+          {isPending
+            ? '요청 중...'
+            : currentStep === 3
+              ? '견적 요청하기'
+              : '다음'}
         </Button>
       </section>
 
       <Button
         type="submit"
-        disabled={!isFormComplete}
+        disabled={!isFormComplete || isPending}
         className="mt-auto hidden self-end md:flex md:h-14 md:w-50 lg:h-14 lg:w-50"
       >
-        견적 요청하기
+        {isPending ? '요청 중...' : '견적 요청하기'}
       </Button>
     </form>
   )

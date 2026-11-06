@@ -96,7 +96,7 @@ describe('SocialLoginCallback', () => {
       queryClient.setQueryData(queryKeys.user.me(), createUser('CUSTOMER'))
     })
     await waitFor(() =>
-      expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/'),
+      expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/request'),
     )
   })
 

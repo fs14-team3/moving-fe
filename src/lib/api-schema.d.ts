@@ -15,7 +15,7 @@ export interface paths {
     put?: never
     /**
      * 이메일 회원가입
-     * @description 요청한 역할의 이메일 계정을 생성합니다. 이름·이메일·전화번호·비밀번호는 validator 기준에 따라 검증합니다.
+     * @description 요청한 역할의 이메일 계정을 생성하고 로그인 세션을 발급합니다. 이름·이메일·전화번호·비밀번호는 validator 기준에 따라 검증합니다.
      */
     post: operations['signup']
     delete?: never
@@ -75,11 +75,31 @@ export interface paths {
     }
     /**
      * 소셜 로그인 콜백 (등록된 redirect URI)
-     * @description 소셜 제공자의 응답을 검증한 뒤 가입 또는 로그인합니다. 동일 역할과 이메일을 가진 기존 계정이 있으면 소셜 계정을 연결하며, 처리 결과에 따라 프론트엔드로 리다이렉트합니다.
+     * @description 소셜 제공자의 응답을 검증한 뒤 가입 또는 로그인합니다.
      */
     get: operations['socialLoginCallback']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 로그아웃
+     * @description 현재 로그인된 세션을 종료하고 세션 쿠키를 삭제합니다.
+     */
+    post: operations['logout']
     delete?: never
     options?: never
     head?: never
@@ -285,7 +305,13 @@ export interface paths {
     get: operations['listMyFavorites']
     put?: never
     post?: never
-    delete?: never
+    /**
+     * 찜 일괄 해제 (멱등)
+     * @description 프로필을 등록한 일반 유저만 호출할 수 있습니다. 찜한 기사님 페이지의 선택 항목 삭제에 씁니다.
+     *     화면에서 선택한 기사님의 id를 `moverIds`로 보내면 그 기사님들만 해제합니다. 전체 선택도 화면에 보이는 기사님만 선택하므로 같은 방식으로 보냅니다.
+     *     `all: true`를 보내면 본인의 찜을 모두 해제합니다. 찜하지 않았거나 없는 기사님과 중복된 id는 건너뛰고 실제 해제된 수를 반환하며, `moverIds`는 한 번에 최대 500개입니다.
+     */
+    delete: operations['removeMyFavorites']
     options?: never
     head?: never
     patch?: never
@@ -303,8 +329,12 @@ export interface paths {
     /**
      * 일반 견적 요청 생성
      * @description §4.2에 따라 이사일이 지나기 전에는 새 요청을 만들 수 없으며 활성 요청은 한 번에 하나입니다.
-     *     서버는 요청 상태와 이사일을 함께 확인합니다. 이사 완료 처리만으로 이사일 이전에 새 요청을 허용하지 않습니다.
-     *     새 요청을 모든 서비스 지역의 기사님들에게 알립니다. 날짜 기준 시간대와 주소의 지역 매핑 방식은 추후 결정합니다.
+     *     활성 요청은 상태가 `PENDING`, `CONFIRMED`, `COMPLETED` 중 하나이고 이사일이 지나지 않은 요청입니다.
+     *     서버는 요청 상태와 이사일을 함께 확인하며, 이사일이 지난 요청은 새 요청을 만들 때 `EXPIRED` 또는 `COMPLETED`로 바꿉니다.
+     *     이사 완료 처리만으로 이사일 이전에 새 요청을 허용하지 않습니다.
+     *     날짜는 한국 시간(Asia/Seoul) 기준이며 오늘 날짜로도 요청할 수 있습니다.
+     *     출발지와 도착지의 지역은 서버가 주소의 첫 단어(시/도)로 판별하며, 강원도, 전라북도, 제주도처럼 바뀌기 전 명칭과 줄임 명칭도 인식합니다.
+     *     새 요청을 모든 서비스 지역의 기사님들에게 알립니다.
      *     입력 중 수정(§4.1.4)은 제출 전 프론트엔드 폼에서 처리합니다.
      */
     post: operations['createMoveRequest']
@@ -323,7 +353,8 @@ export interface paths {
     }
     /**
      * 현재 활성 견적 요청 (없으면 null)
-     * @description §4.2.1의 활성 요청을 반환합니다. 이사일이 지난 요청을 계속 활성으로 반환하지 않도록 상태를 확인합니다.
+     * @description §4.2.1의 활성 요청을 반환합니다. 활성 여부는 견적 요청 생성의 제한과 같은 기준으로 판단합니다.
+     *     이사일이 지난 요청은 아직 `EXPIRED` 또는 `COMPLETED`로 바뀌지 않았어도 반환하지 않습니다.
      */
     get: operations['getActiveMoveRequest']
     put?: never
@@ -361,7 +392,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 견적 요청 상세 (요청자 본인) */
+    /**
+     * 견적 요청 상세 (요청자 본인)
+     * @description 이사일이 지났거나 종료된 요청도 조회할 수 있습니다. 다른 사용자의 요청은 없는 요청과 같이 404를 반환합니다.
+     */
     get: operations['getMoveRequest']
     put?: never
     post?: never
@@ -382,8 +416,9 @@ export interface paths {
     put?: never
     /**
      * 지정 견적 요청
-     * @description 호출자 본인의 일반 견적 요청이 먼저 있어야 합니다(§6.5). 해당 요청에 기사님을 지정합니다.
-     *     지정 요청 인원에는 별도의 상한을 두지 않습니다. 받은 지정 견적에만 3개 상한을 적용합니다(§7.1.1).
+     * @description 호출자 본인의 일반 견적 요청이 먼저 있어야 합니다(§6.5). 대기 중이고 이사일이 지나지 않은 요청에 기사님을 지정합니다.
+     *     한 요청에 기사님을 최대 3명까지 지정할 수 있으며, 동시에 요청해도 인원과 중복 제한을 지킵니다(§7.1.1).
+     *     이 요청에 이미 견적을 보냈거나 요청을 반려한 기사님은 지정할 수 없습니다.
      *     지정 요청은 기사님에게 라벨로 강조 표시하며, 기사님의 서비스 가능 지역과 관계없이 요청할 수 있습니다.
      */
     post: operations['designateMover']
@@ -454,6 +489,28 @@ export interface paths {
      *     이사 빠른 순·최근 요청 순 정렬을 지원합니다. 지역 단위와 매핑 방식은 추후 결정합니다.
      */
     get: operations['listReceivedRequests']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/movers/me/quotes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 보낸 견적 목록 조회 (기사님)
+     * @description 로그인한 기사님이 본인이 보낸 견적을 최신순으로 조회합니다.
+     *     견적 상태별 필터링과 커서 기반 페이지네이션을 지원합니다.
+     *     고객명은 닉네임을 우선 사용하며, 닉네임이 없으면 사용자 이름을 반환합니다.
+     */
+    get: operations['listMySentQuotes']
     put?: never
     post?: never
     delete?: never
@@ -582,8 +639,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * 알림 목록
-     * @description §13의 역할별 알림을 조회합니다. 새 견적·새 요청·견적 확정·이사 당일 알림을 제공하며, 전달 방식과 갱신 주기는 추후 결정합니다.
+     * 미읽음 알림 목록 조회
+     * @description 현재 사용자의 미읽음 알림을 최신순으로 3개씩 조회합니다.
      */
     get: operations['listNotifications']
     put?: never
@@ -592,6 +649,57 @@ export interface paths {
     options?: never
     head?: never
     patch?: never
+    trace?: never
+  }
+  '/notifications/unread-count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 미읽음 알림 개수 조회 */
+    get: operations['getUnreadNotificationCount']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/notifications/read-all': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** 전체 알림 읽음 처리 */
+    patch: operations['readAllNotifications']
+    trace?: never
+  }
+  '/notifications/{id}/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** 개별 알림 읽음 처리 */
+    patch: operations['readNotification']
     trace?: never
   }
 }
@@ -605,7 +713,7 @@ export interface components {
      * @enum {string}
      */
     ServiceType: 'SMALL' | 'HOME' | 'OFFICE'
-    /** @description 서비스 지역 식별값. 지역 단위와 코드 목록은 추후 결정합니다. */
+    /** @description 시/도 줄임 명칭: 서울, 경기, 인천, 강원, 충북, 충남, 세종, 대전, 전북, 전남, 광주, 경북, 경남, 대구, 울산, 부산, 제주 */
     Region: string
     /** @enum {string} */
     MoveRequestStatus: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'EXPIRED'
@@ -613,7 +721,11 @@ export interface components {
     QuoteStatus: 'SUBMITTED' | 'CONFIRMED' | 'NOT_SELECTED'
     /** @enum {string} */
     NotificationType:
-      'NEW_REQUEST' | 'NEW_QUOTE' | 'QUOTE_CONFIRMED' | 'MOVE_DAY'
+      | 'NEW_REQUEST'
+      | 'NEW_DESIGNATED_REQUEST'
+      | 'NEW_QUOTE'
+      | 'QUOTE_CONFIRMED'
+      | 'MOVE_DAY'
     /**
      * @description 리뷰 많은 순 / 평점 높은 순 / 경력 많은 순 / 확정 많은 순. 값이 같으면 기사님 id 순서이며, 경력순에서는 경력을 입력하지 않은 기사님이 마지막에 옵니다.
      * @enum {string}
@@ -632,6 +744,7 @@ export interface components {
       | 'VALIDATION_ERROR'
       | 'UNAUTHORIZED'
       | 'INVALID_CREDENTIALS'
+      | 'EMAIL_ALREADY_EXISTS'
       | 'FORBIDDEN'
       | 'PROFILE_REQUIRED'
       | 'NOT_IN_SERVICE_AREA'
@@ -639,6 +752,9 @@ export interface components {
       | 'NOT_FOUND'
       | 'PROFILE_ALREADY_EXISTS'
       | 'ACTIVE_REQUEST_EXISTS'
+      | 'ALREADY_DESIGNATED'
+      | 'MOVER_ALREADY_RESPONDED'
+      | 'DESIGNATION_LIMIT_REACHED'
       | 'REQUEST_NOT_PENDING'
       | 'QUOTE_LIMIT_REACHED'
       | 'RATE_LIMITED'
@@ -843,6 +959,10 @@ export interface components {
     MoverListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['MoverSummary'][]
     }
+    FavoriteListResponse: components['schemas']['MoverListResponse'] & {
+      /** @description 찜한 기사님 전체 수 */
+      totalCount: number
+    }
     FavoriteState: {
       /** Format: uuid */
       moverId: string
@@ -850,12 +970,36 @@ export interface components {
       /** @description 기사님이 받은 전체 찜 수 */
       favoriteCount: number
     }
-    /** @description 우편번호 서비스로 입력한 주소. 제공자는 특정하지 않습니다. */
+    FavoriteRemoveRequest:
+      | {
+          /**
+           * @description 생략할 수 있습니다
+           * @enum {boolean}
+           */
+          all?: false
+          /** @description 해제할 기사님의 user id. 중복은 한 번만 처리합니다. */
+          moverIds: string[]
+        }
+      | {
+          /**
+           * @description 본인의 찜을 모두 해제합니다
+           * @enum {boolean}
+           */
+          all: true
+        }
+    FavoriteRemoveResult: {
+      /** @description 이번 요청으로 실제 해제된 찜 수 */
+      removedCount: number
+    }
+    /** @description 우편번호 서비스로 입력한 주소. 제공자는 특정하지 않으며, 지역은 서버가 주소로 판별합니다. */
     AddressInput: {
+      /**
+       * @description 시/도로 시작하는 주소
+       * @example 서울 강남구 테헤란로 152
+       */
       address: string
       /** @description 우편번호 */
       zonecode?: string
-      region: components['schemas']['Region']
     }
     Address: {
       address: string
@@ -866,7 +1010,7 @@ export interface components {
       moveType: components['schemas']['ServiceType']
       /**
        * Format: date
-       * @description 이사 날짜
+       * @description 이사 날짜. 한국 시간 기준 오늘 또는 이후
        */
       moveDate: string
       from: components['schemas']['AddressInput']
@@ -959,6 +1103,9 @@ export interface components {
       /** Format: date-time */
       createdAt: string
       moveRequest: components['schemas']['RequestForMover']
+    }
+    SentQuoteListResponse: components['schemas']['CursorMeta'] & {
+      items: components['schemas']['SentQuote'][]
     }
     RejectedRequest: {
       moveRequest: components['schemas']['RequestForMover']
@@ -1144,6 +1291,15 @@ export interface operations {
         }
       }
       400: components['responses']['ValidationError']
+      /** @description `EMAIL_ALREADY_EXISTS`. 같은 역할로 이미 가입된 이메일인 경우 */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
       429: components['responses']['RateLimited']
     }
   }
@@ -1195,6 +1351,13 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description OAuth 인증 요청 안내 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
       /** @description Google / Kakao / Naver 인가(authorize) URL로 리다이렉트 */
       302: {
         headers: {
@@ -1220,7 +1383,6 @@ export interface operations {
         code?: string
         state: string
         error?: string
-        /** @description OAuth 제공자가 전달하는 인증 실패 상세 설명 */
         error_description?: string
       }
       header?: never
@@ -1234,9 +1396,73 @@ export interface operations {
       /** @description 로그인 결과 화면으로 이동 */
       302: {
         headers: {
+          /** @description 로그인 결과에 따른 프론트엔드 이동 URL */
+          Location?: string
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description 잘못된 OAuth 요청 또는 인증 실패 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description OAuth 인증 실패 */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description 서버 내부 오류 */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  logout: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 로그아웃 성공 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example 로그아웃되었습니다. */
+            message: string
+          }
+        }
+      }
+      /** @description 인증되지 않은 사용자 */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description 로그아웃 처리 실패 */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
       }
     }
   }
@@ -1627,16 +1853,51 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 찜한 기사님 목록 페이지 (`isFavorite`는 항상 true). 찜한 기사님이 없으면 `items`는 빈 배열, `nextCursor`는 null, `hasNext`는 false입니다. */
+      /** @description 찜한 기사님 목록 페이지 (`isFavorite`는 항상 true, `totalCount`는 찜한 기사님 전체 수). 찜한 기사님이 없으면 `items`는 빈 배열, `totalCount`는 0, `nextCursor`는 null, `hasNext`는 false입니다. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['MoverListResponse']
+          'application/json': components['schemas']['FavoriteListResponse']
         }
       }
       /** @description `VALIDATION_ERROR`. `limit`이 허용 범위를 벗어나거나 `cursor`가 잘못된 경우 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  removeMyFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FavoriteRemoveRequest']
+      }
+    }
+    responses: {
+      /** @description 이번 요청으로 실제 해제된 찜 수. 해제된 찜이 없으면 0입니다. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FavoriteRemoveResult']
+        }
+      }
+      /** @description `VALIDATION_ERROR`. `moverIds`가 없거나 비어 있거나, 500개를 넘거나, uuid가 아닌 값이 있거나, `all: true`와 `moverIds`를 함께 보낸 경우 */
       400: {
         headers: {
           [name: string]: unknown
@@ -1671,10 +1932,18 @@ export interface operations {
           'application/json': components['schemas']['MoveRequest']
         }
       }
-      400: components['responses']['ValidationError']
+      /** @description `VALIDATION_ERROR`. 필수 정보가 없거나, 이사 날짜가 한국 시간 기준으로 지났거나, 주소에서 시/도를 판별할 수 없는 경우 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
-      /** @description `ACTIVE_REQUEST_EXISTS` */
+      /** @description `ACTIVE_REQUEST_EXISTS`. 활성 요청이 이미 있는 경우. 여러 번 또는 동시에 제출해도 요청은 하나만 생성됩니다. */
       409: {
         headers: {
           [name: string]: unknown
@@ -1757,6 +2026,7 @@ export interface operations {
           'application/json': components['schemas']['MoveRequest']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -1789,7 +2059,24 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
-      404: components['responses']['NotFound']
+      /** @description `NOT_FOUND`. 요청이 없거나 다른 사용자의 요청인 경우. 기사님이 없는 경우에는 `details`에 `moverId`가 담깁니다. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `REQUEST_NOT_PENDING` (확정되었거나 이사일이 지난 요청), `ALREADY_DESIGNATED` (이미 지정한 기사님), `MOVER_ALREADY_RESPONDED` (이미 견적을 보냈거나 요청을 반려한 기사님) 또는 `DESIGNATION_LIMIT_REACHED` (이미 3명을 지정함) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   listQuotesForRequest: {
@@ -1923,6 +2210,36 @@ export interface operations {
           'application/json': components['schemas']['ReceivedRequestListResponse']
         }
       }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  listMySentQuotes: {
+    parameters: {
+      query?: {
+        /** @description 견적 상태 필터. 생략하면 전체 조회. */
+        status?: components['schemas']['QuoteStatus']
+        /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
+        cursor?: components['parameters']['Cursor']
+        /** @description 페이지당 조회 개수. 생략하면 10. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 보낸 견적 목록 페이지. 견적이 없으면 빈 배열을 반환합니다. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SentQuoteListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }
@@ -2107,7 +2424,6 @@ export interface operations {
       query?: {
         /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
         cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
       }
       header?: never
       path?: never
@@ -2115,7 +2431,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 알림 목록 페이지 */
+      /** @description 미읽음 알림 목록 */
       200: {
         headers: {
           [name: string]: unknown
@@ -2124,6 +2440,79 @@ export interface operations {
           'application/json': components['schemas']['NotificationListResponse']
         }
       }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+    }
+  }
+  getUnreadNotificationCount: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 미읽음 알림 개수 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            unreadCount: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+    }
+  }
+  readAllNotifications: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 전체 알림 읽음 처리 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            updatedCount: number
+          }
+        }
+      }
+      401: components['responses']['Unauthorized']
+    }
+  }
+  readNotification: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 개별 알림 읽음 처리 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            updated: boolean
+          }
+        }
+      }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
     }
   }

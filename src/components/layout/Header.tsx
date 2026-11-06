@@ -9,12 +9,15 @@ import NotificationMenu from '@/components/layout/NotificationMenu'
 import ProfileMenu from '@/components/layout/ProfileMenu'
 import { isActivePath, NAV_ITEMS } from '@/constants/navigation'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { getRouteAccess } from '@/features/auth/lib/access'
 import { cn } from '@/lib/cn'
 
 export default function Header() {
   const pathname = usePathname()
   const { user, isPending } = useCurrentUser()
   const navItems = NAV_ITEMS[user?.role ?? 'GUEST']
+  const isAuthPage = getRouteAccess(pathname) === 'GUEST'
+  const showsLogin = !user && !isAuthPage
 
   return (
     <header className="sticky top-0 z-50 border-b border-line-100 bg-white">
@@ -64,12 +67,13 @@ export default function Header() {
         </div>
         {!isPending && (
           <div className="flex items-center gap-6 lg:gap-8">
-            {user ? (
+            {user && (
               <>
                 <NotificationMenu />
                 <ProfileMenu user={user} />
               </>
-            ) : (
+            )}
+            {showsLogin && (
               <div className="hidden lg:block">
                 <Button href="/login" className="lg:h-[54px] lg:w-auto lg:px-8">
                   로그인
@@ -78,9 +82,9 @@ export default function Header() {
             )}
             <MobileMenu
               items={
-                user
-                  ? navItems
-                  : [...navItems, { label: '로그인', href: '/login' }]
+                showsLogin
+                  ? [...navItems, { label: '로그인', href: '/login' }]
+                  : navItems
               }
               pathname={pathname}
             />

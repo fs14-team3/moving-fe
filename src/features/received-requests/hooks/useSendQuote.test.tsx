@@ -34,7 +34,7 @@ describe('useSendQuote', () => {
     vi.clearAllMocks()
   })
 
-  it('견적을 보내면 알리고 받은 요청 목록을 다시 불러온다', async () => {
+  it('견적을 보내면 알리고 받은 요청 · 보낸 견적 목록을 다시 불러온다', async () => {
     vi.mocked(sendQuote).mockResolvedValue(
       {} as Awaited<ReturnType<typeof sendQuote>>,
     )
@@ -49,6 +49,9 @@ describe('useSendQuote', () => {
     )
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.receivedRequests.lists(),
+    })
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.sentQuotes.lists(),
     })
   })
 

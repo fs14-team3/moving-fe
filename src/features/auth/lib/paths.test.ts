@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { canAccess, getRouteAccess } from '@/features/auth/lib/access'
 import { getLoginPath, getPathAfterLogin } from '@/features/auth/lib/paths'
 import type { Me, Role } from '@/features/auth/types'
 
@@ -20,11 +21,21 @@ const mover = createUser('MOVER')
 
 describe('getPathAfterLogin', () => {
   it.each<[Role, string]>([
-    ['CUSTOMER', '/'],
-    ['MOVER', '/'],
+    ['CUSTOMER', '/request'],
+    ['MOVER', '/mover/requests'],
   ])('redirect가 없으면 %s 유저를 기본 페이지 %s로 보낸다', (role, path) => {
     expect(getPathAfterLogin(createUser(role))).toBe(path)
   })
+
+  it.each<Role>(['CUSTOMER', 'MOVER'])(
+    '%s 유저는 자기 기본 페이지에 들어갈 수 있다',
+    (role) => {
+      const user = createUser(role)
+      const access = getRouteAccess(getPathAfterLogin(user))
+
+      expect(canAccess(access, user)).toBe(true)
+    },
+  )
 
   it.each<[Role, string]>([
     ['CUSTOMER', '/profile/register'],

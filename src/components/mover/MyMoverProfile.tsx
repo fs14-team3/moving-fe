@@ -2,6 +2,7 @@
 
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
+import ReviewSection from '@/components/mover/review/ReviewSection'
 import { getServiceTypeLabel } from '@/constants/services'
 import { useMyMover } from '@/features/movers/hooks/useMyMover'
 import { Heart, LoaderCircle, PencilLine } from 'lucide-react'
@@ -202,7 +203,11 @@ export default function MyMoverProfile() {
             </div>
           </section>
 
-          {/* TODO(#103): 받은 리뷰 · 평점 영역 추가 */}
+          <ReviewSection
+            mover={mover}
+            showEmptyMessage={false}
+            className="border-t border-line-100 pt-6 md:pt-10"
+          />
         </div>
       </div>
     </div>

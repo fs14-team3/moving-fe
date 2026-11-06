@@ -45,6 +45,10 @@ export function useSendQuote() {
       toast.success(TOAST_MESSAGES.estimate.sendSuccess)
       // 모달은 바로 닫고, 목록은 뒤에서 다시 불러온다.
       void refreshRequests()
+      // 내 견적 관리의 보낸 견적 목록에는 새로 생기므로 함께 다시 불러온다.
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.sentQuotes.lists(),
+      })
     },
     onError: (error) => {
       if (isUnauthorized(error)) return

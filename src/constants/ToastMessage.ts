@@ -22,6 +22,7 @@ export const TOAST_MESSAGES = {
   estimate: {
     requestSuccess: '견적 요청이 완료되었습니다.',
     requestFailed: '견적 요청에 실패했습니다.',
+    activeRequestExists: '이미 진행 중인 견적 요청이 있습니다.',
 
     confirmSuccess: '견적이 확정되었습니다.',
     confirmFailed: '견적 확정에 실패했습니다.',

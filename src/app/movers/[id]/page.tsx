@@ -40,8 +40,14 @@ export default function MoverDetailPage() {
   const { mutate: removeFavorite, isPending: isRemovingFavorite } =
     useRemoveFavorite(id)
 
-  const { activeMoveRequest, isPending: isActiveRequestPending } =
-    useActiveMoveRequest()
+  const canFetchActiveRequest = user?.role === 'CUSTOMER' && user.hasProfile
+  const {
+    activeMoveRequest,
+    isPending: isActiveRequestPending,
+    isError: isActiveRequestError,
+  } = useActiveMoveRequest({
+    enabled: canFetchActiveRequest,
+  })
 
   const { mutate: createDesignation, isPending: isCreatingDesignation } =
     useCreateDesignation()
@@ -215,6 +221,11 @@ export default function MoverDetailPage() {
       return
     }
 
+    if (isActiveRequestError) {
+      toast.error(TOAST_MESSAGES.estimate.requestFailed)
+      return
+    }
+
     if (!activeMoveRequest) {
       setIsModalOpen(true)
       return
@@ -227,7 +238,6 @@ export default function MoverDetailPage() {
       },
       {
         onSuccess: () => {
-          // TODO: 내 견적 관리 페이지 확정되면 경로 수정
           router.push('/my-quotes')
         },
       },
@@ -404,7 +414,7 @@ export default function MoverDetailPage() {
                   disabled={
                     isUserPending ||
                     isCreatingDesignation ||
-                    isActiveRequestPending ||
+                    (canFetchActiveRequest && isActiveRequestPending) ||
                     mover.isDesignated === true
                   }
                   className="w-auto min-w-0 flex-1 lg:w-full lg:flex-none"

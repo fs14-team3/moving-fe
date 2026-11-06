@@ -1,4 +1,5 @@
 import MoverDetailPage from '@/app/movers/[id]/page'
+import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import type { Me } from '@/features/auth/types'
 import { MOCK_MOVE_REQUEST } from '@/features/move-request/fixtures/moveRequests'
@@ -237,6 +238,32 @@ describe('MoverDetailPage', () => {
     await user.click(screen.getByRole('button', { name: '기사님 찜하기' }))
 
     expect(addFavorite).toHaveBeenCalled()
+  })
+
+  it('진행 중인 견적 조회에 실패하면 오류를 알린다', async () => {
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: undefined,
+      isPending: false,
+      isError: true,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    const user = userEvent.setup()
+
+    render(<MoverDetailPage />)
+
+    await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.requestFailed,
+    )
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('진행 중인 견적이 있으면 지정 견적을 요청한다', async () => {

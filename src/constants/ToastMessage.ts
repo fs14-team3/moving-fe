@@ -24,6 +24,12 @@ export const TOAST_MESSAGES = {
     requestFailed: '견적 요청에 실패했습니다.',
     activeRequestExists: '이미 진행 중인 견적 요청이 있습니다.',
 
+    designationRequestSuccess: '지정 견적 요청이 완료되었습니다.',
+    designationRequestFailed: '지정 견적 요청에 실패했습니다.',
+    alreadyDesignated: '이미 지정한 기사님입니다.',
+    moverAlreadyResponded: '이미 견적을 보냈거나 요청을 반려한 기사님입니다.',
+    designationLimitReached: '지정 견적은 최대 3명까지 요청할 수 있습니다.',
+
     confirmSuccess: '견적이 확정되었습니다.',
     confirmFailed: '견적 확정에 실패했습니다.',
 

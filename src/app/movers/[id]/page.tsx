@@ -3,12 +3,15 @@
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
+import GeneralModal from '@/components/common/modal/GeneralModal'
 import KakaoScript from '@/components/mover/KakaoScript'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { getServiceTypeLabel } from '@/constants/services'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { useActiveMoveRequest } from '@/features/move-request/hooks/useActiveMoveRequest'
+import { useCreateDesignation } from '@/features/move-request/hooks/useCreateDesignation'
 import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
 import { useMover } from '@/features/movers/hooks/useMover'
 import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
@@ -16,10 +19,12 @@ import { isApiError } from '@/lib/api-error'
 import { Heart, LoaderCircle, Star } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export default function MoverDetailPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   // 라우팅 및 API 상태
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
@@ -34,6 +39,18 @@ export default function MoverDetailPage() {
 
   const { mutate: removeFavorite, isPending: isRemovingFavorite } =
     useRemoveFavorite(id)
+
+  const canFetchActiveRequest = user?.role === 'CUSTOMER' && user.hasProfile
+  const {
+    activeMoveRequest,
+    isPending: isActiveRequestPending,
+    isError: isActiveRequestError,
+  } = useActiveMoveRequest({
+    enabled: canFetchActiveRequest,
+  })
+
+  const { mutate: createDesignation, isPending: isCreatingDesignation } =
+    useCreateDesignation()
 
   const isNotFound =
     isApiError(error) && (error.status === 400 || error.status === 404)
@@ -188,9 +205,50 @@ export default function MoverDetailPage() {
     addFavorite()
   }
 
+  function handleDesignate() {
+    if (!user) {
+      toast.info(TOAST_MESSAGES.favorite.loginRequired)
+      return
+    }
+
+    if (user.role !== 'CUSTOMER') {
+      toast.info(TOAST_MESSAGES.favorite.customerOnly)
+      return
+    }
+
+    if (!user.hasProfile) {
+      toast.info(TOAST_MESSAGES.favorite.profileRequired)
+      return
+    }
+
+    if (isActiveRequestError) {
+      toast.error(TOAST_MESSAGES.estimate.requestFailed)
+      return
+    }
+
+    if (!activeMoveRequest) {
+      setIsModalOpen(true)
+      return
+    }
+
+    createDesignation(
+      {
+        requestId: activeMoveRequest.id,
+        moverId: id,
+      },
+      {
+        onSuccess: () => {
+          router.push('/my-quotes')
+        },
+      },
+    )
+  }
+
   return (
     <>
       <KakaoScript />
+
+      <GeneralModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
       <main className="bg-gray-50">
         <header className="relative">
@@ -351,7 +409,16 @@ export default function MoverDetailPage() {
                   onClick={handleFavorite}
                   className="size-[54px] disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
                 />
-                <Button className="w-auto min-w-0 flex-1 lg:w-full lg:flex-none">
+                <Button
+                  onClick={handleDesignate}
+                  disabled={
+                    isUserPending ||
+                    isCreatingDesignation ||
+                    (canFetchActiveRequest && isActiveRequestPending) ||
+                    mover.isDesignated === true
+                  }
+                  className="w-auto min-w-0 flex-1 lg:w-full lg:flex-none"
+                >
                   지정 견적 요청하기
                 </Button>
                 <Button

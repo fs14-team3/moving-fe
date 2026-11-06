@@ -47,6 +47,7 @@ function createFavoritesResult(
 ) {
   return {
     favoriteMovers: [MOCK_MOVERS[0]],
+    totalCount: 1,
     isPending: false,
     isError: false,
     isRefetching: false,
@@ -159,5 +160,15 @@ describe('FavoritesPage', () => {
       [MOCK_MOVERS[0].id],
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     )
+  })
+
+  it('전체 선택에 찜한 기사님 전체 수를 보여준다', () => {
+    vi.mocked(useFavoriteMovers).mockReturnValue(
+      createFavoritesResult({ totalCount: 5 }),
+    )
+
+    render(<FavoritesPage />)
+
+    expect(screen.getByText('전체 선택 (0/5)')).toBeInTheDocument()
   })
 })

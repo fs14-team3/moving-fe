@@ -12,6 +12,7 @@ const response = {
   items: [MOCK_MOVERS[0]],
   nextCursor: 'next-cursor',
   hasNext: true,
+  totalCount: MOCK_MOVERS.length,
 }
 
 afterEach(() => {

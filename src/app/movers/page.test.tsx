@@ -165,6 +165,7 @@ function createFavoritesResult(
 ) {
   return {
     favoriteMovers: [],
+    totalCount: 0,
     isPending: false,
     isError: false,
     isRefetching: false,

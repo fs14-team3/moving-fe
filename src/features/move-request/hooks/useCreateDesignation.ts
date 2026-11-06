@@ -7,12 +7,18 @@ import { toast } from 'sonner'
 import { createDesignation } from '../api'
 import type { RequestId } from '../types'
 
-export function useCreateDesignation(requestId: RequestId, moverId: MoverId) {
+export function useCreateDesignation() {
   const queryClient = useQueryClient()
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => createDesignation(requestId, moverId),
-    onSuccess: async () => {
+    mutationFn: ({
+      requestId,
+      moverId,
+    }: {
+      requestId: RequestId
+      moverId: MoverId
+    }) => createDesignation(requestId, moverId),
+    onSuccess: async (_, { moverId }) => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: queryKeys.moveRequests.active(),

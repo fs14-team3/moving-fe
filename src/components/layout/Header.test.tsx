@@ -1,13 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Header from '@/components/layout/Header'
 import { NAV_ITEMS } from '@/constants/navigation'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 
+const navigation = vi.hoisted(() => ({ pathname: '/' }))
+
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+  usePathname: () => navigation.pathname,
   useRouter: () => ({ replace: vi.fn() }),
 }))
 
@@ -69,6 +71,10 @@ function getMobileMenuLinks() {
 }
 
 describe('Header', () => {
+  beforeEach(() => {
+    navigation.pathname = '/'
+  })
+
   it('내 정보를 불러오는 동안에는 메뉴와 로그인 버튼을 보여 주지 않는다', () => {
     renderHeader()
 
@@ -102,6 +108,18 @@ describe('Header', () => {
     (role) => {
       renderHeader(createUser(role))
       expect(screen.getByRole('button', { name: '알림' })).toBeInTheDocument()
+    },
+  )
+
+  it.each(['/login', '/signup', '/mover/login', '/mover/signup'])(
+    '%s에서는 비회원에게 로그인 버튼과 로그인 메뉴를 보여 주지 않는다',
+    (pathname) => {
+      navigation.pathname = pathname
+      renderHeader(null)
+
+      const links = NAV_ITEMS.GUEST.map(({ label, href }) => [label, href])
+      expect(getMenuLinks()).toEqual(links)
+      expect(getMobileMenuLinks()).toEqual(links)
     },
   )
 })

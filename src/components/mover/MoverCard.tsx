@@ -2,8 +2,8 @@
 
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
-import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
-import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
+import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
+import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
 import type { Mover } from '@/features/movers/types'
 import { Check, Heart, Star } from 'lucide-react'
 import Image from 'next/image'

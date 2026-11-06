@@ -32,9 +32,11 @@ export function useFavoriteMovers(
   })
 
   const favoriteMovers = data?.pages.flatMap((page) => page.items) ?? []
+  const totalCount = data?.pages[0]?.totalCount ?? 0
 
   return {
     favoriteMovers,
+    totalCount,
     isPending,
     isError,
     isRefetching,

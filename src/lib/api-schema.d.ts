@@ -15,7 +15,7 @@ export interface paths {
     put?: never
     /**
      * 이메일 회원가입
-     * @description 요청한 역할의 이메일 계정을 생성합니다. 이름·이메일·전화번호·비밀번호는 validator 기준에 따라 검증합니다.
+     * @description 요청한 역할의 이메일 계정을 생성하고 로그인 세션을 발급합니다. 이름·이메일·전화번호·비밀번호는 validator 기준에 따라 검증합니다.
      */
     post: operations['signup']
     delete?: never
@@ -75,11 +75,31 @@ export interface paths {
     }
     /**
      * 소셜 로그인 콜백 (등록된 redirect URI)
-     * @description 소셜 제공자의 응답을 검증한 뒤 가입 또는 로그인합니다. 동일 역할과 이메일을 가진 기존 계정이 있으면 소셜 계정을 연결하며, 처리 결과에 따라 프론트엔드로 리다이렉트합니다.
+     * @description 소셜 제공자의 응답을 검증한 뒤 가입 또는 로그인합니다.
      */
     get: operations['socialLoginCallback']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 로그아웃
+     * @description 현재 로그인된 세션을 종료하고 세션 쿠키를 삭제합니다.
+     */
+    post: operations['logout']
     delete?: never
     options?: never
     head?: never
@@ -327,7 +347,8 @@ export interface paths {
     }
     /**
      * 현재 활성 견적 요청 (없으면 null)
-     * @description §4.2.1의 활성 요청을 반환합니다. 이사일이 지난 요청을 계속 활성으로 반환하지 않도록 상태를 확인합니다.
+     * @description §4.2.1의 활성 요청을 반환합니다. 활성 여부는 견적 요청 생성의 제한과 같은 기준으로 판단합니다.
+     *     이사일이 지난 요청은 아직 `EXPIRED` 또는 `COMPLETED`로 바뀌지 않았어도 반환하지 않습니다.
      */
     get: operations['getActiveMoveRequest']
     put?: never
@@ -365,7 +386,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 견적 요청 상세 (요청자 본인) */
+    /**
+     * 견적 요청 상세 (요청자 본인)
+     * @description 이사일이 지났거나 종료된 요청도 조회할 수 있습니다. 다른 사용자의 요청은 없는 요청과 같이 404를 반환합니다.
+     */
     get: operations['getMoveRequest']
     put?: never
     post?: never
@@ -386,8 +410,9 @@ export interface paths {
     put?: never
     /**
      * 지정 견적 요청
-     * @description 호출자 본인의 일반 견적 요청이 먼저 있어야 합니다(§6.5). 해당 요청에 기사님을 지정합니다.
-     *     지정 요청 인원에는 별도의 상한을 두지 않습니다. 받은 지정 견적에만 3개 상한을 적용합니다(§7.1.1).
+     * @description 호출자 본인의 일반 견적 요청이 먼저 있어야 합니다(§6.5). 대기 중이고 이사일이 지나지 않은 요청에 기사님을 지정합니다.
+     *     한 요청에 기사님을 최대 3명까지 지정할 수 있으며, 동시에 요청해도 인원과 중복 제한을 지킵니다(§7.1.1).
+     *     이 요청에 이미 견적을 보냈거나 요청을 반려한 기사님은 지정할 수 없습니다.
      *     지정 요청은 기사님에게 라벨로 강조 표시하며, 기사님의 서비스 가능 지역과 관계없이 요청할 수 있습니다.
      */
     post: operations['designateMover']
@@ -458,6 +483,28 @@ export interface paths {
      *     이사 빠른 순·최근 요청 순 정렬을 지원합니다. 지역 단위와 매핑 방식은 추후 결정합니다.
      */
     get: operations['listReceivedRequests']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/movers/me/quotes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 보낸 견적 목록 조회 (기사님)
+     * @description 로그인한 기사님이 본인이 보낸 견적을 최신순으로 조회합니다.
+     *     견적 상태별 필터링과 커서 기반 페이지네이션을 지원합니다.
+     *     고객명은 닉네임을 우선 사용하며, 닉네임이 없으면 사용자 이름을 반환합니다.
+     */
+    get: operations['listMySentQuotes']
     put?: never
     post?: never
     delete?: never
@@ -691,6 +738,7 @@ export interface components {
       | 'VALIDATION_ERROR'
       | 'UNAUTHORIZED'
       | 'INVALID_CREDENTIALS'
+      | 'EMAIL_ALREADY_EXISTS'
       | 'FORBIDDEN'
       | 'PROFILE_REQUIRED'
       | 'NOT_IN_SERVICE_AREA'
@@ -698,6 +746,9 @@ export interface components {
       | 'NOT_FOUND'
       | 'PROFILE_ALREADY_EXISTS'
       | 'ACTIVE_REQUEST_EXISTS'
+      | 'ALREADY_DESIGNATED'
+      | 'MOVER_ALREADY_RESPONDED'
+      | 'DESIGNATION_LIMIT_REACHED'
       | 'REQUEST_NOT_PENDING'
       | 'QUOTE_LIMIT_REACHED'
       | 'RATE_LIMITED'
@@ -1022,6 +1073,9 @@ export interface components {
       createdAt: string
       moveRequest: components['schemas']['RequestForMover']
     }
+    SentQuoteListResponse: components['schemas']['CursorMeta'] & {
+      items: components['schemas']['SentQuote'][]
+    }
     RejectedRequest: {
       moveRequest: components['schemas']['RequestForMover']
       /** Format: date-time */
@@ -1206,6 +1260,15 @@ export interface operations {
         }
       }
       400: components['responses']['ValidationError']
+      /** @description `EMAIL_ALREADY_EXISTS`. 같은 역할로 이미 가입된 이메일인 경우 */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
       429: components['responses']['RateLimited']
     }
   }
@@ -1257,6 +1320,13 @@ export interface operations {
     }
     requestBody?: never
     responses: {
+      /** @description OAuth 인증 요청 안내 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
       /** @description Google / Kakao / Naver 인가(authorize) URL로 리다이렉트 */
       302: {
         headers: {
@@ -1282,7 +1352,6 @@ export interface operations {
         code?: string
         state: string
         error?: string
-        /** @description OAuth 제공자가 전달하는 인증 실패 상세 설명 */
         error_description?: string
       }
       header?: never
@@ -1296,9 +1365,73 @@ export interface operations {
       /** @description 로그인 결과 화면으로 이동 */
       302: {
         headers: {
+          /** @description 로그인 결과에 따른 프론트엔드 이동 URL */
+          Location?: string
           [name: string]: unknown
         }
         content?: never
+      }
+      /** @description 잘못된 OAuth 요청 또는 인증 실패 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description OAuth 인증 실패 */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description 서버 내부 오류 */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  logout: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 로그아웃 성공 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example 로그아웃되었습니다. */
+            message: string
+          }
+        }
+      }
+      /** @description 인증되지 않은 사용자 */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description 로그아웃 처리 실패 */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
       }
     }
   }
@@ -1827,6 +1960,7 @@ export interface operations {
           'application/json': components['schemas']['MoveRequest']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -1859,7 +1993,24 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
-      404: components['responses']['NotFound']
+      /** @description `NOT_FOUND`. 요청이 없거나 다른 사용자의 요청인 경우. 기사님이 없는 경우에는 `details`에 `moverId`가 담깁니다. */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `REQUEST_NOT_PENDING` (확정되었거나 이사일이 지난 요청), `ALREADY_DESIGNATED` (이미 지정한 기사님), `MOVER_ALREADY_RESPONDED` (이미 견적을 보냈거나 요청을 반려한 기사님) 또는 `DESIGNATION_LIMIT_REACHED` (이미 3명을 지정함) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   listQuotesForRequest: {
@@ -1993,6 +2144,36 @@ export interface operations {
           'application/json': components['schemas']['ReceivedRequestListResponse']
         }
       }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  listMySentQuotes: {
+    parameters: {
+      query?: {
+        /** @description 견적 상태 필터. 생략하면 전체 조회. */
+        status?: components['schemas']['QuoteStatus']
+        /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
+        cursor?: components['parameters']['Cursor']
+        /** @description 페이지당 조회 개수. 생략하면 10. */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 보낸 견적 목록 페이지. 견적이 없으면 빈 배열을 반환합니다. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SentQuoteListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }

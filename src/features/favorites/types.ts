@@ -4,13 +4,12 @@ type Schemas = components['schemas']
 
 export type FavoriteState = Schemas['FavoriteState']
 
+export type FavoriteListResponse = Schemas['FavoriteListResponse']
+
 export type FavoriteMoverListParams = NonNullable<
   operations['listMyFavorites']['parameters']['query']
 >
 
 export type FavoriteMoverListFilters = Omit<FavoriteMoverListParams, 'cursor'>
 
-// TODO: BE 머지 후 생성된 스키마 타입으로 교체
-export type RemoveFavoritesResponse = {
-  removedCount: number
-}
+export type RemoveFavoritesResponse = Schemas['FavoriteRemoveResult']

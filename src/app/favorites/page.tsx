@@ -12,6 +12,7 @@ export default function FavoritesPage() {
   // Hooks
   const {
     favoriteMovers,
+    totalCount,
     isPending,
     isError,
     isRefetching,
@@ -146,7 +147,7 @@ export default function FavoritesPage() {
                 />
               </span>
               <span className="text-sm leading-6 font-normal md:text-base">
-                전체 선택 ({selectedIds.length}/{favoriteMovers.length})
+                전체 선택 ({selectedIds.length}/{totalCount})
               </span>
             </label>
 

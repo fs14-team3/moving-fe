@@ -1,15 +1,19 @@
-import type { MoverId, MoverListResponse } from '@/features/movers/types'
+import type { MoverId } from '@/features/movers/types'
 import api from '@/lib/api'
 import {
+  FavoriteListResponse,
   RemoveFavoritesResponse,
   type FavoriteMoverListParams,
   type FavoriteState,
 } from './types'
 
 export async function getFavoriteMovers(params?: FavoriteMoverListParams) {
-  const { data } = await api.get<MoverListResponse>('/customers/me/favorites', {
-    params,
-  })
+  const { data } = await api.get<FavoriteListResponse>(
+    '/customers/me/favorites',
+    {
+      params,
+    },
+  )
 
   return data
 }

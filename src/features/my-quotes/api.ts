@@ -30,6 +30,29 @@ export async function getRequestQuotes(
   return data
 }
 
+// 받았던 견적. 지난 요청마다 받은 견적 전체가 함께 온다.
+export type QuoteHistoryItem = Omit<
+  Schemas['MoveRequestWithQuotes'],
+  'quotes'
+> & {
+  quotes: CustomerQuote[]
+}
+
+type QuoteHistoryQuery = NonNullable<
+  operations['listMoveRequestHistory']['parameters']['query']
+>
+
+type QuoteHistoryPage = Schemas['CursorMeta'] & {
+  items: QuoteHistoryItem[]
+}
+
+export async function getQuoteHistory(query: QuoteHistoryQuery = {}) {
+  const { data } = await api.get<QuoteHistoryPage>('/move-requests/history', {
+    params: query,
+  })
+  return data
+}
+
 export async function confirmQuote(quoteId: string) {
   const { data } = await api.post<Schemas['QuoteDetail']>(
     `/quotes/${quoteId}/confirm`,

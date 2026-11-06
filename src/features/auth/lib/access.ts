@@ -14,6 +14,7 @@ const ROUTE_ACCESS: Record<string, RouteAccess> = {
   '/mover/signup': 'GUEST',
   '/mover/profile/register': { role: 'MOVER', hasProfile: false },
   '/favorites': { role: 'CUSTOMER', hasProfile: true },
+  '/request': { role: 'CUSTOMER', hasProfile: true },
 }
 
 const ROUTES = Object.keys(ROUTE_ACCESS).sort((a, b) => b.length - a.length)

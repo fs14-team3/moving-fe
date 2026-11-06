@@ -1,5 +1,14 @@
 'use client'
 
+import type {
+  Notification,
+  NotificationType,
+} from '@/features/notifications/api'
+import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
+import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
+import { useDismiss } from '@/hooks/useDismiss'
+import { formatTimeAgo } from '@/lib/formatTimeAgo'
 import { LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -11,15 +20,6 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type {
-  Notification,
-  NotificationType,
-} from '@/features/notifications/api'
-import { useNotifications } from '@/features/notifications/hooks/useNotifications'
-import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
-import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
-import { useDismiss } from '@/hooks/useDismiss'
-import { formatTimeAgo } from '@/lib/formatTimeAgo'
 
 // 서버가 문구를 주지 않았을 때 보여줄 기본 문구
 const DEFAULT_MESSAGE: Record<NotificationType, string> = {
@@ -27,6 +27,7 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   NEW_QUOTE: '새로운 견적이 도착했어요',
   QUOTE_CONFIRMED: '견적이 확정되었어요',
   MOVE_DAY: '내일은 이사 예정일이에요',
+  NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
 }
 
 // TODO(#87): 시안처럼 이사 종류·지역 등을 강조하려면 BE에 payload 구조를 받아서 문구를 조합한다.

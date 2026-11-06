@@ -4,6 +4,7 @@ import Button from '@/components/common/button/Button'
 import Pagination from '@/components/common/pagination/Pagination'
 import { useMoverReviews } from '@/features/movers/hooks/useMoverReviews'
 import type { MoverDetail } from '@/features/movers/types'
+import { cn } from '@/lib/cn'
 import { LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import RatingDistribution from './RatingDistribution'
@@ -15,11 +16,18 @@ type ReviewSectionProps = {
     MoverDetail,
     'id' | 'averageRating' | 'reviewCount' | 'ratingCounts'
   >
+  // 리뷰가 없을 때 안내 문구를 보여 줄지. 기사님 마이페이지는 리뷰 칸을 비워 둔다.
+  showEmptyMessage?: boolean
+  className?: string
 }
 
 const PAGE_SIZE = 5
 
-export default function ReviewSection({ mover }: ReviewSectionProps) {
+export default function ReviewSection({
+  mover,
+  showEmptyMessage = true,
+  className,
+}: ReviewSectionProps) {
   const [page, setPage] = useState(1)
 
   const {
@@ -37,7 +45,12 @@ export default function ReviewSection({ mover }: ReviewSectionProps) {
   })
 
   return (
-    <section className="flex flex-col gap-4 lg:border-t lg:border-line-100 lg:pt-10">
+    <section
+      className={cn(
+        'flex flex-col gap-4 lg:border-t lg:border-line-100 lg:pt-10',
+        className,
+      )}
+    >
       <h2 className="text-xl leading-8 font-semibold">리뷰</h2>
 
       {isPending ? (
@@ -68,7 +81,7 @@ export default function ReviewSection({ mover }: ReviewSectionProps) {
           </Button>
         </div>
       ) : totalCount === 0 ? (
-        <ReviewList reviews={[]} />
+        showEmptyMessage && <ReviewList reviews={[]} />
       ) : (
         <>
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">

@@ -305,7 +305,13 @@ export interface paths {
     get: operations['listMyFavorites']
     put?: never
     post?: never
-    delete?: never
+    /**
+     * 찜 일괄 해제 (멱등)
+     * @description 프로필을 등록한 일반 유저만 호출할 수 있습니다. 찜한 기사님 페이지의 선택 항목 삭제에 씁니다.
+     *     화면에서 선택한 기사님의 id를 `moverIds`로 보내면 그 기사님들만 해제합니다. 전체 선택도 화면에 보이는 기사님만 선택하므로 같은 방식으로 보냅니다.
+     *     `all: true`를 보내면 본인의 찜을 모두 해제합니다. 찜하지 않았거나 없는 기사님과 중복된 id는 건너뛰고 실제 해제된 수를 반환하며, `moverIds`는 한 번에 최대 500개입니다.
+     */
+    delete: operations['removeMyFavorites']
     options?: never
     head?: never
     patch?: never
@@ -953,12 +959,37 @@ export interface components {
     MoverListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['MoverSummary'][]
     }
+    FavoriteListResponse: components['schemas']['MoverListResponse'] & {
+      /** @description 찜한 기사님 전체 수 */
+      totalCount: number
+    }
     FavoriteState: {
       /** Format: uuid */
       moverId: string
       isFavorite: boolean
       /** @description 기사님이 받은 전체 찜 수 */
       favoriteCount: number
+    }
+    FavoriteRemoveRequest:
+      | {
+          /**
+           * @description 생략할 수 있습니다
+           * @enum {boolean}
+           */
+          all?: false
+          /** @description 해제할 기사님의 user id. 중복은 한 번만 처리합니다. */
+          moverIds: string[]
+        }
+      | {
+          /**
+           * @description 본인의 찜을 모두 해제합니다
+           * @enum {boolean}
+           */
+          all: true
+        }
+    FavoriteRemoveResult: {
+      /** @description 이번 요청으로 실제 해제된 찜 수 */
+      removedCount: number
     }
     /** @description 우편번호 서비스로 입력한 주소. 제공자는 특정하지 않으며, 지역은 서버가 주소로 판별합니다. */
     AddressInput: {
@@ -1822,16 +1853,51 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 찜한 기사님 목록 페이지 (`isFavorite`는 항상 true). 찜한 기사님이 없으면 `items`는 빈 배열, `nextCursor`는 null, `hasNext`는 false입니다. */
+      /** @description 찜한 기사님 목록 페이지 (`isFavorite`는 항상 true, `totalCount`는 찜한 기사님 전체 수). 찜한 기사님이 없으면 `items`는 빈 배열, `totalCount`는 0, `nextCursor`는 null, `hasNext`는 false입니다. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['MoverListResponse']
+          'application/json': components['schemas']['FavoriteListResponse']
         }
       }
       /** @description `VALIDATION_ERROR`. `limit`이 허용 범위를 벗어나거나 `cursor`가 잘못된 경우 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  removeMyFavorites: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FavoriteRemoveRequest']
+      }
+    }
+    responses: {
+      /** @description 이번 요청으로 실제 해제된 찜 수. 해제된 찜이 없으면 0입니다. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FavoriteRemoveResult']
+        }
+      }
+      /** @description `VALIDATION_ERROR`. `moverIds`가 없거나 비어 있거나, 500개를 넘거나, uuid가 아닌 값이 있거나, `all: true`와 `moverIds`를 함께 보낸 경우 */
       400: {
         headers: {
           [name: string]: unknown

@@ -42,13 +42,13 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
   },
 }
 
-export const MOCK_CONFIRMED_QUOTE_DETAIL: QuoteDetail = {
-  ...MOCK_QUOTE_DETAIL,
-  status: 'CONFIRMED',
-  confirmedAt: '2026-11-06T03:00:00.000Z',
-  moveRequest: {
-    ...MOCK_QUOTE_DETAIL.moveRequest,
-    status: 'CONFIRMED',
-    confirmedAt: '2026-11-06T03:00:00.000Z',
-  },
-}
+// export const MOCK_CONFIRMED_QUOTE_DETAIL: QuoteDetail = {
+//   ...MOCK_QUOTE_DETAIL,
+//   status: 'CONFIRMED',
+//   confirmedAt: '2026-11-06T03:00:00.000Z',
+//   moveRequest: {
+//     ...MOCK_QUOTE_DETAIL.moveRequest,
+//     status: 'CONFIRMED',
+//     confirmedAt: '2026-11-06T03:00:00.000Z',
+//   },
+// }

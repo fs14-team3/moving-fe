@@ -39,7 +39,8 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { user, isPending, isError, isRefetching, refetch } = useCurrentUser()
   const access = getRouteAccess(pathname)
-  const isBlocked = !isPending && !isError && !canAccess(access, user)
+  const hasSessionError = isError && !user
+  const isBlocked = !isPending && !hasSessionError && !canAccess(access, user)
 
   useEffect(() => {
     if (!isBlocked) return
@@ -47,8 +48,10 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
     if (redirectPath) router.replace(redirectPath)
   }, [isBlocked, access, user, router])
 
-  if (access === 'PUBLIC' || (access === 'GUEST' && isError)) return children
-  if (isError) {
+  if (access === 'PUBLIC' || (access === 'GUEST' && hasSessionError)) {
+    return children
+  }
+  if (hasSessionError) {
     return <SessionError isRetrying={isRefetching} onRetry={() => refetch()} />
   }
   if (isPending || isBlocked) return <SessionPending />

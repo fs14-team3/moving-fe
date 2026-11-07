@@ -2,6 +2,7 @@ import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
+import { cn } from '@/lib/cn'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 
@@ -9,120 +10,205 @@ export default function QuoteDetail() {
   // TODO: API 연동 시 삭제
   const quote = MOCK_QUOTE_DETAIL
 
+  const isPending = quote.status === 'SUBMITTED'
+
   return (
-    <div>
-      <header>
-        <h1>견적 상세</h1>
+    <div className="bg-gray-50">
+      <header className="px-[30px] py-[14px] md:px-18 lg:mx-auto lg:max-w-[1354px] lg:px-18 lg:py-8">
+        <h1 className="text-lg leading-6 font-semibold lg:text-2xl lg:leading-8">
+          견적 상세
+        </h1>
       </header>
 
-      <div>
+      <div className="relative">
         <div
           aria-hidden="true"
-          className="h-[122px] w-full bg-[url('/assets/images/mover_detail_banner.png')] bg-cover bg-center bg-no-repeat md:h-[157px] lg:h-[225px]"
+          className="h-[122px] w-full bg-[url('/assets/images/mover_detail_banner.png')] bg-cover bg-center bg-no-repeat md:h-[157px] lg:h-45"
         />
-        <Image
-          src={quote.mover.imageUrl ?? '/assets/images/profile.png'}
-          width={64}
-          height={64}
-          alt={`${quote.mover.nickname} 기사님 프로필`}
-        />
+        <div className="absolute inset-x-0 top-0 mx-auto h-full max-w-[1354px]">
+          <Image
+            src={quote.mover.imageUrl ?? '/assets/images/profile.png'}
+            width={64}
+            height={64}
+            alt={`${quote.mover.nickname} 기사님 프로필`}
+            className="absolute top-20 left-4 rounded-xl md:top-20 md:left-18 md:size-25 lg:top-[97px] lg:size-[134px]"
+          />
+        </div>
       </div>
 
-      <article>
-        <header>
-          <div>
-            {quote.mover.serviceTypes?.map((serviceType) => (
-              <ServiceTypeChip serviceType={serviceType} key={serviceType} />
-            ))}
-            <p>{quote.mover.intro}</p>
-          </div>
-          <p>{quote.status}</p>
-        </header>
+      <div
+        className={cn(
+          'px-5 pt-[35px] md:px-18 md:pt-[46px] lg:mx-auto lg:grid lg:max-w-[1354px] lg:grid-cols-[minmax(0,766px)_328px] lg:gap-x-35 lg:px-18 lg:pt-[82px] lg:pb-[62px]',
+          isPending && 'pb-[110px]',
+        )}
+      >
+        <article>
+          <header className="flex flex-col gap-3 border-b border-line-100 pb-3 md:pb-5">
+            <div className="flex justify-between">
+              <div className="flex gap-2 md:gap-3">
+                {quote.mover.serviceTypes?.map((serviceType) => (
+                  <ServiceTypeChip
+                    serviceType={serviceType}
+                    key={serviceType}
+                  />
+                ))}
+              </div>
+              <p className="text-base leading-6 font-semibold text-gray-400">
+                {quote.status}
+              </p>
+            </div>
+            <p className="text-lg leading-6 font-semibold md:text-2xl md:leading-8">
+              {quote.mover.intro}
+            </p>
+          </header>
 
-        <div>
-          <div>
-            <div>
-              <Image
-                src="/assets/icons/mover_badge.png"
-                width={20}
-                height={23}
-                alt=""
-              />
-              <p>{quote.mover.nickname} 기사님</p>
+          <div className="flex items-start justify-between border-b border-line-100 py-3 md:py-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-1">
+                <Image
+                  src="/assets/icons/mover_badge.png"
+                  width={20}
+                  height={23}
+                  alt=""
+                />
+                <p className="text-base leading-6 font-semibold md:text-lg">
+                  {quote.mover.nickname} 기사님
+                </p>
+              </div>
+
+              <dl className="flex items-center gap-2">
+                <div className="flex items-center gap-[2px] text-sm leading-6 font-medium">
+                  <Star
+                    aria-hidden="true"
+                    className="size-5 fill-yellow-400 text-yellow-400"
+                  />
+                  <dd>
+                    {quote.mover.averageRating.toFixed(1)}{' '}
+                    <span className="text-gray-400">
+                      ({quote.mover.reviewCount})
+                    </span>
+                  </dd>
+                </div>
+
+                <div aria-hidden="true" className="h-[14px] w-px bg-line-200" />
+
+                <div className="flex items-center gap-1 text-sm leading-6 font-medium">
+                  <dt className="text-gray-400">경력</dt>
+                  <dd>{quote.mover.careerYears}년</dd>
+                </div>
+
+                <div aria-hidden="true" className="h-[14px] w-px bg-line-200" />
+
+                <div className="flex items-center gap-1 text-sm leading-6 font-medium">
+                  <dd>{quote.mover.confirmedCount}건</dd>
+                  <dt className="text-gray-400">확정</dt>
+                </div>
+              </dl>
             </div>
 
-            <dl>
-              <div>
-                <Star aria-hidden="true" />
-                <dd>
-                  {quote.mover.averageRating}{' '}
-                  <span>({quote.mover.reviewCount})</span>
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-1"
+            >
+              <span className="text-sm leading-6 font-medium text-gray-500 md:text-lg">
+                {quote.mover.favoriteCount}
+              </span>
+              <Heart
+                aria-hidden="true"
+                className={
+                  quote.mover.isFavorite
+                    ? 'size-4 fill-red-500 text-red-500'
+                    : 'size-4 fill-transparent text-gray-300'
+                }
+              />
+            </button>
+          </div>
+
+          <section className="flex items-center justify-between border-b border-line-100 py-5 md:justify-start md:gap-[61px] md:py-8">
+            <h2 className="text-base leading-6 font-semibold md:text-xl md:leading-8">
+              견적가
+            </h2>
+            <p className="text-xl leading-8 font-bold md:text-2xl">
+              {quote.price.toLocaleString()}원
+            </p>
+          </section>
+
+          <section className="border-b border-line-100 py-5 md:py-8 lg:border-none">
+            <h2 className="pb-5 text-base leading-6 font-semibold md:pb-8 md:text-xl md:leading-8">
+              견적 정보
+            </h2>
+            <dl className="flex flex-col gap-3 md:gap-4">
+              <div className="flex items-center justify-between gap-6 md:justify-start">
+                <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
+                  견적 요청일
+                </dt>
+                <dd className="text-base leading-6 font-medium">
+                  {quote.moveRequest.createdAt}
                 </dd>
               </div>
-              <div>
-                <dt>경력</dt>
-                <dd>{quote.mover.careerYears}년</dd>
+              <div className="flex items-center justify-between gap-6 md:justify-start">
+                <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
+                  서비스
+                </dt>
+                <dd className="text-base leading-6 font-medium">
+                  {quote.moveRequest.moveType}
+                </dd>
               </div>
-              <div>
-                <dd>{quote.mover.confirmedCount}건</dd>
-                <dt>확정</dt>
+              <div className="flex items-center justify-between gap-6 md:justify-start">
+                <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
+                  이용일
+                </dt>
+                <dd className="text-base leading-6 font-medium">
+                  {quote.moveRequest.moveDate}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-6 md:justify-start">
+                <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
+                  출발지
+                </dt>
+                <dd className="text-base leading-6 font-medium">
+                  {quote.moveRequest.from.address}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-6 md:justify-start">
+                <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
+                  도착지
+                </dt>
+                <dd className="text-base leading-6 font-medium">
+                  {quote.moveRequest.to.address}
+                </dd>
               </div>
             </dl>
-          </div>
+          </section>
+        </article>
 
-          <button type="button">
-            <span>{quote.mover.favoriteCount}</span>
-            <Heart aria-hidden="true" />
-          </button>
-        </div>
+        <aside>
+          {quote.status === 'SUBMITTED' && (
+            <section className="fixed inset-x-0 bottom-0 z-50 bg-gray-50 px-6 py-7 md:px-18 lg:static lg:border-b lg:border-line-100 lg:px-0 lg:pb-10">
+              <p className="hidden text-lg leading-6 font-semibold text-gray-400 lg:block">
+                견적가
+              </p>
+              <p className="hidden text-2xl leading-8 font-bold lg:block">
+                {quote.price.toLocaleString()}원
+              </p>
+              <Button className="w-full cursor-pointer lg:mt-[30px] lg:w-80">
+                견적 확정하기
+              </Button>
+            </section>
+          )}
 
-        <section>
-          <h2>견적가</h2>
-          <p>{quote.price}</p>
-        </section>
-
-        <section>
-          <h2>견적 정보</h2>
-          <dl>
-            <div>
-              <dt>견적 요청일</dt>
-              <dd>{quote.moveRequest.createdAt}</dd>
+          <section className="mb-10 flex flex-col gap-3 py-5 md:py-8 md:pb-16 lg:mb-0 lg:gap-5 lg:px-0 lg:pt-10">
+            <h2 className="text-base leading-8 font-semibold lg:text-xl">
+              견적서 공유하기
+            </h2>
+            <div className="flex gap-3 lg:gap-4">
+              <IconButton icon="link" className="cursor-pointer" />
+              <IconButton icon="kakao" className="cursor-pointer" />
+              <IconButton icon="facebook" className="cursor-pointer" />
             </div>
-            <div>
-              <dt>서비스</dt>
-              <dd>{quote.moveRequest.moveType}</dd>
-            </div>
-            <div>
-              <dt>이용일</dt>
-              <dd>{quote.moveRequest.moveDate}</dd>
-            </div>
-            <div>
-              <dt>출발지</dt>
-              <dd>{quote.moveRequest.from.address}</dd>
-            </div>
-            <div>
-              <dt>도착지</dt>
-              <dd>{quote.moveRequest.to.address}</dd>
-            </div>
-          </dl>
-        </section>
-      </article>
-
-      <aside>
-        <section>
-          {/* status에 따라 보여줄지 말지 분기 */}
-          <p>견적가</p>
-          <p>{quote.price}</p>
-          <Button>견적 확정하기</Button>
-        </section>
-
-        <section>
-          <h2>견적서 공유하기</h2>
-          <IconButton icon="link" className="cursor-pointer" />
-          <IconButton icon="kakao" className="cursor-pointer" />
-          <IconButton icon="facebook" className="cursor-pointer" />
-        </section>
-      </aside>
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }

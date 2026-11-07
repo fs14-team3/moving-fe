@@ -1,9 +1,15 @@
+'use client'
+
+import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
+import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
+import { formatRequestDate } from '@/features/my-quotes/format'
+import { formatMoveDate } from '@/features/received-requests/format'
 import { cn } from '@/lib/cn'
-import { Heart, Star } from 'lucide-react'
+import { FileText, Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 
 export default function QuoteDetail() {
@@ -45,17 +51,36 @@ export default function QuoteDetail() {
         <article>
           <header className="flex flex-col gap-3 border-b border-line-100 pb-3 md:pb-5">
             <div className="flex justify-between">
-              <div className="flex gap-2 md:gap-3">
+              <div className="flex flex-wrap gap-2 md:gap-3">
                 {quote.mover.serviceTypes?.map((serviceType) => (
                   <ServiceTypeChip
                     serviceType={serviceType}
                     key={serviceType}
                   />
                 ))}
+                {quote.isDesignated && (
+                  <Badge icon={<FileText className="size-3.5 md:size-4" />}>
+                    지정 견적 요청
+                  </Badge>
+                )}
               </div>
-              <p className="text-base leading-6 font-semibold text-gray-400">
-                {quote.status}
-              </p>
+              {quote.status === 'CONFIRMED' ? (
+                <div className="flex shrink-0 items-center gap-1">
+                  <Image
+                    src="/assets/icons/confirmed-badge.svg"
+                    width={16}
+                    height={16}
+                    alt=""
+                  />
+                  <p className="text-base leading-6 font-bold text-primary-400">
+                    확정견적
+                  </p>
+                </div>
+              ) : (
+                <p className="shrink-0 text-base leading-6 font-semibold text-gray-400">
+                  견적대기
+                </p>
+              )}
             </div>
             <p className="text-lg leading-6 font-semibold md:text-2xl md:leading-8">
               {quote.mover.intro}
@@ -143,7 +168,7 @@ export default function QuoteDetail() {
                   견적 요청일
                 </dt>
                 <dd className="text-base leading-6 font-medium">
-                  {quote.moveRequest.createdAt}
+                  {formatRequestDate(quote.moveRequest.createdAt)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-6 md:justify-start">
@@ -151,7 +176,7 @@ export default function QuoteDetail() {
                   서비스
                 </dt>
                 <dd className="text-base leading-6 font-medium">
-                  {quote.moveRequest.moveType}
+                  {MOVE_TYPE[quote.moveRequest.moveType].label}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-6 md:justify-start">
@@ -159,7 +184,7 @@ export default function QuoteDetail() {
                   이용일
                 </dt>
                 <dd className="text-base leading-6 font-medium">
-                  {quote.moveRequest.moveDate}
+                  {formatMoveDate(quote.moveRequest.moveDate)}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-6 md:justify-start">

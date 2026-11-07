@@ -70,6 +70,8 @@ function MoversPageContent() {
     refetch: refetchFavorites,
     isRefetching: isFavoritesRefetching,
   } = useFavoriteMovers({ limit: 3 }, { enabled: isCustomer })
+  const isInitialFavoritesError =
+    isFavoritesError && favoriteMovers.length === 0
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -192,7 +194,7 @@ function MoversPageContent() {
                   찜한 기사님을 불러오고 있습니다.
                 </p>
               </div>
-            ) : isFavoritesError ? (
+            ) : isInitialFavoritesError ? (
               <div
                 role="alert"
                 className="mt-2 flex flex-col items-center justify-center gap-2 rounded-2xl border border-line-100 bg-white px-4 py-6 lg:py-8"

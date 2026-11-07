@@ -94,4 +94,15 @@ describe('MoveRequestPage', () => {
     expect(screen.getByText('견적 요청 생성 폼')).toBeInTheDocument()
     expect(screen.queryByText('활성 견적 요청 화면')).not.toBeInTheDocument()
   })
+
+  it('진행 중인 견적을 다시 불러오다 실패해도 작성하던 견적 요청 폼을 유지한다', () => {
+    vi.mocked(useActiveMoveRequest).mockReturnValue(
+      createActiveMoveRequestResult({ activeMoveRequest: null, isError: true }),
+    )
+
+    render(<MoveRequestPage />)
+
+    expect(screen.getByText('견적 요청 생성 폼')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })

@@ -25,7 +25,7 @@ export default function MoveRequestPage() {
             진행 중인 견적 요청을 불러오고 있습니다.
           </p>
         </div>
-      ) : isError ? (
+      ) : isError && activeMoveRequest === undefined ? (
         <div
           role="alert"
           className="flex min-h-page w-full flex-col items-center justify-center gap-3"

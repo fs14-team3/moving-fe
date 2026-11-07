@@ -323,6 +323,29 @@ describe('MoversPage', () => {
     )
   })
 
+  it('찜한 기사님을 다시 불러오다 실패해도 불러온 목록을 계속 보여 준다', () => {
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useFavoriteMovers).mockReturnValue(
+      createFavoritesResult({
+        favoriteMovers: [MOCK_MOVERS[1]],
+        isError: true,
+      }),
+    )
+
+    render(<MoversPage />)
+
+    expect(screen.getByText('이친절')).toBeInTheDocument()
+    expect(
+      screen.queryByText('찜한 기사님을 불러오지 못했습니다.'),
+    ).not.toBeInTheDocument()
+  })
+
   it('필터를 바꾸면 해당 조건을 URL에 반영한다', () => {
     render(<MoversPage />)
 

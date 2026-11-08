@@ -183,7 +183,7 @@ describe('BasicInfoForm', () => {
     await user.tab()
 
     expect(fields.newPassword).toHaveAccessibleDescription(
-      '영문, 숫자, 특수문자를 포함해 8자 이상 입력해 주세요.',
+      '공백 없이 영문, 숫자, 특수문자를 포함해 8~16자로 입력해 주세요.',
     )
   })
 

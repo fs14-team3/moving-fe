@@ -28,11 +28,7 @@ type RejectedRequestQuery = NonNullable<
 export async function getReceivedRequests(query: ReceivedRequestQuery) {
   const { data } = await api.get<ReceivedRequestPage>(
     '/movers/me/received-requests',
-    {
-      params: query,
-      // 배열은 moveTypes=SMALL&moveTypes=HOME 형태로 보낸다.
-      paramsSerializer: { indexes: null },
-    },
+    { params: { ...query, moveTypes: query.moveTypes?.join(',') } },
   )
   return data
 }

@@ -10,9 +10,19 @@ import {
 } from '@/features/auth/lib/validation'
 
 describe('getNameError', () => {
-  it('비어 있으면 입력을 요청하고, 그 밖에는 오류가 없다', () => {
+  it('비어 있으면 입력을 요청한다', () => {
     expect(getNameError('')).toBe('이름을 입력해 주세요.')
-    expect(getNameError('김무빙')).toBeUndefined()
+  })
+
+  it.each(['김무', '김무빙', '가'.repeat(20)])(
+    '2~20자 이름 %s는 오류가 없다',
+    (name) => {
+      expect(getNameError(name)).toBeUndefined()
+    },
+  )
+
+  it.each(['김', '가'.repeat(21)])('%s는 길이 안내를 보여 준다', (name) => {
+    expect(getNameError(name)).toBe('이름은 2~20자로 입력해 주세요.')
   })
 })
 
@@ -38,19 +48,20 @@ describe('getPhoneError', () => {
     expect(getPhoneError('')).toBe('전화번호를 입력해 주세요.')
   })
 
-  it.each(['01012345678', '0111234567', '01612345678', '0191234567'])(
-    '휴대전화 번호 %s는 오류가 없다',
-    (phone) => {
-      expect(getPhoneError(phone)).toBeUndefined()
-    },
-  )
+  it('010으로 시작하는 11자리 번호는 오류가 없다', () => {
+    expect(getPhoneError('01012345678')).toBeUndefined()
+  })
 
-  it.each(['0101234567', '010123456789', '01212345678', '010-1234-5678'])(
-    '%s는 휴대전화 번호 형식 오류로 본다',
-    (phone) => {
-      expect(getPhoneError(phone)).toBe('올바른 휴대전화 번호를 입력해 주세요.')
-    },
-  )
+  it.each([
+    '0101234567',
+    '010123456789',
+    '0111234567',
+    '01612345678',
+    '01212345678',
+    '010-1234-5678',
+  ])('%s는 휴대전화 번호 형식 오류로 본다', (phone) => {
+    expect(getPhoneError(phone)).toBe('올바른 휴대전화 번호를 입력해 주세요.')
+  })
 })
 
 describe('getPasswordError', () => {
@@ -65,12 +76,18 @@ describe('getNewPasswordError', () => {
     expect(getNewPasswordError('')).toBe('비밀번호를 입력해 주세요.')
   })
 
-  it('영문, 숫자, 특수문자를 포함한 8자 이상이면 오류가 없다', () => {
-    expect(getNewPasswordError('moving1!')).toBeUndefined()
-  })
+  it.each(['moving1!', 'moving12345678!@'])(
+    '영문, 숫자, 특수문자를 포함한 8~16자 %s는 오류가 없다',
+    (password) => {
+      expect(getNewPasswordError(password)).toBeUndefined()
+    },
+  )
 
   it.each([
     ['7자', 'movin1!'],
+    ['17자', 'moving12345678!@#'],
+    ['공백이 있는', 'moving 1!'],
+    ['한글이 있는', '무빙moving1!'],
     ['특수문자가 없는', 'moving12'],
     ['숫자가 없는', 'moving!!'],
     ['영문이 없는', '1234567!'],

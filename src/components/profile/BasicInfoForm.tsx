@@ -61,20 +61,6 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   const isChangingPassword = Boolean(
     values.currentPassword || values.newPassword || values.newPasswordConfirm,
   )
-  const errors: FieldErrors = {
-    name: getNameError(name),
-    email: getEmailError(email),
-    phone: getPhoneError(values.phone),
-  }
-  if (isChangingPassword) {
-    errors.currentPassword = getPasswordError(values.currentPassword)
-    errors.newPassword = getNewPasswordError(values.newPassword)
-    errors.newPasswordConfirm = getPasswordConfirmError(
-      values.newPassword,
-      values.newPasswordConfirm,
-    )
-  }
-
   const body: BasicInfoUpdate = {}
   if (name !== savedName) body.name = name
   if (email !== savedEmail) body.email = email
@@ -82,6 +68,19 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   if (isChangingPassword) {
     body.currentPassword = values.currentPassword
     body.newPassword = values.newPassword
+  }
+
+  const errors: FieldErrors = {}
+  if (body.name !== undefined) errors.name = getNameError(body.name)
+  if (body.email !== undefined) errors.email = getEmailError(body.email)
+  if (body.phone !== undefined) errors.phone = getPhoneError(body.phone)
+  if (isChangingPassword) {
+    errors.currentPassword = getPasswordError(values.currentPassword)
+    errors.newPassword = getNewPasswordError(values.newPassword)
+    errors.newPasswordConfirm = getPasswordConfirmError(
+      values.newPassword,
+      values.newPasswordConfirm,
+    )
   }
 
   const canSubmit =

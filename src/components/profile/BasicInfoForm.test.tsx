@@ -114,6 +114,20 @@ describe('BasicInfoForm', () => {
     )
   })
 
+  it('저장된 값이 규칙에 맞지 않아도 바꾼 입력란만 검사해 보낸다', async () => {
+    currentUser.user = { ...createUser('MOVER'), name: 'A', phone: null }
+    const { user, fields, submit } = renderBasicInfoForm()
+
+    await user.clear(fields.email)
+    await user.type(fields.email, 'new@example.com')
+    await user.click(submit)
+
+    expect(updateBasicInfoState.mutate).toHaveBeenCalledWith(
+      { email: 'new@example.com' },
+      expect.anything(),
+    )
+  })
+
   it('다시 불러온 정보는 고치지 않은 입력란에 반영하고 보내지 않는다', async () => {
     const { user, rerender, fields, submit } = renderBasicInfoForm()
     await user.clear(fields.phone)

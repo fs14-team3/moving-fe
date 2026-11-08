@@ -75,12 +75,33 @@ describe('useUpdateBasicInfo', () => {
     expect(toast.error).not.toHaveBeenCalled()
   })
 
-  it('서버가 알려 준 입력란에만 오류를 표시한다', async () => {
+  it('서버가 알려 준 입력란에 첫 번째 사유를 표시하고 모르는 필드는 무시한다', async () => {
     vi.mocked(updateBasicInfo).mockRejectedValue(
       new ApiError('VALIDATION_ERROR', 'Bad Request', 400, [
-        { field: 'email', reason: 'INVALID' },
-        { field: 'currentPassword', reason: 'MISMATCH' },
-        { field: 'unknown', reason: 'INVALID' },
+        { field: 'name', reason: '이름은 20자 이하여야 합니다' },
+        { field: 'email', reason: '올바른 이메일 형식이 아닙니다' },
+        { field: 'email', reason: '이메일은 255자 이하여야 합니다' },
+        { field: 'unknown', reason: '알 수 없는 입력입니다' },
+      ]),
+    )
+    const { result, onFieldErrors } = renderUseUpdateBasicInfo()
+
+    act(() => result.current.mutate({ email: 'new@example.com' }))
+
+    await waitFor(() =>
+      expect(onFieldErrors).toHaveBeenCalledWith({
+        name: '이름은 20자 이하여야 합니다',
+        email: '올바른 이메일 형식이 아닙니다',
+      }),
+    )
+    expect(toast.error).not.toHaveBeenCalled()
+  })
+
+  it('사유가 비어 있으면 입력란별 기본 안내를 보여 준다', async () => {
+    vi.mocked(updateBasicInfo).mockRejectedValue(
+      new ApiError('VALIDATION_ERROR', 'Bad Request', 400, [
+        { field: 'email', reason: '' },
+        { field: 'currentPassword', reason: '' },
       ]),
     )
     const { result, onFieldErrors } = renderUseUpdateBasicInfo()
@@ -93,7 +114,6 @@ describe('useUpdateBasicInfo', () => {
         currentPassword: '현재 비밀번호를 다시 확인해 주세요.',
       }),
     )
-    expect(toast.error).not.toHaveBeenCalled()
   })
 
   it.each([

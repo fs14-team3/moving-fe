@@ -88,7 +88,7 @@ export default function MoverDetailPage() {
 
   if (isNotFound) return null
 
-  if (isError) {
+  if (isError && !mover) {
     return (
       <main className="flex min-h-page flex-col items-center justify-center gap-4">
         <p role="alert" className="text-base text-gray-400 md:text-lg">
@@ -221,7 +221,7 @@ export default function MoverDetailPage() {
       return
     }
 
-    if (isActiveRequestError) {
+    if (isActiveRequestError && activeMoveRequest === undefined) {
       toast.error(TOAST_MESSAGES.estimate.requestFailed)
       return
     }

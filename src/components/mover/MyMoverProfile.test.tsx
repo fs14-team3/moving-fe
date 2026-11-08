@@ -123,4 +123,15 @@ describe('MyMoverProfile', () => {
 
     expect(refetch).toHaveBeenCalledOnce()
   })
+
+  it('다시 불러오다 실패해도 불러온 프로필을 계속 보여 준다', () => {
+    vi.mocked(useMyMover).mockReturnValue(
+      createMyMoverResult({ isError: true }),
+    )
+
+    render(<MyMoverProfile />)
+
+    expect(screen.getByRole('heading', { name: '김무빙' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })

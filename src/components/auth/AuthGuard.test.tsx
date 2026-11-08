@@ -40,24 +40,35 @@ const mover = createUser('MOVER')
 const newCustomer = createUser('CUSTOMER', false)
 const newMover = createUser('MOVER', false)
 
-function renderGuard(url: string, user?: Me | null) {
+function setUrl(url: string) {
   window.history.replaceState(null, '', url)
   navigation.pathname = window.location.pathname
+}
+
+function renderGuard(url: string, user?: Me | null) {
+  setUrl(url)
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { staleTime: Infinity, retry: false } },
   })
   if (user !== undefined) queryClient.setQueryData(queryKeys.user.me(), user)
 
-  render(
+  const guard = () => (
     <QueryClientProvider client={queryClient}>
       <AuthGuard>
         <h1>페이지 내용</h1>
       </AuthGuard>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
+  const { rerender } = render(guard())
 
-  return queryClient
+  return {
+    queryClient,
+    navigate(nextUrl: string) {
+      setUrl(nextUrl)
+      rerender(guard())
+    },
+  }
 }
 
 function setUser(queryClient: QueryClient, user: Me | null) {
@@ -81,7 +92,7 @@ describe('AuthGuard', () => {
   })
 
   it('로그인 페이지에서 세션이 생기면 redirect의 페이지로 보낸다', async () => {
-    const queryClient = renderGuard(
+    const { queryClient } = renderGuard(
       '/mover/login?redirect=%2Fmover%2Frequests%3Fstatus%3Dpending%23quote',
       null,
     )
@@ -99,7 +110,7 @@ describe('AuthGuard', () => {
   })
 
   it('redirect가 외부 주소로 해석되면 기본 페이지로 보낸다', async () => {
-    const queryClient = renderGuard(
+    const { queryClient } = renderGuard(
       '/login?redirect=%2F.%2F%2Fexample.com',
       null,
     )
@@ -117,7 +128,7 @@ describe('AuthGuard', () => {
   })
 
   it('보던 중 세션이 사라지면 지금 주소를 담아 로그인 페이지로 보낸다', async () => {
-    const queryClient = renderGuard(
+    const { queryClient } = renderGuard(
       '/mover/requests?status=pending#quote',
       mover,
     )
@@ -134,7 +145,7 @@ describe('AuthGuard', () => {
   })
 
   it('보던 중 다른 유저 타입으로 바뀌면 그 유저의 기본 페이지로 보낸다', async () => {
-    const queryClient = renderGuard('/mover/requests', mover)
+    const { queryClient } = renderGuard('/mover/requests', mover)
 
     setUser(queryClient, customer)
 
@@ -184,21 +195,57 @@ describe('AuthGuard', () => {
     expect(navigation.router.replace).not.toHaveBeenCalled()
   })
 
-  it('보던 중 세션 확인에 실패하면 오류 화면으로 바꾸고, 다시 시도하는 동안 버튼을 막는다', async () => {
-    const retried = Promise.withResolvers<Me>()
-    vi.mocked(getMe)
-      .mockRejectedValueOnce(new Error('Network Error'))
-      .mockReturnValueOnce(retried.promise)
-    const user = userEvent.setup()
-    const queryClient = renderGuard('/mover/requests', mover)
-    expect(screen.getByRole('heading')).toBeInTheDocument()
+  it('보던 중 세션 확인에 실패해도 페이지 내용을 그대로 보여 준다', async () => {
+    vi.mocked(getMe).mockRejectedValueOnce(new Error('Network Error'))
+    const { queryClient } = renderGuard('/mover/requests', mover)
 
     await act(() =>
       queryClient.refetchQueries({ queryKey: queryKeys.user.me() }),
     )
 
+    expect(queryClient.getQueryState(queryKeys.user.me())?.status).toBe('error')
+    await expect(
+      screen.findByRole('alert', undefined, { timeout: 100 }),
+    ).rejects.toThrow()
+    expect(screen.getByRole('heading')).toBeInTheDocument()
+    expect(navigation.router.replace).not.toHaveBeenCalled()
+  })
+
+  it.each(['/request', '/mover/login'])(
+    '세션 확인에 실패한 뒤 불러온 유저가 볼 수 없는 %s로 가면 기본 페이지로 보낸다',
+    async (url) => {
+      vi.mocked(getMe).mockRejectedValueOnce(new Error('Network Error'))
+      const { queryClient, navigate } = renderGuard('/mover/requests', mover)
+      await act(() =>
+        queryClient.refetchQueries({ queryKey: queryKeys.user.me() }),
+      )
+
+      navigate(url)
+
+      await waitFor(() =>
+        expect(navigation.router.replace).toHaveBeenCalledWith(
+          getPathAfterLogin(mover),
+        ),
+      )
+      expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    },
+  )
+
+  it('비회원이 세션 확인에 실패한 뒤 로그인이 필요한 페이지로 가면 오류 화면을 보여 주고, 다시 시도하는 동안 버튼을 막는다', async () => {
+    const retried = Promise.withResolvers<Me>()
+    vi.mocked(getMe)
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockReturnValueOnce(retried.promise)
+    const user = userEvent.setup()
+    const { queryClient, navigate } = renderGuard('/', null)
+    await act(() =>
+      queryClient.refetchQueries({ queryKey: queryKeys.user.me() }),
+    )
+
+    navigate('/mover/requests')
+
     const retry = await screen.findByRole('button', { name: '다시 시도' })
-    expect(screen.getByRole('alert')).toBeInTheDocument()
     expect(screen.queryByRole('heading')).not.toBeInTheDocument()
 
     await user.click(retry)
@@ -296,7 +343,7 @@ describe('AuthGuard', () => {
   })
 
   it('로그인한 유저에게 프로필이 없으면 redirect 대신 프로필 등록 페이지로 보낸다', async () => {
-    const queryClient = renderGuard(
+    const { queryClient } = renderGuard(
       '/mover/login?redirect=%2Fmover%2Frequests',
       null,
     )
@@ -311,7 +358,7 @@ describe('AuthGuard', () => {
   })
 
   it('프로필을 등록하면 기본 페이지로 보내고 등록 페이지로 돌려보내지 않는다', async () => {
-    const queryClient = renderGuard('/profile/register', newCustomer)
+    const { queryClient } = renderGuard('/profile/register', newCustomer)
     expect(screen.getByRole('heading')).toBeInTheDocument()
 
     setUser(queryClient, customer)

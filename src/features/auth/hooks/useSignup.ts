@@ -28,8 +28,10 @@ function getSignupFieldErrors(error: unknown) {
   if (error.code === 'EMAIL_ALREADY_EXISTS') {
     return { email: '이미 가입된 이메일입니다.' }
   }
-  for (const { field } of error.details ?? []) {
-    if (isSignupField(field)) fieldErrors[field] = SERVER_FIELD_ERROR[field]
+  for (const { field, reason } of error.details ?? []) {
+    if (isSignupField(field)) {
+      fieldErrors[field] ??= reason || SERVER_FIELD_ERROR[field]
+    }
   }
   return fieldErrors
 }

@@ -1,6 +1,6 @@
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { addFavorite } from '@/features/movers/api'
-import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
+import { removeFavorite } from '@/features/favorites/api'
+import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
 import { ApiError } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -12,18 +12,18 @@ const toast = vi.hoisted(() => ({ error: vi.fn() }))
 
 vi.mock('sonner', () => ({ toast }))
 
-vi.mock('@/features/movers/api', () => ({
-  addFavorite: vi.fn(),
+vi.mock('@/features/favorites/api', () => ({
+  removeFavorite: vi.fn(),
 }))
 
-function renderUseAddFavorite() {
+function renderUseRemoveFavorite() {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   })
 
   const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
 
-  const { result } = renderHook(() => useAddFavorite('mover-1'), {
+  const { result } = renderHook(() => useRemoveFavorite('mover-1'), {
     wrapper: ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
@@ -32,19 +32,19 @@ function renderUseAddFavorite() {
   return { result, invalidateQueries }
 }
 
-describe('useAddFavorite', () => {
+describe('useRemoveFavorite', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('찜에 성공하면 관련 데이터를 다시 불러온다', async () => {
-    vi.mocked(addFavorite).mockResolvedValue({
+  it('찜 해제에 성공하면 관련 데이터를 다시 불러온다', async () => {
+    vi.mocked(removeFavorite).mockResolvedValue({
       moverId: 'mover-1',
-      isFavorite: true,
-      favoriteCount: 1,
+      isFavorite: false,
+      favoriteCount: 0,
     })
 
-    const { result, invalidateQueries } = renderUseAddFavorite()
+    const { result, invalidateQueries } = renderUseRemoveFavorite()
 
     act(() => result.current.mutate())
 
@@ -54,7 +54,7 @@ describe('useAddFavorite', () => {
       }),
     )
 
-    expect(addFavorite).toHaveBeenCalledWith('mover-1')
+    expect(removeFavorite).toHaveBeenCalledWith('mover-1')
 
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.movers.lists(),
@@ -65,10 +65,10 @@ describe('useAddFavorite', () => {
     })
   })
 
-  it('찜에 실패하면 오류 토스트를 표시한다', async () => {
-    vi.mocked(addFavorite).mockRejectedValue(new Error('Network Error'))
+  it('찜 해제에 실패하면 오류 토스트를 표시한다', async () => {
+    vi.mocked(removeFavorite).mockRejectedValue(new Error('Network Error'))
 
-    const { result } = renderUseAddFavorite()
+    const { result } = renderUseRemoveFavorite()
 
     act(() => result.current.mutate())
 
@@ -80,11 +80,11 @@ describe('useAddFavorite', () => {
   })
 
   it('인증 오류는 별도의 오류 토스트를 표시하지 않는다', async () => {
-    vi.mocked(addFavorite).mockRejectedValue(
+    vi.mocked(removeFavorite).mockRejectedValue(
       new ApiError('UNAUTHORIZED', 'Unauthorized', 401),
     )
 
-    const { result } = renderUseAddFavorite()
+    const { result } = renderUseRemoveFavorite()
 
     act(() => result.current.mutate())
 

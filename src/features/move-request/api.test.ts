@@ -1,4 +1,5 @@
 import {
+  createDesignation,
   createMoveRequest,
   getActiveMoveRequest,
 } from '@/features/move-request/api'
@@ -6,6 +7,7 @@ import api from '@/lib/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   MOCK_CREATE_MOVE_REQUEST_BODY,
+  MOCK_DESIGNATION,
   MOCK_MOVE_REQUEST,
 } from './fixtures/moveRequests'
 
@@ -35,5 +37,24 @@ describe('getActiveMoveRequest', () => {
       moveRequest: MOCK_MOVE_REQUEST,
     })
     expect(get).toHaveBeenCalledWith('/move-requests/active')
+  })
+})
+
+describe('createDesignation', () => {
+  it('지정 견적 요청을 생성한다', async () => {
+    const requestId = MOCK_MOVE_REQUEST.id
+    const moverId = MOCK_DESIGNATION.moverId
+
+    const post = vi
+      .spyOn(api, 'post')
+      .mockResolvedValue({ data: MOCK_DESIGNATION })
+
+    await expect(createDesignation(requestId, moverId)).resolves.toEqual(
+      MOCK_DESIGNATION,
+    )
+    expect(post).toHaveBeenCalledWith(
+      `/move-requests/${requestId}/designations`,
+      { moverId },
+    )
   })
 })

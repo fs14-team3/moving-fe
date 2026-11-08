@@ -1,11 +1,8 @@
 import {
-  addFavorite,
-  getFavoriteMovers,
   getMover,
   getMoverReviews,
   getMovers,
   getMyMover,
-  removeFavorite,
 } from '@/features/movers/api'
 import {
   MOCK_MOVER_DETAILS,
@@ -39,16 +36,6 @@ describe('getMovers', () => {
 
     await expect(getMovers(params)).resolves.toEqual(response)
     expect(get).toHaveBeenCalledWith('/movers', { params })
-  })
-})
-
-describe('getFavoriteMovers', () => {
-  it('커서와 개수로 찜한 기사님 목록을 조회한다', async () => {
-    const params = { cursor: 'cursor-1', limit: 3 }
-    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: response })
-
-    await expect(getFavoriteMovers(params)).resolves.toEqual(response)
-    expect(get).toHaveBeenCalledWith('/customers/me/favorites', { params })
   })
 })
 
@@ -88,37 +75,5 @@ describe('getMoverReviews', () => {
 
     await expect(getMoverReviews('1', params)).resolves.toEqual(reviewResponse)
     expect(get).toHaveBeenCalledWith('/movers/1/reviews', { params })
-  })
-})
-
-describe('addFavorite', () => {
-  it('기사님을 찜한다', async () => {
-    const favoriteResponse = {
-      moverId: 'mover-1',
-      isFavorite: true,
-      favoriteCount: 1,
-    }
-    const put = vi
-      .spyOn(api, 'put')
-      .mockResolvedValue({ data: favoriteResponse })
-
-    await expect(addFavorite('mover-1')).resolves.toEqual(favoriteResponse)
-    expect(put).toHaveBeenCalledWith('/movers/mover-1/favorite')
-  })
-})
-
-describe('removeFavorite', () => {
-  it('기사님 찜을 해제한다', async () => {
-    const favoriteResponse = {
-      moverId: 'mover-1',
-      isFavorite: false,
-      favoriteCount: 0,
-    }
-    const deleteRequest = vi
-      .spyOn(api, 'delete')
-      .mockResolvedValue({ data: favoriteResponse })
-
-    await expect(removeFavorite('mover-1')).resolves.toEqual(favoriteResponse)
-    expect(deleteRequest).toHaveBeenCalledWith('/movers/mover-1/favorite')
   })
 })

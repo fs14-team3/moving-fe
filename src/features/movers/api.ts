@@ -1,7 +1,5 @@
 import api from '@/lib/api'
 import type {
-  FavoriteMoverListParams,
-  FavoriteState,
   MoverDetail,
   MoverId,
   MoverListParams,
@@ -30,14 +28,6 @@ export async function getMyMover() {
   return data
 }
 
-export async function getFavoriteMovers(params?: FavoriteMoverListParams) {
-  const { data } = await api.get<MoverListResponse>('/customers/me/favorites', {
-    params,
-  })
-
-  return data
-}
-
 export async function getMoverReviews(
   moverId: MoverId,
   params?: MoverReviewListParams,
@@ -45,20 +35,6 @@ export async function getMoverReviews(
   const { data } = await api.get<MoverReviewListResponse>(
     `/movers/${moverId}/reviews`,
     { params },
-  )
-
-  return data
-}
-
-export async function addFavorite(moverId: MoverId) {
-  const { data } = await api.put<FavoriteState>(`/movers/${moverId}/favorite`)
-
-  return data
-}
-
-export async function removeFavorite(moverId: MoverId) {
-  const { data } = await api.delete<FavoriteState>(
-    `/movers/${moverId}/favorite`,
   )
 
   return data

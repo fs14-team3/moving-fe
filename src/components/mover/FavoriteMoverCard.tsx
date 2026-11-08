@@ -1,6 +1,6 @@
 'use client'
 
-import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
+import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
 import type { Mover } from '@/features/movers/types'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'

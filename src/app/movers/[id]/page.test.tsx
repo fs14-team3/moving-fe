@@ -1,14 +1,18 @@
 import MoverDetailPage from '@/app/movers/[id]/page'
+import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import type { Me } from '@/features/auth/types'
+import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
+import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
+import { MOCK_MOVE_REQUEST } from '@/features/move-request/fixtures/moveRequests'
+import { useActiveMoveRequest } from '@/features/move-request/hooks/useActiveMoveRequest'
+import { useCreateDesignation } from '@/features/move-request/hooks/useCreateDesignation'
 import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
-import { useAddFavorite } from '@/features/movers/hooks/useAddFavorite'
 import { useMover } from '@/features/movers/hooks/useMover'
-import { useRemoveFavorite } from '@/features/movers/hooks/useRemoveFavorite'
 import { ApiError } from '@/lib/api-error'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const navigation = vi.hoisted(() => ({
   moverId: '1',
@@ -16,6 +20,7 @@ const navigation = vi.hoisted(() => ({
 }))
 
 const toast = vi.hoisted(() => ({
+  info: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
 }))
@@ -39,12 +44,20 @@ vi.mock('@/features/auth/hooks/useCurrentUser', () => ({
   useCurrentUser: vi.fn(),
 }))
 
-vi.mock('@/features/movers/hooks/useAddFavorite', () => ({
+vi.mock('@/features/favorites/hooks/useAddFavorite', () => ({
   useAddFavorite: vi.fn(),
 }))
 
-vi.mock('@/features/movers/hooks/useRemoveFavorite', () => ({
+vi.mock('@/features/favorites/hooks/useRemoveFavorite', () => ({
   useRemoveFavorite: vi.fn(),
+}))
+
+vi.mock('@/features/move-request/hooks/useActiveMoveRequest', () => ({
+  useActiveMoveRequest: vi.fn(),
+}))
+
+vi.mock('@/features/move-request/hooks/useCreateDesignation', () => ({
+  useCreateDesignation: vi.fn(),
 }))
 
 vi.mock('@/components/mover/KakaoScript', () => ({
@@ -81,6 +94,15 @@ const customer: Me = {
 }
 
 describe('MoverDetailPage', () => {
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open')
+    }
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     navigation.moverId = '1'
@@ -97,6 +119,17 @@ describe('MoverDetailPage', () => {
       isPending: false,
     })
     vi.mocked(useRemoveFavorite).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: null,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useCreateDesignation).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
     })
@@ -205,5 +238,97 @@ describe('MoverDetailPage', () => {
     await user.click(screen.getByRole('button', { name: '기사님 찜하기' }))
 
     expect(addFavorite).toHaveBeenCalled()
+  })
+
+  it('진행 중인 견적 조회에 실패하면 오류를 알린다', async () => {
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: undefined,
+      isPending: false,
+      isError: true,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    const user = userEvent.setup()
+
+    render(<MoverDetailPage />)
+
+    await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.requestFailed,
+    )
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('진행 중인 견적이 있으면 지정 견적을 요청한다', async () => {
+    const createDesignation = vi.fn()
+
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: MOCK_MOVE_REQUEST,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useCreateDesignation).mockReturnValue({
+      mutate: createDesignation,
+      isPending: false,
+    })
+    const user = userEvent.setup()
+
+    render(<MoverDetailPage />)
+
+    await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+    expect(createDesignation).toHaveBeenCalledWith(
+      {
+        requestId: MOCK_MOVE_REQUEST.id,
+        moverId: '1',
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+  })
+
+  it('진행 중인 견적이 없으면 일반 견적 요청 모달을 연다', async () => {
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: null,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    const user = userEvent.setup()
+
+    render(<MoverDetailPage />)
+
+    await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+    expect(
+      screen.getByRole('dialog', { name: '지정 견적 요청하기' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('일반 견적 요청을 먼저 진행해 주세요.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: '일반 견적 요청 하기' }),
+    ).toHaveAttribute('href', '/request')
   })
 })

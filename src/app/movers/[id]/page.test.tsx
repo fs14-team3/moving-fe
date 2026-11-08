@@ -174,6 +174,19 @@ describe('MoverDetailPage', () => {
     expect(refetch).toHaveBeenCalledOnce()
   })
 
+  it('다시 불러오다 실패해도 불러온 기사님 정보를 계속 보여 준다', () => {
+    vi.mocked(useMover).mockReturnValue(
+      createMoverResult({ error: new Error('Network Error'), isError: true }),
+    )
+
+    render(<MoverDetailPage />)
+
+    expect(
+      screen.getByRole('heading', { name: '김무빙 기사님' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('기사님을 찾을 수 없으면 목록으로 이동한다', async () => {
     navigation.moverId = 'missing-mover'
     vi.mocked(useMover).mockReturnValue(
@@ -292,6 +305,42 @@ describe('MoverDetailPage', () => {
     render(<MoverDetailPage />)
 
     await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+    expect(createDesignation).toHaveBeenCalledWith(
+      {
+        requestId: MOCK_MOVE_REQUEST.id,
+        moverId: '1',
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+  })
+
+  it('진행 중인 견적을 다시 불러오다 실패해도 불러온 견적으로 지정 견적을 요청한다', async () => {
+    const createDesignation = vi.fn()
+
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: MOCK_MOVE_REQUEST,
+      isPending: false,
+      isError: true,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useCreateDesignation).mockReturnValue({
+      mutate: createDesignation,
+      isPending: false,
+    })
+    const user = userEvent.setup()
+
+    render(<MoverDetailPage />)
+
+    await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+    expect(toast.error).not.toHaveBeenCalled()
     expect(createDesignation).toHaveBeenCalledWith(
       {
         requestId: MOCK_MOVE_REQUEST.id,

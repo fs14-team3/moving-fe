@@ -28,7 +28,7 @@ export default function MyMoverProfile() {
     )
   }
 
-  if (isError) {
+  if (isError && !mover) {
     return (
       <div className="flex min-h-page flex-col items-center justify-center gap-4">
         <p role="alert" className="text-base text-gray-400 md:text-lg">

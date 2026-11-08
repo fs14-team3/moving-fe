@@ -66,7 +66,7 @@ export default function ReviewSection({
             리뷰를 불러오고 있습니다.
           </p>
         </div>
-      ) : isError ? (
+      ) : isError && reviews.length === 0 ? (
         <div className="flex min-h-60 flex-col items-center justify-center gap-4 md:min-h-80">
           <p role="alert" className="text-base text-gray-400 md:text-lg">
             리뷰를 불러오지 못했습니다.

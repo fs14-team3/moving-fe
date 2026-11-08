@@ -1,15 +1,14 @@
 'use client'
 
-import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import { MOVE_TYPE } from '@/components/common/modal/Modal'
-import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
+import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
 import { formatRequestDate } from '@/features/my-quotes/format'
 import { formatMoveDate } from '@/features/received-requests/format'
 import { cn } from '@/lib/cn'
-import { FileText, Heart, Star } from 'lucide-react'
+import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 
 export default function QuoteDetail() {
@@ -17,6 +16,14 @@ export default function QuoteDetail() {
   const quote = MOCK_QUOTE_DETAIL
 
   const isPending = quote.status === 'SUBMITTED'
+
+  // 화면 표시 데이터
+  const { mover } = quote
+  const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
+  const nickname = mover.nickname?.trim() || '익명'
+  const careerYears =
+    mover.careerYears !== null ? `${mover.careerYears}년` : '-'
+  const favoriteCount = mover.favoriteCount ?? '-'
 
   return (
     <div className="bg-gray-50">
@@ -36,7 +43,7 @@ export default function QuoteDetail() {
             src={quote.mover.imageUrl ?? '/assets/images/profile.png'}
             width={64}
             height={64}
-            alt={`${quote.mover.nickname} 기사님 프로필`}
+            alt={`${nickname} 기사님 프로필`}
             className="absolute top-20 left-4 rounded-xl md:top-20 md:left-18 md:size-25 lg:top-[97px] lg:size-[134px]"
           />
         </div>
@@ -51,20 +58,11 @@ export default function QuoteDetail() {
         <article>
           <header className="flex flex-col gap-3 border-b border-line-100 pb-3 md:pb-5">
             <div className="flex justify-between">
-              <div className="flex flex-wrap gap-2 md:gap-3">
-                {quote.mover.serviceTypes?.map((serviceType) => (
-                  <ServiceTypeChip
-                    serviceType={serviceType}
-                    key={serviceType}
-                  />
-                ))}
-                {quote.isDesignated && (
-                  <Badge icon={<FileText className="size-3.5 md:size-4" />}>
-                    지정 견적 요청
-                  </Badge>
-                )}
-              </div>
-              {quote.status === 'CONFIRMED' ? (
+              <QuoteBadges
+                moveType={quote.moveRequest.moveType}
+                isDesignated={quote.isDesignated}
+              />
+              {quote.status === 'CONFIRMED' && (
                 <div className="flex shrink-0 items-center gap-1">
                   <Image
                     src="/assets/icons/confirmed-badge.svg"
@@ -76,14 +74,15 @@ export default function QuoteDetail() {
                     확정견적
                   </p>
                 </div>
-              ) : (
+              )}
+              {quote.status === 'SUBMITTED' && (
                 <p className="shrink-0 text-base leading-6 font-semibold text-gray-400">
                   견적대기
                 </p>
               )}
             </div>
             <p className="text-lg leading-6 font-semibold md:text-2xl md:leading-8">
-              {quote.mover.intro}
+              {intro}
             </p>
           </header>
 
@@ -97,7 +96,7 @@ export default function QuoteDetail() {
                   alt=""
                 />
                 <p className="text-base leading-6 font-semibold md:text-lg">
-                  {quote.mover.nickname} 기사님
+                  {nickname} 기사님
                 </p>
               </div>
 
@@ -119,7 +118,7 @@ export default function QuoteDetail() {
 
                 <div className="flex items-center gap-1 text-sm leading-6 font-medium">
                   <dt className="text-gray-400">경력</dt>
-                  <dd>{quote.mover.careerYears}년</dd>
+                  <dd>{careerYears}</dd>
                 </div>
 
                 <div aria-hidden="true" className="h-[14px] w-px bg-line-200" />
@@ -136,7 +135,7 @@ export default function QuoteDetail() {
               className="flex cursor-pointer items-center gap-1"
             >
               <span className="text-sm leading-6 font-medium text-gray-500 md:text-lg">
-                {quote.mover.favoriteCount}
+                {favoriteCount}
               </span>
               <Heart
                 aria-hidden="true"

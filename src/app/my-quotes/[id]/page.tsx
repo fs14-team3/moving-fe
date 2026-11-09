@@ -63,7 +63,7 @@ export default function QuoteDetail() {
     <>
       <KakaoScript />
 
-      <main className="bg-gray-50">
+      <div className="bg-gray-50">
         <header className="px-[30px] py-[14px] md:px-18 lg:mx-auto lg:max-w-[1354px] lg:px-18 lg:py-8">
           <h1 className="text-lg leading-6 font-semibold lg:text-2xl lg:leading-8">
             견적 상세
@@ -288,7 +288,7 @@ export default function QuoteDetail() {
             </section>
           </aside>
         </div>
-      </main>
+      </div>
     </>
   )
 }

@@ -6,6 +6,9 @@ import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import KakaoScript from '@/components/share/KakaoScript'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
+import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
+import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
 import { formatRequestDate } from '@/features/my-quotes/format'
 import { useQuoteDetail } from '@/features/my-quotes/hooks/useQuoteDetail'
 import { formatMoveDate } from '@/features/received-requests/format'
@@ -27,11 +30,23 @@ export default function QuoteDetail() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
 
+  const { user, isPending: isUserPending } = useCurrentUser()
+
   const { quote, error, isPending, isError, refetch, isRefetching } =
     useQuoteDetail(id)
 
+  const { mutate: addFavorite, isPending: isAddingFavorite } = useAddFavorite(
+    quote?.mover.id ?? '',
+  )
+
+  const { mutate: removeFavorite, isPending: isRemovingFavorite } =
+    useRemoveFavorite(quote?.mover.id ?? '')
+
   const isNotFound =
     isApiError(error) && (error.status === 400 || error.status === 404)
+
+  const isFavoritePending = isAddingFavorite || isRemovingFavorite
+  const isFavoriteDisabled = isUserPending || isFavoritePending
 
   // 부수 효과
   useEffect(() => {
@@ -91,6 +106,7 @@ export default function QuoteDetail() {
   const nickname = mover.nickname?.trim() || '익명'
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
+  const isFavorite = mover.isFavorite
   const favoriteCount = mover.favoriteCount ?? '-'
   const moveTypeLabel = MOVE_TYPE[quote.moveRequest.moveType].label
   const moveDateLabel = formatMoveDate(quote.moveRequest.moveDate)
@@ -119,6 +135,30 @@ export default function QuoteDetail() {
 
   function handleFacebookShare() {
     shareToFacebook()
+  }
+
+  function handleFavorite() {
+    if (!user) {
+      toast.info(TOAST_MESSAGES.favorite.loginRequired)
+      return
+    }
+
+    if (user.role !== 'CUSTOMER') {
+      toast.info(TOAST_MESSAGES.favorite.customerOnly)
+      return
+    }
+
+    if (!user.hasProfile) {
+      toast.info(TOAST_MESSAGES.favorite.profileRequired)
+      return
+    }
+
+    if (isFavorite) {
+      removeFavorite()
+      return
+    }
+
+    addFavorite()
   }
 
   return (
@@ -237,7 +277,10 @@ export default function QuoteDetail() {
 
               <button
                 type="button"
-                className="flex cursor-pointer items-center gap-1"
+                aria-label={isFavorite ? '찜 해제하기' : '찜하기'}
+                disabled={isFavoriteDisabled}
+                onClick={handleFavorite}
+                className="flex cursor-pointer items-center gap-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="text-sm leading-6 font-medium text-gray-500 md:text-lg">
                   {favoriteCount}
@@ -245,7 +288,7 @@ export default function QuoteDetail() {
                 <Heart
                   aria-hidden="true"
                   className={
-                    quote.mover.isFavorite
+                    isFavorite
                       ? 'size-4 fill-red-500 text-red-500'
                       : 'size-4 fill-transparent text-gray-300'
                   }

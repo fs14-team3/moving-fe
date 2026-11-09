@@ -46,6 +46,7 @@ export const TOAST_MESSAGES = {
   review: {
     createSuccess: '리뷰가 등록되었습니다.',
     createFailed: '리뷰 등록에 실패했습니다.',
+    notAllowed: '리뷰를 작성할 수 없는 견적입니다.',
   },
 
   profile: {

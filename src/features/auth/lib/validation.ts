@@ -1,16 +1,23 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const MOBILE_PHONE_PATTERN = /^(010\d{8}|01[16789]\d{7,8})$/
+const MOBILE_PHONE_PATTERN = /^010\d{8}$/
+const PASSWORD_CHARACTERS_PATTERN = /^[!-~]+$/
 const LETTER_PATTERN = /[A-Za-z]/
 const DIGIT_PATTERN = /\d/
 const SPECIAL_CHARACTER_PATTERN = /[!-/:-@[-`{-~]/
+const NAME_MIN_LENGTH = 2
+const NAME_MAX_LENGTH = 20
 const PASSWORD_MIN_LENGTH = 8
+const PASSWORD_MAX_LENGTH = 16
 const PHONE_MAX_LENGTH = 11
 
 export const PASSWORD_RULE_MESSAGE =
-  '영문, 숫자, 특수문자를 포함해 8자 이상 입력해 주세요.'
+  '공백 없이 영문, 숫자, 특수문자를 포함해 8~16자로 입력해 주세요.'
 
 export function getNameError(name: string) {
   if (!name) return '이름을 입력해 주세요.'
+  if (name.length < NAME_MIN_LENGTH || name.length > NAME_MAX_LENGTH) {
+    return '이름은 2~20자로 입력해 주세요.'
+  }
   return undefined
 }
 
@@ -41,6 +48,8 @@ export function getNewPasswordError(password: string) {
   if (!password) return '비밀번호를 입력해 주세요.'
   if (
     password.length < PASSWORD_MIN_LENGTH ||
+    password.length > PASSWORD_MAX_LENGTH ||
+    !PASSWORD_CHARACTERS_PATTERN.test(password) ||
     !LETTER_PATTERN.test(password) ||
     !DIGIT_PATTERN.test(password) ||
     !SPECIAL_CHARACTER_PATTERN.test(password)

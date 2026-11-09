@@ -10,6 +10,10 @@ export type CustomerQuote = Omit<Schemas['CustomerQuote'], 'mover'> & {
   mover: Mover
 }
 
+export type QuoteDetail = Omit<Schemas['QuoteDetail'], 'mover'> & {
+  mover: Mover
+}
+
 type RequestQuoteQuery = NonNullable<
   operations['listQuotesForRequest']['parameters']['query']
 >

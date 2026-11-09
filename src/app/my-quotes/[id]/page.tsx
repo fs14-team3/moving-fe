@@ -6,26 +6,85 @@ import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import KakaoScript from '@/components/share/KakaoScript'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
 import { formatRequestDate } from '@/features/my-quotes/format'
+import { useQuoteDetail } from '@/features/my-quotes/hooks/useQuoteDetail'
 import { formatMoveDate } from '@/features/received-requests/format'
 import {
   copyCurrentLink,
   shareToFacebook,
   shareToKakao,
 } from '@/features/share/utils'
+import { isApiError } from '@/lib/api-error'
 import { cn } from '@/lib/cn'
-import { Heart, Star } from 'lucide-react'
+import { Heart, LoaderCircle, Star } from 'lucide-react'
 import Image from 'next/image'
+import { useParams, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 export default function QuoteDetail() {
-  // TODO: API 연동 시 삭제
-  const quote = MOCK_QUOTE_DETAIL
+  // 라우팅 및 API 상태
+  const router = useRouter()
+  const { id } = useParams<{ id: string }>()
 
-  const isPending = quote.status === 'SUBMITTED'
+  const { quote, error, isPending, isError, refetch, isRefetching } =
+    useQuoteDetail(id)
+
+  const isNotFound =
+    isApiError(error) && (error.status === 400 || error.status === 404)
+
+  // 부수 효과
+  useEffect(() => {
+    if (!isNotFound) return
+
+    toast.error(TOAST_MESSAGES.quote.notFound, {
+      id: 'quote-not-found',
+    })
+    router.replace('/my-quotes')
+  }, [isNotFound, router])
+
+  // 비동기 상태 처리
+  if (isPending) {
+    return (
+      <main
+        role="status"
+        className="flex min-h-page flex-col items-center justify-center gap-4"
+      >
+        <LoaderCircle
+          aria-hidden="true"
+          className="size-8 animate-spin text-primary-400"
+        />
+        <span className="text-base text-gray-400 md:text-lg">
+          견적 정보를 불러오고 있습니다.
+        </span>
+      </main>
+    )
+  }
+
+  if (isNotFound) return null
+
+  if (isError && !quote) {
+    return (
+      <main className="flex min-h-page flex-col items-center justify-center gap-4">
+        <p role="alert" className="text-base text-gray-400 md:text-lg">
+          견적 정보를 불러오지 못했습니다.
+        </p>
+        <Button
+          variant="outlined"
+          disabled={isRefetching}
+          onClick={() => refetch()}
+          className="h-10 w-auto rounded-xl px-5 text-sm lg:h-10 lg:w-auto"
+        >
+          다시 시도
+        </Button>
+      </main>
+    )
+  }
+
+  if (!quote) return null
 
   // 화면 표시 데이터
+  const isQuotePending = quote.status === 'SUBMITTED'
   const { mover } = quote
   const imageUrl = mover.imageUrl ?? '/assets/images/profile.png'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
@@ -33,6 +92,9 @@ export default function QuoteDetail() {
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
   const favoriteCount = mover.favoriteCount ?? '-'
+  const moveTypeLabel = MOVE_TYPE[quote.moveRequest.moveType].label
+  const moveDateLabel = formatMoveDate(quote.moveRequest.moveDate)
+  const priceLabel = `${quote.price.toLocaleString()}원`
 
   // 이벤트 핸들러
   async function handleCopyLink() {
@@ -47,7 +109,7 @@ export default function QuoteDetail() {
   function handleKakaoShare() {
     const ok = shareToKakao({
       title: `${nickname} 기사님 | 무빙`,
-      description: `${MOVE_TYPE[quote.moveRequest.moveType].label} · ${formatMoveDate(quote.moveRequest.moveDate)} · ${quote.price.toLocaleString()}원`,
+      description: `${moveTypeLabel} · ${moveDateLabel} · ${priceLabel}`,
       imageUrl,
       buttonTitle: '견적 상세 보기',
     })
@@ -89,7 +151,7 @@ export default function QuoteDetail() {
         <div
           className={cn(
             'px-5 pt-[35px] md:px-18 md:pt-[46px] lg:mx-auto lg:grid lg:max-w-[1354px] lg:grid-cols-[minmax(0,766px)_328px] lg:gap-x-35 lg:px-18 lg:pt-[82px] lg:pb-[62px]',
-            isPending && 'pb-[110px]',
+            isQuotePending && 'pb-[110px]',
           )}
         >
           <article>
@@ -112,7 +174,7 @@ export default function QuoteDetail() {
                     </p>
                   </div>
                 )}
-                {quote.status === 'SUBMITTED' && (
+                {isQuotePending && (
                   <p className="shrink-0 text-base leading-6 font-semibold text-gray-400">
                     견적대기
                   </p>
@@ -250,7 +312,7 @@ export default function QuoteDetail() {
           </article>
 
           <aside>
-            {quote.status === 'SUBMITTED' && (
+            {isQuotePending && (
               <section className="fixed inset-x-0 bottom-0 z-50 bg-gray-50 px-6 py-7 md:px-18 lg:static lg:border-b lg:border-line-100 lg:px-0 lg:pb-10">
                 <p className="hidden text-lg leading-6 font-semibold text-gray-400 lg:block">
                   견적가

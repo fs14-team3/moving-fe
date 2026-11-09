@@ -16,6 +16,7 @@ import {
   toPhoneDigits,
 } from '@/features/auth/lib/validation'
 import type { Role } from '@/features/auth/types'
+import { useChangePassword } from '@/features/profile/hooks/useChangePassword'
 import { useUpdateBasicInfo } from '@/features/profile/hooks/useUpdateBasicInfo'
 import type { BasicInfoUpdate } from '@/features/profile/types'
 
@@ -54,7 +55,8 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
     {},
   )
   const [serverErrors, setServerErrors] = useState<FieldErrors>({})
-  const { mutate, isPending } = useUpdateBasicInfo(setServerErrors)
+  const updateBasicInfo = useUpdateBasicInfo(setServerErrors)
+  const changePassword = useChangePassword(setServerErrors)
 
   const name = values.name.trim()
   const email = values.email.trim()
@@ -65,10 +67,7 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   if (name !== savedName) body.name = name
   if (email !== savedEmail) body.email = email
   if (values.phone !== savedPhone) body.phone = values.phone
-  if (isChangingPassword) {
-    body.currentPassword = values.currentPassword
-    body.newPassword = values.newPassword
-  }
+  const isChangingBasicInfo = Object.keys(body).length > 0
 
   const errors: FieldErrors = {}
   if (body.name !== undefined) errors.name = getNameError(body.name)
@@ -76,7 +75,11 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   if (body.phone !== undefined) errors.phone = getPhoneError(body.phone)
   if (isChangingPassword) {
     errors.currentPassword = getPasswordError(values.currentPassword)
-    errors.newPassword = getNewPasswordError(values.newPassword)
+    errors.newPassword =
+      getNewPasswordError(values.newPassword) ??
+      (values.newPassword === values.currentPassword
+        ? '현재 비밀번호와 다른 비밀번호를 입력해 주세요.'
+        : undefined)
     errors.newPasswordConfirm = getPasswordConfirmError(
       values.newPassword,
       values.newPasswordConfirm,
@@ -84,18 +87,35 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   }
 
   const canSubmit =
-    Object.keys(body).length > 0 &&
+    (isChangingBasicInfo || isChangingPassword) &&
     [...Object.values(errors), ...Object.values(serverErrors)].every(
       (error) => !error,
     )
 
-  const submit = () =>
-    mutate(body, {
-      onSuccess: () => {
-        if (role === 'MOVER') router.push(MOVER_MYPAGE_PATH)
-        else setEdits({})
+  const finish = () => {
+    if (role === 'MOVER') router.push(MOVER_MYPAGE_PATH)
+    else setEdits({})
+  }
+
+  const savePassword = () => {
+    if (!isChangingPassword) return finish()
+    changePassword.mutate(
+      {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+        confirmPassword: values.newPasswordConfirm,
       },
-    })
+      { onSuccess: finish },
+    )
+  }
+
+  const submit = () => {
+    if (isChangingBasicInfo) {
+      updateBasicInfo.mutate(body, { onSuccess: savePassword })
+    } else {
+      savePassword()
+    }
+  }
 
   const cancel = () => {
     if (role === 'MOVER') router.push(MOVER_MYPAGE_PATH)
@@ -120,7 +140,7 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
     <ProfileForm
       submitLabel="수정하기"
       canSubmit={canSubmit}
-      isSubmitting={isPending}
+      isSubmitting={updateBasicInfo.isPending || changePassword.isPending}
       onSubmit={submit}
       onCancel={cancel}
       className="lg:grid lg:grid-cols-2 lg:gap-x-30"

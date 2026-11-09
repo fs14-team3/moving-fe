@@ -57,6 +57,9 @@ export const TOAST_MESSAGES = {
 
     basicInfoUpdateSuccess: '기본 정보가 수정되었습니다.',
     basicInfoUpdateFailed: '기본 정보 수정에 실패했습니다.',
+
+    passwordChangeSuccess: '비밀번호가 변경되었습니다.',
+    passwordChangeFailed: '비밀번호 변경에 실패했습니다.',
   },
 
   common: {

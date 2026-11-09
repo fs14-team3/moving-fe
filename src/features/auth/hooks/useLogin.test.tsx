@@ -22,6 +22,7 @@ const user: Me = {
   email: 'mover@example.com',
   phone: null,
   hasProfile: true,
+  isProfileComplete: true,
   customerProfile: null,
   moverProfile: null,
 }

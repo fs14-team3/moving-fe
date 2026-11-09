@@ -8,7 +8,7 @@ import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { PASSWORD_RULE_MESSAGE } from '@/features/auth/lib/validation'
-import { ApiError } from '@/lib/api-error'
+import { ApiError, type ApiErrorDetail } from '@/lib/api-error'
 
 const toastError = vi.hoisted(() => vi.fn())
 
@@ -37,10 +37,9 @@ const body = {
 
 function createApiError(
   status: number,
-  fields: string[] = [],
+  details: ApiErrorDetail[] = [],
   code = 'UNKNOWN_ERROR',
 ) {
-  const details = fields.map((field) => ({ field, reason: 'INVALID' }))
   return new ApiError(code, 'Request failed', status, details)
 }
 
@@ -73,9 +72,35 @@ describe('useSignup', () => {
     expect(queryClient.getQueryData(queryKeys.user.me())).toEqual(user)
   })
 
-  it('서버가 알려 준 입력란에만 오류를 표시하고 모르는 필드는 무시한다', async () => {
+  it('서버가 알려 준 입력란에 첫 번째 사유를 표시하고 모르는 필드는 무시한다', async () => {
     vi.mocked(signup).mockRejectedValue(
-      createApiError(400, ['email', 'password', 'role', 'unknown']),
+      createApiError(400, [
+        { field: 'password', reason: '비밀번호는 16자 이하여야 합니다' },
+        { field: 'password', reason: '비밀번호에 특수문자를 포함해 주세요' },
+        { field: 'phone', reason: '전화번호 형식이 올바르지 않습니다' },
+        { field: 'role', reason: '잘못된 회원 유형입니다' },
+        { field: 'unknown', reason: '알 수 없는 입력입니다' },
+      ]),
+    )
+    const { result, onFieldErrors } = renderUseSignup()
+
+    act(() => result.current.mutate(body))
+
+    await waitFor(() =>
+      expect(onFieldErrors).toHaveBeenCalledWith({
+        password: '비밀번호는 16자 이하여야 합니다',
+        phone: '전화번호 형식이 올바르지 않습니다',
+      }),
+    )
+    expect(toastError).not.toHaveBeenCalled()
+  })
+
+  it('사유가 비어 있으면 입력란별 기본 안내를 보여 준다', async () => {
+    vi.mocked(signup).mockRejectedValue(
+      createApiError(400, [
+        { field: 'email', reason: '' },
+        { field: 'password', reason: '' },
+      ]),
     )
     const { result, onFieldErrors } = renderUseSignup()
 
@@ -87,12 +112,15 @@ describe('useSignup', () => {
         password: PASSWORD_RULE_MESSAGE,
       }),
     )
-    expect(toastError).not.toHaveBeenCalled()
   })
 
   it('이미 가입된 이메일이면 이메일 입력란에 안내한다', async () => {
     vi.mocked(signup).mockRejectedValue(
-      createApiError(409, ['email'], 'EMAIL_ALREADY_EXISTS'),
+      createApiError(
+        409,
+        [{ field: 'email', reason: '이미 사용 중인 이메일입니다' }],
+        'EMAIL_ALREADY_EXISTS',
+      ),
     )
     const { result, onFieldErrors } = renderUseSignup()
 
@@ -107,7 +135,10 @@ describe('useSignup', () => {
   })
 
   it.each([
-    ['알 수 없는 입력란', createApiError(500, ['unknown'])],
+    [
+      '알 수 없는 입력란',
+      createApiError(500, [{ field: 'unknown', reason: 'INVALID' }]),
+    ],
     ['ApiError가 아닌 오류', new Error('Network Error')],
   ])('입력란 오류로 표시할 수 없는 실패(%s)는 알린다', async (_name, error) => {
     vi.mocked(signup).mockRejectedValue(error)

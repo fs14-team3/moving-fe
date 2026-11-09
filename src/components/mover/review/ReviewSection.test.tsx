@@ -78,6 +78,17 @@ describe('ReviewSection', () => {
     expect(refetch).toHaveBeenCalledOnce()
   })
 
+  it('다시 불러오다 실패해도 불러온 리뷰를 계속 보여 준다', () => {
+    vi.mocked(useMoverReviews).mockReturnValue(
+      createReviewsResult({ isError: true }),
+    )
+
+    render(<ReviewSection mover={mover} />)
+
+    expect(screen.getByText('6개의 리뷰')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
   it('페이지를 선택하면 해당 페이지의 리뷰를 조회한다', async () => {
     const user = userEvent.setup()
     render(<ReviewSection mover={mover} />)

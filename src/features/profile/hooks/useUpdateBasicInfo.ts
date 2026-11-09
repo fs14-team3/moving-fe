@@ -26,8 +26,10 @@ function isBasicInfoField(field: string): field is BasicInfoField {
 function getBasicInfoFieldErrors(error: unknown) {
   const fieldErrors: BasicInfoFieldErrors = {}
   if (!isApiError(error)) return fieldErrors
-  for (const { field } of error.details ?? []) {
-    if (isBasicInfoField(field)) fieldErrors[field] = SERVER_FIELD_ERROR[field]
+  for (const { field, reason } of error.details ?? []) {
+    if (isBasicInfoField(field)) {
+      fieldErrors[field] ??= reason || SERVER_FIELD_ERROR[field]
+    }
   }
   return fieldErrors
 }

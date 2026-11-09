@@ -3,12 +3,17 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import { MOVE_TYPE } from '@/components/common/modal/Modal'
-import KakaoScript from '@/components/mover/KakaoScript'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
+import KakaoScript from '@/components/share/KakaoScript'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
 import { formatRequestDate } from '@/features/my-quotes/format'
 import { formatMoveDate } from '@/features/received-requests/format'
+import {
+  copyCurrentLink,
+  shareToFacebook,
+  shareToKakao,
+} from '@/features/share/utils'
 import { cn } from '@/lib/cn'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
@@ -32,8 +37,7 @@ export default function QuoteDetail() {
   // 이벤트 핸들러
   async function handleCopyLink() {
     try {
-      const currentUrl = window.location.href
-      await navigator.clipboard.writeText(currentUrl)
+      await copyCurrentLink()
       toast.success(TOAST_MESSAGES.common.linkCopied)
     } catch {
       toast.error(TOAST_MESSAGES.common.linkCopyFailed)
@@ -41,49 +45,18 @@ export default function QuoteDetail() {
   }
 
   function handleKakaoShare() {
-    const Kakao = window.Kakao
-
-    if (!Kakao?.isInitialized()) {
-      toast.error(TOAST_MESSAGES.common.shareFailed)
-      return
-    }
-
-    const currentUrl = window.location.href
-    const shareImageUrl = imageUrl.startsWith('http')
-      ? imageUrl
-      : `${window.location.origin}${imageUrl}`
-
-    Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: `${nickname} 기사님 | 무빙`,
-        description: `${MOVE_TYPE[quote.moveRequest.moveType].label} · ${formatMoveDate(quote.moveRequest.moveDate)} · ${quote.price.toLocaleString()}원`,
-        imageUrl: shareImageUrl,
-        link: {
-          mobileWebUrl: currentUrl,
-          webUrl: currentUrl,
-        },
-      },
-      buttons: [
-        {
-          title: '견적 상세 보기',
-          link: {
-            mobileWebUrl: currentUrl,
-            webUrl: currentUrl,
-          },
-        },
-      ],
+    const ok = shareToKakao({
+      title: `${nickname} 기사님 | 무빙`,
+      description: `${MOVE_TYPE[quote.moveRequest.moveType].label} · ${formatMoveDate(quote.moveRequest.moveDate)} · ${quote.price.toLocaleString()}원`,
+      imageUrl,
+      buttonTitle: '견적 상세 보기',
     })
+
+    if (!ok) toast.error(TOAST_MESSAGES.common.shareFailed)
   }
 
   function handleFacebookShare() {
-    const shareUrl = encodeURIComponent(window.location.href)
-
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
-      '_blank',
-      'noopener,noreferrer,width=600,height=400',
-    )
+    shareToFacebook()
   }
 
   return (

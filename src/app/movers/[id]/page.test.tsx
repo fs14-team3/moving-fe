@@ -60,7 +60,7 @@ vi.mock('@/features/move-request/hooks/useCreateDesignation', () => ({
   useCreateDesignation: vi.fn(),
 }))
 
-vi.mock('@/components/mover/KakaoScript', () => ({
+vi.mock('@/components/share/KakaoScript', () => ({
   default: () => null,
 }))
 

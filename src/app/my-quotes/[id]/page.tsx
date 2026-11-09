@@ -10,6 +10,7 @@ import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
 import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
 import { formatRequestDate } from '@/features/my-quotes/format'
+import { useConfirmQuote } from '@/features/my-quotes/hooks/useConfirmQuote'
 import { useQuoteDetail } from '@/features/my-quotes/hooks/useQuoteDetail'
 import { formatMoveDate } from '@/features/received-requests/format'
 import {
@@ -42,6 +43,7 @@ export default function QuoteDetail() {
   const { mutate: removeFavorite, isPending: isRemovingFavorite } =
     useRemoveFavorite(quote?.mover.id ?? '')
 
+  const { mutate: confirmQuote, isPending: isConfirming } = useConfirmQuote()
   const isNotFound =
     isApiError(error) && (error.status === 400 || error.status === 404)
 
@@ -363,7 +365,11 @@ export default function QuoteDetail() {
                 <p className="hidden text-2xl leading-8 font-bold lg:block">
                   {quote.price.toLocaleString()}원
                 </p>
-                <Button className="w-full cursor-pointer lg:mt-[30px] lg:w-80">
+                <Button
+                  disabled={isConfirming}
+                  onClick={() => confirmQuote(id)}
+                  className="w-full cursor-pointer lg:mt-[30px] lg:w-80"
+                >
                   견적 확정하기
                 </Button>
               </section>

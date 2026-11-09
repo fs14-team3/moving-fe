@@ -53,6 +53,7 @@ function createCustomer(profile: Me['customerProfile']): Me {
     email: 'user@example.com',
     phone: '01012345678',
     hasProfile: true,
+    isProfileComplete: true,
     customerProfile: profile,
     moverProfile: null,
   }

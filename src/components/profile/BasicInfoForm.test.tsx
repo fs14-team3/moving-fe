@@ -38,6 +38,7 @@ function createUser(role: Role): Me {
     email: 'mover@example.com',
     phone: '01012345678',
     hasProfile: true,
+    isProfileComplete: true,
     customerProfile: null,
     moverProfile: null,
   }

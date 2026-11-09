@@ -28,6 +28,7 @@ function createUser(role: Role, hasProfile = true): Me {
     email: null,
     phone: null,
     hasProfile,
+    isProfileComplete: hasProfile,
     customerProfile: null,
     moverProfile: null,
   }

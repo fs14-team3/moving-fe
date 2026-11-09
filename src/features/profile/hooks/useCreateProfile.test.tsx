@@ -23,6 +23,7 @@ function createUser(role: Role): Me {
     email: 'user@example.com',
     phone: null,
     hasProfile: false,
+    isProfileComplete: false,
     customerProfile: null,
     moverProfile: null,
   }

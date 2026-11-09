@@ -28,6 +28,7 @@ describe('signup', () => {
       email: 'customer@example.com',
       phone: '01012345678',
       hasProfile: false,
+      isProfileComplete: false,
       customerProfile: null,
       moverProfile: null,
     }
@@ -54,6 +55,7 @@ describe('login', () => {
       email: 'mover@example.com',
       phone: null,
       hasProfile: false,
+      isProfileComplete: false,
       customerProfile: null,
       moverProfile: null,
     }

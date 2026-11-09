@@ -22,9 +22,9 @@ import {
   getSelectionError,
 } from '@/features/profile/lib/validation'
 import type {
+  MoverProfileUpdate,
   ProfileFieldErrors,
   ProfileFormMode,
-  ProfileUpdate,
 } from '@/features/profile/types'
 
 type TextFieldName = 'nickname' | 'careerYears' | 'intro' | 'description'
@@ -79,7 +79,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
     serviceTypes: getSelectionError(serviceTypes),
     regions: getSelectionError(regions),
   }
-  const changes: ProfileUpdate = {}
+  const changes: MoverProfileUpdate = {}
   if (nickname !== saved.nickname) changes.nickname = nickname
   if (careerYears !== saved.careerYears) {
     changes.careerYears = Number(careerYears)

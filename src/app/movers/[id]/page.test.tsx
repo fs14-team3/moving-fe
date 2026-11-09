@@ -89,6 +89,7 @@ const customer: Me = {
   email: null,
   phone: null,
   hasProfile: true,
+  isProfileComplete: true,
   customerProfile: null,
   moverProfile: null,
 }

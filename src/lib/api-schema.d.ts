@@ -127,6 +127,26 @@ export interface paths {
     patch: operations['updateMe']
     trace?: never
   }
+  '/users/me/password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * 비밀번호 변경
+     * @description 이메일 계정의 비밀번호를 변경합니다. 소셜 로그인 전용 계정은 변경할 수 없습니다.
+     */
+    patch: operations['changePassword']
+    trace?: never
+  }
   '/customers/me/profile': {
     parameters: {
       query?: never
@@ -437,13 +457,14 @@ export interface paths {
     }
     /**
      * 받은 견적 목록 (대기 중인 견적)
-     * @description 요청자 본인만 조회합니다. 지정 요청 라벨과 기사님 찜 상태를 제공합니다. 최대 8개이므로 별도 페이지네이션은 두지 않습니다.
+     * @description 요청자 본인만 받은 견적을 조회할 수 있습니다. 일반 견적은 최대 5건, 지정 견적은 최대 3건으로 총 8건까지 조회할 수 있습니다. 지정 견적을 먼저 반환하며, 같은 유형에서는 최신 견적 순으로 정렬합니다. 생성 시각이 동일하면 견적 ID 내림차순으로 정렬합니다. 견적 금액, 지정 여부, 기사님 요약 정보 및 찜 상태를 제공합니다. status 쿼리로 견적 상태를 필터링할 수 있습니다. 별도 페이지네이션은 제공하지 않습니다.
      */
     get: operations['listQuotesForRequest']
     put?: never
     /**
      * 견적 보내기 (기사님)
-     * @description 기사님은 모든 서비스 지역의 받은 요청에 가격을 입력하여 견적을 보냅니다(§8.1–8.2).
+     * @description 로그인 세션으로 인증된 기사님만 요청할 수 있습니다. 비로그인은 401, 고객은 403을 반환합니다.
+     *     기사님은 모든 서비스 지역의 받은 요청에 가격을 입력하여 견적을 보냅니다(§8.1–8.2).
      *     지정된 기사님도 지역 제한 없이 견적을 보낼 수 있습니다. 확정되거나 이사일이 지난 요청에는 견적을 보내지 않습니다.
      *     일반 견적 최대 5개, 지정 견적 최대 3개, 총 최대 8개를 동시 요청에서도 지킵니다(§7.1.1).
      *     지정 여부의 견적 분류 시점과 재응답 정책은 추후 결정합니다. 일반 유저에게 새 견적 알림을 보냅니다.
@@ -466,7 +487,8 @@ export interface paths {
     put?: never
     /**
      * 견적 요청 반려 (기사님)
-     * @description 지역에 관계없이 받은 요청을 반려합니다(§8.3). 반려 사유 입력은 요구하지 않습니다.
+     * @description 로그인 세션으로 인증된 기사님만 요청할 수 있습니다. 비로그인은 401, 고객은 403을 반환합니다.
+     *     지역에 관계없이 받은 요청을 반려합니다(§8.3). 반려 사유 입력은 요구하지 않습니다.
      */
     post: operations['rejectMoveRequest']
     delete?: never
@@ -507,6 +529,7 @@ export interface paths {
     /**
      * 보낸 견적 목록 조회 (기사님)
      * @description 로그인한 기사님이 본인이 보낸 견적을 최신순으로 조회합니다.
+     *     로그인 세션으로 인증하며, 비로그인은 401, 고객은 403을 반환합니다.
      *     견적 상태별 필터링과 커서 기반 페이지네이션을 지원합니다.
      *     고객명은 닉네임을 우선 사용하며, 닉네임이 없으면 사용자 이름을 반환합니다.
      */
@@ -640,7 +663,7 @@ export interface paths {
     }
     /**
      * 미읽음 알림 목록 조회
-     * @description 현재 사용자의 미읽음 알림을 최신순으로 3개씩 조회합니다.
+     * @description 로그인 세션으로 인증된 고객·기사님의 미읽음 알림을 최신순으로 3개씩 조회합니다.
      */
     get: operations['listNotifications']
     put?: never
@@ -819,6 +842,7 @@ export interface components {
       email: string | null
       phone: string | null
       hasProfile: boolean
+      isProfileComplete: boolean
       /** @description role이 CUSTOMER이고 프로필이 있을 때 채워짐 */
       customerProfile: components['schemas']['CustomerProfile'] | null
       /** @description role이 MOVER이고 프로필이 있을 때 채워짐 */
@@ -835,44 +859,34 @@ export interface components {
     CustomerProfile: {
       /** Format: uri */
       imageUrl?: string | null
-      /** @description 별명 */
-      nickname?: string | null
-      /** @description 경력 (년) */
-      careerYears?: number | null
-      /** @description 한 줄 소개 */
-      intro?: string | null
-      /** @description 상세 설명 */
-      description?: string | null
       serviceTypes?: components['schemas']['ServiceType'][] | null
       regions?: components['schemas']['Region'][] | null
+    }
+    PasswordChange: {
+      /** Format: password */
+      currentPassword: string
+      /**
+       * Format: password
+       * @description 공백을 제외한 ASCII 문자 8~16자. 영문·숫자·특수문자를 각각 1자 이상 포함. 현재 비밀번호와 달라야 함
+       */
+      newPassword: string
+      /**
+       * Format: password
+       * @description newPassword와 같아야 함
+       */
+      confirmPassword: string
     }
     /** @description §3.4의 프로필 항목. 필수 입력 여부는 추후 결정합니다. */
     CustomerProfileCreate: {
       /** Format: uri */
       imageUrl?: string | null
-      /** @description 별명 */
-      nickname?: string
-      /** @description 경력 (년) */
-      careerYears?: number
-      /** @description 한 줄 소개 */
-      intro?: string
-      /** @description 상세 설명 */
-      description?: string
-      serviceTypes?: components['schemas']['ServiceType'][]
-      regions?: components['schemas']['Region'][]
+      serviceTypes: components['schemas']['ServiceType'][]
+      regions: components['schemas']['Region'][]
     }
     /** @description §3.4의 프로필 항목. 필수 입력 여부는 추후 결정합니다. */
     CustomerProfileUpdate: {
       /** Format: uri */
       imageUrl?: string | null
-      /** @description 별명 */
-      nickname?: string
-      /** @description 경력 (년) */
-      careerYears?: number
-      /** @description 한 줄 소개 */
-      intro?: string
-      /** @description 상세 설명 */
-      description?: string
       serviceTypes?: components['schemas']['ServiceType'][]
       regions?: components['schemas']['Region'][]
     }
@@ -955,6 +969,11 @@ export interface components {
       }
       /** @description 활성 견적 요청이 있는 일반 유저가 아니면 null */
       isDesignated: boolean | null
+    }
+    /** @description 기사님 본인 마이페이지 응답 */
+    MoverMyPage: components['schemas']['MoverDetail'] & {
+      /** @description 해당 기사님의 견적과 연결된 CONFIRMED 상태 이사 요청 수 */
+      inProgressCount: number
     }
     MoverListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['MoverSummary'][]
@@ -1070,6 +1089,7 @@ export interface components {
       /** Format: date-time */
       confirmedAt: string | null
       moveRequest: components['schemas']['MoveRequest']
+      mover?: components['schemas']['MoverDetail']
     }
     QuoteCreate: {
       /** @description 견적가 (원) */
@@ -1212,6 +1232,15 @@ export interface components {
     }
     /** @description 인증 정보가 없거나 유효하지 않음 */
     Unauthorized: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['ErrorResponse']
+      }
+    }
+    /** @description `UNAUTHORIZED`. 만료되었거나 유효하지 않은 세션 쿠키를 보낸 경우. 응답에서 쿠키를 지우므로 다시 요청하면 비회원으로 조회됩니다. */
+    InvalidSession: {
       headers: {
         [name: string]: unknown
       }
@@ -1513,6 +1542,53 @@ export interface operations {
       401: components['responses']['Unauthorized']
     }
   }
+  changePassword: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordChange']
+      }
+    }
+    responses: {
+      /** @description 변경 완료 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            /** @example 비밀번호가 변경되었습니다 */
+            message: string
+          }
+        }
+      }
+      400: components['responses']['ValidationError']
+      /** @description `UNAUTHORIZED` 또는 `INVALID_CREDENTIALS` */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `FORBIDDEN`. 비밀번호가 없는 소셜 계정 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+    }
+  }
   createCustomerProfile: {
     parameters: {
       query?: never
@@ -1648,13 +1724,13 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 공개 기사님 상세와 같은 형태. `isFavorite`, `isDesignated`는 null입니다. */
+      /** @description 기사님 본인의 프로필·평점·진행 중인 이사 건수. isFavorite과 isDesignated는 null입니다. */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['MoverDetail']
+          'application/json': components['schemas']['MoverMyPage']
         }
       }
       401: components['responses']['Unauthorized']
@@ -1729,6 +1805,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
+      401: components['responses']['InvalidSession']
     }
   }
   getMover: {
@@ -1753,6 +1830,7 @@ export interface operations {
         }
       }
       400: components['responses']['ValidationError']
+      401: components['responses']['InvalidSession']
       404: components['responses']['NotFound']
     }
   }
@@ -2103,6 +2181,7 @@ export interface operations {
           }
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
@@ -2290,6 +2369,7 @@ export interface operations {
           'application/json': components['schemas']['QuoteDetail']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']

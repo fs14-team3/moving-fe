@@ -7,12 +7,15 @@ export type Profile = Schemas['CustomerProfile'] | Schemas['MoverProfile']
 export type ProfileCreate =
   Schemas['CustomerProfileCreate'] | Schemas['MoverProfileCreate']
 
-export type ProfileField = keyof ProfileCreate
+export type ProfileField = keyof (Schemas['CustomerProfileCreate'] &
+  Schemas['MoverProfileCreate'])
 
 export type ProfileFieldErrors = Partial<Record<ProfileField, string>>
 
 export type ProfileUpdate =
   Schemas['CustomerProfileUpdate'] | Schemas['MoverProfileUpdate']
+
+export type MoverProfileUpdate = Schemas['MoverProfileUpdate']
 
 export type ProfileFormMode = 'register' | 'edit'
 

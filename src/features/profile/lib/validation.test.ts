@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getCareerYearsError,
   getDescriptionError,
+  getImageFileError,
   getIntroError,
   getNicknameError,
   getSelectionError,
@@ -48,5 +49,21 @@ describe('getSelectionError', () => {
   it('하나도 고르지 않으면 안내한다', () => {
     expect(getSelectionError([])).toBe('1개 이상 선택해 주세요.')
     expect(getSelectionError(['서울'])).toBeUndefined()
+  })
+})
+
+describe('getImageFileError', () => {
+  const file = (type: string, size: number) =>
+    new File([new Uint8Array(size)], 'me', { type })
+
+  it.each([
+    ['image/jpeg', 10, undefined],
+    ['image/png', 5 * 1024 * 1024, undefined],
+    ['image/webp', 10, undefined],
+    ['image/gif', 10, 'JPG, PNG, WEBP 이미지를 선택해 주세요.'],
+    ['image/heic', 10, 'JPG, PNG, WEBP 이미지를 선택해 주세요.'],
+    ['image/png', 5 * 1024 * 1024 + 1, '5MB 이하의 이미지를 선택해 주세요.'],
+  ])('%s %d바이트는 %j', (type, size, message) => {
+    expect(getImageFileError(file(type, size))).toBe(message)
   })
 })

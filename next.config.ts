@@ -1,6 +1,8 @@
 import { withSentryConfig } from '@sentry/nextjs/config'
 import type { NextConfig } from 'next'
 
+const imageBaseUrl = process.env.IMAGE_BASE_URL
+
 const nextConfig: NextConfig = {
   // TODO: 실제 이미지 호스트 확정 후 목데이터 이미지 호스트 제거
   images: {
@@ -10,6 +12,7 @@ const nextConfig: NextConfig = {
         hostname: 'i.pravatar.cc',
         pathname: '/**',
       },
+      ...(imageBaseUrl ? [new URL(`${imageBaseUrl}/profile-images/**`)] : []),
     ],
   },
   /* config options here */

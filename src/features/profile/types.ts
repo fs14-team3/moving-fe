@@ -19,6 +19,8 @@ export type MoverProfileUpdate = Schemas['MoverProfileUpdate']
 
 export type ProfileFormMode = 'register' | 'edit'
 
+export type UploadResponse = Schemas['UploadResponse']
+
 export type BasicInfoUpdate = Schemas['BasicInfoUpdate'] & {
   currentPassword?: string
   newPassword?: string

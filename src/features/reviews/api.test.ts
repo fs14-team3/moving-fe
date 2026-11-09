@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createReview, getWritableReviews } from '@/features/reviews/api'
+import {
+  createReview,
+  getMyReviews,
+  getWritableReviews,
+} from '@/features/reviews/api'
 import api from '@/lib/api'
 
 afterEach(() => {
@@ -22,6 +26,24 @@ describe('getWritableReviews', () => {
     )
     expect(get).toHaveBeenCalledWith('/customers/me/reviews/writable', {
       params: { page: 2, pageSize: 4 },
+    })
+  })
+})
+
+describe('getMyReviews', () => {
+  it('페이지를 query로 보내고 내가 쓴 리뷰 목록을 반환한다', async () => {
+    const page = {
+      items: [],
+      page: 1,
+      pageSize: 6,
+      totalCount: 0,
+      totalPages: 0,
+    }
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: page })
+
+    await expect(getMyReviews({ page: 1, pageSize: 6 })).resolves.toEqual(page)
+    expect(get).toHaveBeenCalledWith('/customers/me/reviews', {
+      params: { page: 1, pageSize: 6 },
     })
   })
 })

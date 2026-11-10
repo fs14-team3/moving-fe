@@ -72,7 +72,6 @@ export default function MoveRequestForm() {
       },
       {
         onSuccess: () => {
-          // TODO: 내 견적 관리 페이지가 생기면 그 경로로 이동
           router.push('/my-quotes')
         },
       },

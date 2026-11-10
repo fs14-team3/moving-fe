@@ -1,6 +1,7 @@
 import type { Me, Role } from '@/features/auth/types'
 import type {
   BasicInfoUpdate,
+  PasswordChange,
   Profile,
   ProfileCreate,
   ProfileUpdate,
@@ -26,6 +27,10 @@ export async function updateProfile(role: Role, body: ProfileUpdate) {
 export async function updateBasicInfo(body: BasicInfoUpdate) {
   const { data } = await api.patch<Me>('/users/me', body)
   return data
+}
+
+export async function changePassword(body: PasswordChange) {
+  await api.patch('/users/me/password', body)
 }
 
 export async function uploadImage(file: File) {

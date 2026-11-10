@@ -21,11 +21,10 @@ export type ProfileFormMode = 'register' | 'edit'
 
 export type UploadResponse = Schemas['UploadResponse']
 
-export type BasicInfoUpdate = Schemas['BasicInfoUpdate'] & {
-  currentPassword?: string
-  newPassword?: string
-}
+export type BasicInfoUpdate = Schemas['BasicInfoUpdate']
 
 export type BasicInfoField = keyof BasicInfoUpdate
 
 export type BasicInfoFieldErrors = Partial<Record<BasicInfoField, string>>
+
+export type PasswordChange = Schemas['PasswordChange']

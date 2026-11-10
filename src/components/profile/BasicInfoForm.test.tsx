@@ -11,6 +11,12 @@ const updateBasicInfoState = vi.hoisted(() => ({
   onFieldErrors: (() => {}) as (errors: BasicInfoFieldErrors) => void,
 }))
 
+const changePasswordState = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  isPending: false,
+  onFieldErrors: (() => {}) as (errors: { currentPassword: string }) => void,
+}))
+
 const currentUser = vi.hoisted(() => ({ user: null as Me | null }))
 
 const router = vi.hoisted(() => ({ push: vi.fn(), back: vi.fn() }))
@@ -27,6 +33,15 @@ vi.mock('@/features/profile/hooks/useUpdateBasicInfo', () => ({
   ) => {
     updateBasicInfoState.onFieldErrors = onFieldErrors
     return updateBasicInfoState
+  },
+}))
+
+vi.mock('@/features/profile/hooks/useChangePassword', () => ({
+  useChangePassword: (
+    onFieldErrors: (errors: { currentPassword: string }) => void,
+  ) => {
+    changePasswordState.onFieldErrors = onFieldErrors
+    return changePasswordState
   },
 }))
 
@@ -67,6 +82,8 @@ describe('BasicInfoForm', () => {
   beforeEach(() => {
     updateBasicInfoState.mutate.mockClear()
     updateBasicInfoState.isPending = false
+    changePasswordState.mutate.mockClear()
+    changePasswordState.isPending = false
     router.push.mockClear()
     currentUser.user = createUser('MOVER')
   })
@@ -171,10 +188,15 @@ describe('BasicInfoForm', () => {
     await user.type(fields.newPasswordConfirm, 'newpass1!')
     await user.click(submit)
 
-    expect(updateBasicInfoState.mutate).toHaveBeenCalledWith(
-      { currentPassword: 'oldpass1!', newPassword: 'newpass1!' },
+    expect(changePasswordState.mutate).toHaveBeenCalledWith(
+      {
+        currentPassword: 'oldpass1!',
+        newPassword: 'newpass1!',
+        confirmPassword: 'newpass1!',
+      },
       expect.anything(),
     )
+    expect(updateBasicInfoState.mutate).not.toHaveBeenCalled()
   })
 
   it('새 비밀번호가 규칙에 맞지 않으면 안내한다', async () => {
@@ -188,6 +210,51 @@ describe('BasicInfoForm', () => {
     )
   })
 
+  it('새 비밀번호가 현재 비밀번호와 같으면 안내한다', async () => {
+    const { user, fields, submit } = renderBasicInfoForm()
+
+    await user.type(fields.currentPassword, 'samepass1!')
+    await user.type(fields.newPassword, 'samepass1!')
+    await user.tab()
+    await user.type(fields.newPasswordConfirm, 'samepass1!')
+
+    expect(fields.newPassword).toHaveAccessibleDescription(
+      '현재 비밀번호와 다른 비밀번호를 입력해 주세요.',
+    )
+    expect(submit).toBeDisabled()
+  })
+
+  it('기본정보를 먼저 저장한 뒤 비밀번호를 바꾸고 마이페이지로 이동한다', async () => {
+    const { user, fields, submit } = renderBasicInfoForm()
+    await user.type(fields.name, '님')
+    await user.type(fields.currentPassword, 'oldpass1!')
+    await user.type(fields.newPassword, 'newpass1!')
+    await user.type(fields.newPasswordConfirm, 'newpass1!')
+    await user.click(submit)
+
+    expect(updateBasicInfoState.mutate).toHaveBeenCalledWith(
+      { name: '김기사님' },
+      expect.anything(),
+    )
+    expect(changePasswordState.mutate).not.toHaveBeenCalled()
+
+    act(() => updateBasicInfoState.mutate.mock.calls[0][1].onSuccess())
+
+    expect(changePasswordState.mutate).toHaveBeenCalledWith(
+      {
+        currentPassword: 'oldpass1!',
+        newPassword: 'newpass1!',
+        confirmPassword: 'newpass1!',
+      },
+      expect.anything(),
+    )
+    expect(router.push).not.toHaveBeenCalled()
+
+    act(() => changePasswordState.mutate.mock.calls[0][1].onSuccess())
+
+    expect(router.push).toHaveBeenCalledWith('/mover/mypage')
+  })
+
   it('서버가 알려 준 오류를 보여 주고 고치면 지운다', async () => {
     const { user, fields, submit } = renderBasicInfoForm()
     await user.type(fields.currentPassword, 'wrongpass1!')
@@ -195,7 +262,7 @@ describe('BasicInfoForm', () => {
     await user.type(fields.newPasswordConfirm, 'newpass1!')
 
     act(() =>
-      updateBasicInfoState.onFieldErrors({
+      changePasswordState.onFieldErrors({
         currentPassword: '현재 비밀번호를 다시 확인해 주세요.',
       }),
     )
@@ -232,8 +299,11 @@ describe('BasicInfoForm', () => {
     expect(updateBasicInfoState.mutate).not.toHaveBeenCalled()
   })
 
-  it('수정 중에는 입력란과 버튼을 모두 잠근다', () => {
-    updateBasicInfoState.isPending = true
+  it.each([
+    ['기본정보', updateBasicInfoState],
+    ['비밀번호', changePasswordState],
+  ])('%s 수정 중에는 입력란과 버튼을 모두 잠근다', (_name, state) => {
+    state.isPending = true
     const { fields, submit } = renderBasicInfoForm()
 
     for (const field of Object.values(fields)) {
@@ -248,6 +318,8 @@ describe('BasicInfoForm 일반 유저', () => {
   beforeEach(() => {
     updateBasicInfoState.mutate.mockClear()
     updateBasicInfoState.isPending = false
+    changePasswordState.mutate.mockClear()
+    changePasswordState.isPending = false
     router.push.mockClear()
     router.back.mockClear()
     currentUser.user = createUser('CUSTOMER')
@@ -263,6 +335,7 @@ describe('BasicInfoForm 일반 유저', () => {
 
     currentUser.user = { ...createUser('CUSTOMER'), name: '김기사님' }
     act(() => updateBasicInfoState.mutate.mock.calls[0][1].onSuccess())
+    act(() => changePasswordState.mutate.mock.calls[0][1].onSuccess())
 
     expect(router.push).not.toHaveBeenCalled()
     expect(fields.name).toHaveValue('김기사님')

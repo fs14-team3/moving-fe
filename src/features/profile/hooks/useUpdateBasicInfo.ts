@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
-import { PASSWORD_RULE_MESSAGE } from '@/features/auth/lib/validation'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Me } from '@/features/auth/types'
 import { updateBasicInfo } from '@/features/profile/api'
@@ -15,8 +14,6 @@ const SERVER_FIELD_ERROR: Record<BasicInfoField, string> = {
   name: '이름을 다시 확인해 주세요.',
   email: '이메일을 다시 확인해 주세요.',
   phone: '전화번호를 다시 확인해 주세요.',
-  currentPassword: '현재 비밀번호를 다시 확인해 주세요.',
-  newPassword: PASSWORD_RULE_MESSAGE,
 }
 
 function isBasicInfoField(field: string): field is BasicInfoField {

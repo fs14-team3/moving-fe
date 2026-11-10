@@ -23,6 +23,7 @@ import {
 } from '@/features/profile/lib/validation'
 import type {
   MoverProfileUpdate,
+  ProfileField,
   ProfileFieldErrors,
   ProfileFormMode,
 } from '@/features/profile/types'
@@ -32,12 +33,14 @@ type TextFieldName = 'nickname' | 'careerYears' | 'intro' | 'description'
 type FieldName = TextFieldName | 'serviceTypes' | 'regions'
 
 type FormValues = Record<TextFieldName, string> & {
+  imageUrl: string | null
   serviceTypes: ServiceType[]
   regions: string[]
 }
 
 function getSavedValues(profile: Me['moverProfile'] | undefined): FormValues {
   return {
+    imageUrl: profile?.imageUrl ?? null,
     nickname: profile?.nickname ?? '',
     careerYears: profile?.careerYears?.toString() ?? '',
     intro: profile?.intro ?? '',
@@ -63,6 +66,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
     {},
   )
   const [serverErrors, setServerErrors] = useState<ProfileFieldErrors>({})
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const createProfile = useCreateProfile('MOVER', setServerErrors)
   const updateProfile = useUpdateProfile('MOVER', setServerErrors)
 
@@ -70,7 +74,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
   const careerYears = values.careerYears.trim()
   const intro = values.intro.trim()
   const description = values.description.trim()
-  const { serviceTypes, regions } = values
+  const { imageUrl, serviceTypes, regions } = values
   const errors: Record<FieldName, string | undefined> = {
     nickname: getNicknameError(nickname),
     careerYears: getCareerYearsError(careerYears),
@@ -80,6 +84,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
     regions: getSelectionError(regions),
   }
   const changes: MoverProfileUpdate = {}
+  if (imageUrl !== saved.imageUrl) changes.imageUrl = imageUrl
   if (nickname !== saved.nickname) changes.nickname = nickname
   if (careerYears !== saved.careerYears) {
     changes.careerYears = Number(careerYears)
@@ -91,6 +96,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
   }
   if (!isSameSelection(regions, saved.regions)) changes.regions = regions
   const canSubmit =
+    !isUploadingImage &&
     Object.keys(changes).length > 0 &&
     [...Object.values(errors), ...Object.values(serverErrors)].every(
       (error) => !error,
@@ -106,6 +112,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
       })
     } else {
       createProfile.mutate({
+        imageUrl,
         nickname,
         careerYears: Number(careerYears),
         intro,
@@ -119,7 +126,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
   const touch = (field: FieldName) =>
     setTouched((prev) => ({ ...prev, [field]: true }))
 
-  const clearServerError = (field: FieldName) =>
+  const clearServerError = (field: ProfileField) =>
     setServerErrors((prev) => ({ ...prev, [field]: undefined }))
 
   const getError = (field: FieldName) =>
@@ -148,7 +155,15 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
       actionsClassName="lg:mt-4 lg:w-125 lg:self-end"
     >
       <div className="lg:*:last:border-b-0">
-        <ProfileImageField />
+        <ProfileImageField
+          imageUrl={imageUrl}
+          error={serverErrors.imageUrl}
+          onChange={(value) => {
+            setEdits((prev) => ({ ...prev, imageUrl: value }))
+            clearServerError('imageUrl')
+          }}
+          onUploadingChange={setIsUploadingImage}
+        />
         <ProfileTextField
           label="별명"
           placeholder="사이트에 노출될 별명을 입력해 주세요"

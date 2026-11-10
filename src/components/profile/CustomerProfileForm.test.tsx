@@ -45,6 +45,40 @@ vi.mock('@/features/profile/hooks/useUpdateProfile', () => ({
   useUpdateProfile: () => updateProfileState,
 }))
 
+const uploadImageState = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  isPending: false,
+  isError: false,
+}))
+
+vi.mock('@/features/profile/hooks/useUploadImage', () => ({
+  useUploadImage: () => uploadImageState,
+}))
+
+const IMAGE_URL =
+  'https://moving.s3.ap-southeast-2.amazonaws.com/profile-images/user-1/new'
+
+async function uploadImage(user: ReturnType<typeof userEvent.setup>) {
+  await user.upload(
+    screen.getByLabelText('프로필 이미지'),
+    new File(['image'], 'me.png', { type: 'image/png' }),
+  )
+}
+
+function finishUpload() {
+  const { onSuccess, onSettled } = uploadImageState.mutate.mock.calls[0][1]
+  act(() => {
+    onSuccess(IMAGE_URL)
+    onSettled()
+  })
+}
+
+beforeEach(() => {
+  uploadImageState.mutate.mockReset()
+  URL.createObjectURL = vi.fn(() => 'blob:preview')
+  URL.revokeObjectURL = vi.fn()
+})
+
 function createCustomer(profile: Me['customerProfile']): Me {
   return {
     id: 'user-1',
@@ -117,6 +151,7 @@ describe('CustomerProfileForm', () => {
       'false',
     )
     expect(createProfileState.mutate).toHaveBeenCalledWith({
+      imageUrl: null,
       serviceTypes: ['SMALL', 'OFFICE'],
       regions: ['서울'],
     })
@@ -263,6 +298,22 @@ describe('CustomerProfileForm 수정', () => {
     await user.click(submit)
 
     expect(updateProfileState.mutate).toHaveBeenCalledWith({
+      regions: ['부산'],
+    })
+  })
+
+  it('올린 이미지로 수정하고 올리는 중에는 수정할 수 없다', async () => {
+    const { user, submit } = renderCustomerProfileForm('edit')
+    await user.click(screen.getByRole('button', { name: '부산' }))
+
+    await uploadImage(user)
+    expect(submit).toBeDisabled()
+
+    finishUpload()
+    await user.click(submit)
+
+    expect(updateProfileState.mutate).toHaveBeenCalledWith({
+      imageUrl: IMAGE_URL,
       regions: ['부산'],
     })
   })

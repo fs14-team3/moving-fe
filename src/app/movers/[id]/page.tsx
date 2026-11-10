@@ -271,7 +271,7 @@ export default function MoverDetailPage() {
 
                 <button
                   type="button"
-                  aria-label={isFavorite ? '찜 해제하기' : '찜하기'}
+                  aria-label={isFavorite ? '찜 해제' : '찜하기'}
                   disabled={isFavoriteDisabled}
                   onClick={handleFavorite}
                   className="flex cursor-pointer items-center gap-[6px] disabled:cursor-not-allowed disabled:opacity-50"
@@ -375,13 +375,22 @@ export default function MoverDetailPage() {
               </p>
 
               <div className="flex w-full items-center gap-2 lg:flex-col lg:gap-4">
-                <IconButton
-                  icon="like"
+                <button
+                  type="button"
                   aria-label={isFavorite ? '찜 해제' : '찜하기'}
                   disabled={isFavoriteDisabled}
                   onClick={handleFavorite}
-                  className="size-[54px] disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
-                />
+                  className="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-line-200 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+                >
+                  <Heart
+                    aria-hidden="true"
+                    className={
+                      isFavorite
+                        ? 'size-6 fill-red-500 text-red-500'
+                        : 'size-6 fill-black text-black'
+                    }
+                  />
+                </button>
                 <Button
                   onClick={handleDesignate}
                   disabled={

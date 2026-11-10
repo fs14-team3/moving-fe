@@ -53,8 +53,13 @@ export default function FavoritesPage() {
   // 기사님 카드 선택
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
+  const visibleSelectedIds = selectedIds.filter((id) =>
+    favoriteMovers.some((mover) => mover.id === id),
+  )
+
   const allSelected =
-    favoriteMovers.length > 0 && favoriteMovers.length === selectedIds.length
+    favoriteMovers.length > 0 &&
+    favoriteMovers.length === visibleSelectedIds.length
 
   function handleSelectAll() {
     setSelectedIds(allSelected ? [] : favoriteMovers.map((mover) => mover.id))
@@ -69,7 +74,7 @@ export default function FavoritesPage() {
   }
 
   function handleDeleteSelected() {
-    removeFavorites(selectedIds, {
+    removeFavorites(visibleSelectedIds, {
       onSuccess: () => setSelectedIds([]),
     })
   }
@@ -80,6 +85,7 @@ export default function FavoritesPage() {
         <div className="mx-auto max-w-300 px-[30px] py-[14px] md:px-18 lg:py-8">
           <h1 className="text-lg leading-6 font-semibold lg:text-2xl lg:leading-8">
             찜한 기사님
+            {favoriteMovers.length > 0 && ` (${totalCount})`}
           </h1>
         </div>
       </header>
@@ -147,13 +153,13 @@ export default function FavoritesPage() {
                 />
               </span>
               <span className="text-sm leading-6 font-normal md:text-base">
-                전체 선택 ({selectedIds.length}/{totalCount})
+                전체 선택 ({visibleSelectedIds.length}/{favoriteMovers.length})
               </span>
             </label>
 
             <button
               type="button"
-              disabled={selectedIds.length === 0 || isRemovingFavorites}
+              disabled={visibleSelectedIds.length === 0 || isRemovingFavorites}
               onClick={handleDeleteSelected}
               className="text-sm leading-6 font-normal text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 md:text-base"
             >

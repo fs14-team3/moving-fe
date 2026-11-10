@@ -2,6 +2,9 @@ const DIGITS_PATTERN = /^\d+$/
 const CAREER_YEARS_MAX = 99
 const INTRO_MIN_LENGTH = 8
 const DESCRIPTION_MIN_LENGTH = 10
+const IMAGE_MAX_SIZE = 5 * 1024 * 1024
+
+export const IMAGE_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 export function getNicknameError(nickname: string) {
   if (!nickname) return '별명을 입력해 주세요.'
@@ -33,5 +36,13 @@ export function getDescriptionError(description: string) {
 
 export function getSelectionError(values: string[]) {
   if (values.length === 0) return '1개 이상 선택해 주세요.'
+  return undefined
+}
+
+export function getImageFileError(file: File) {
+  if (!IMAGE_FILE_TYPES.includes(file.type)) {
+    return 'JPG, PNG, WEBP 이미지를 선택해 주세요.'
+  }
+  if (file.size > IMAGE_MAX_SIZE) return '5MB 이하의 이미지를 선택해 주세요.'
   return undefined
 }

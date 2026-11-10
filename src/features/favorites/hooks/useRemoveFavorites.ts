@@ -15,6 +15,7 @@ export function useRemoveFavorites() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.favorites.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.movers.lists() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.quotes.all }),
         ...moverIds.map((moverId) =>
           queryClient.invalidateQueries({
             queryKey: queryKeys.movers.detail(moverId),

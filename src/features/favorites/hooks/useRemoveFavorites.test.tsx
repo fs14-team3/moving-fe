@@ -55,11 +55,12 @@ describe('useRemoveFavorites', () => {
     )
 
     expect(removeFavorites).toHaveBeenCalledWith(moverIds)
-
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.movers.lists(),
     })
-
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.quotes.all,
+    })
     moverIds.forEach((moverId) => {
       expect(invalidateQueries).toHaveBeenCalledWith({
         queryKey: queryKeys.movers.detail(moverId),

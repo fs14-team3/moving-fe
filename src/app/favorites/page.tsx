@@ -80,6 +80,7 @@ export default function FavoritesPage() {
         <div className="mx-auto max-w-300 px-[30px] py-[14px] md:px-18 lg:py-8">
           <h1 className="text-lg leading-6 font-semibold lg:text-2xl lg:leading-8">
             찜한 기사님
+            {favoriteMovers.length > 0 && ` (${totalCount})`}
           </h1>
         </div>
       </header>
@@ -147,7 +148,7 @@ export default function FavoritesPage() {
                 />
               </span>
               <span className="text-sm leading-6 font-normal md:text-base">
-                전체 선택 ({selectedIds.length}/{totalCount})
+                전체 선택 ({selectedIds.length}/{favoriteMovers.length})
               </span>
             </label>
 

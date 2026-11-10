@@ -102,7 +102,7 @@ describe('useUpdateBasicInfo', () => {
     vi.mocked(updateBasicInfo).mockRejectedValue(
       new ApiError('VALIDATION_ERROR', 'Bad Request', 400, [
         { field: 'email', reason: '' },
-        { field: 'currentPassword', reason: '' },
+        { field: 'phone', reason: '' },
       ]),
     )
     const { result, onFieldErrors } = renderUseUpdateBasicInfo()
@@ -112,7 +112,7 @@ describe('useUpdateBasicInfo', () => {
     await waitFor(() =>
       expect(onFieldErrors).toHaveBeenCalledWith({
         email: '이메일을 다시 확인해 주세요.',
-        currentPassword: '현재 비밀번호를 다시 확인해 주세요.',
+        phone: '전화번호를 다시 확인해 주세요.',
       }),
     )
   })

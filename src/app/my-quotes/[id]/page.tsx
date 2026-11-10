@@ -101,7 +101,8 @@ export default function QuoteDetail() {
   if (!quote) return null
 
   // 화면 표시 데이터
-  const isQuotePending = quote.status === 'SUBMITTED'
+  const isQuotePending =
+    quote.status === 'SUBMITTED' && quote.moveRequest.status === 'PENDING'
   const { mover } = quote
   const imageUrl = mover.imageUrl ?? '/assets/images/profile.png'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'

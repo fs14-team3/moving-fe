@@ -5,7 +5,6 @@ export type NavItem = {
   href: string
 }
 
-// TODO(#68): #13 · #23 · #24에서 페이지 경로가 정해지면 견적 요청 · 받은 요청 · 내 견적 관리 경로 맞추기
 export const NAV_ITEMS: Record<Role | 'GUEST', NavItem[]> = {
   GUEST: [{ label: '기사님 찾기', href: '/movers' }],
   CUSTOMER: [
@@ -26,7 +25,6 @@ export const PROFILE_EDIT_PATH: Record<Role, string> = {
   MOVER: MOVER_MYPAGE_PATH,
 }
 
-// TODO(#68): #11 · #24에서 페이지 경로가 정해지면 찜한 기사님 · 이사 리뷰 경로 맞추기
 export const PROFILE_MENU_ITEMS: Record<Role, NavItem[]> = {
   CUSTOMER: [
     { label: '프로필 수정', href: PROFILE_EDIT_PATH.CUSTOMER },

@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   confirmQuote,
+  getQuoteDetail,
   getQuoteHistory,
   getRequestQuotes,
 } from '@/features/my-quotes/api'
 import api from '@/lib/api'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -41,5 +42,15 @@ describe('confirmQuote', () => {
 
     await expect(confirmQuote('quote-1')).resolves.toEqual(quote)
     expect(post).toHaveBeenCalledWith('/quotes/quote-1/confirm')
+  })
+})
+
+describe('getQuoteDetail', () => {
+  it('견적 id로 견적 상세를 불러온다', async () => {
+    const quote = { id: 'quote-1' }
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: quote })
+
+    await expect(getQuoteDetail('quote-1')).resolves.toEqual(quote)
+    expect(get).toHaveBeenCalledWith('/quotes/quote-1')
   })
 })

@@ -2,7 +2,6 @@
 
 import Modal, { ModalButton } from './Modal'
 
-// TODO: 일반 견적 요청 페이지 경로가 정해지면 맞춰서 변경
 const GENERAL_REQUEST_PATH = '/request'
 
 type GeneralModalProps = {

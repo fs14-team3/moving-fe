@@ -225,7 +225,7 @@ describe('MoverDetailPage', () => {
 
     const user = userEvent.setup()
     render(<MoverDetailPage />)
-    await user.click(screen.getByRole('button', { name: '찜 해제' }))
+    await user.click(screen.getAllByRole('button', { name: '찜 해제' })[0])
 
     expect(removeFavorite).toHaveBeenCalled()
   })

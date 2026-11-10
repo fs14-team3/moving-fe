@@ -20,7 +20,26 @@ type WritableReviewPage = Schemas['OffsetMeta'] & {
   items: ReviewTarget[]
 }
 
+// 내가 쓴 리뷰도 ReviewTarget을 그대로 이어받아서 출발지 · 도착지가 같이 빠져 있다.
+export type MyReview = ReviewTarget &
+  Pick<Schemas['MyReview'], 'id' | 'rating' | 'content' | 'createdAt'>
+
+export type MyReviewQuery = NonNullable<
+  operations['listMyReviews']['parameters']['query']
+>
+
+type MyReviewPage = Schemas['OffsetMeta'] & {
+  items: MyReview[]
+}
+
 export type ReviewCreate = Schemas['ReviewCreate']
+
+export async function getMyReviews(query: MyReviewQuery = {}) {
+  const { data } = await api.get<MyReviewPage>('/customers/me/reviews', {
+    params: query,
+  })
+  return data
+}
 
 export async function getWritableReviews(query: WritableReviewQuery = {}) {
   const { data } = await api.get<WritableReviewPage>(

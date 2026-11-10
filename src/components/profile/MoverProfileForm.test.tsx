@@ -45,6 +45,40 @@ vi.mock('@/features/profile/hooks/useUpdateProfile', () => ({
   useUpdateProfile: () => updateProfileState,
 }))
 
+const uploadImageState = vi.hoisted(() => ({
+  mutate: vi.fn(),
+  isPending: false,
+  isError: false,
+}))
+
+vi.mock('@/features/profile/hooks/useUploadImage', () => ({
+  useUploadImage: () => uploadImageState,
+}))
+
+const IMAGE_URL =
+  'https://moving.s3.ap-southeast-2.amazonaws.com/profile-images/user-1/new'
+
+async function uploadImage(user: ReturnType<typeof userEvent.setup>) {
+  await user.upload(
+    screen.getByLabelText('프로필 이미지'),
+    new File(['image'], 'me.png', { type: 'image/png' }),
+  )
+}
+
+function finishUpload() {
+  const { onSuccess, onSettled } = uploadImageState.mutate.mock.calls[0][1]
+  act(() => {
+    onSuccess(IMAGE_URL)
+    onSettled()
+  })
+}
+
+beforeEach(() => {
+  uploadImageState.mutate.mockReset()
+  URL.createObjectURL = vi.fn(() => 'blob:preview')
+  URL.revokeObjectURL = vi.fn()
+})
+
 const savedProfile = {
   imageUrl: null,
   nickname: '김코드',
@@ -150,6 +184,7 @@ describe('MoverProfileForm', () => {
     await user.click(submit)
 
     expect(createProfileState.mutate).toHaveBeenCalledWith({
+      imageUrl: null,
       nickname: '김코드',
       careerYears: 8,
       intro: '꼼꼼한 이사를 도와드립니다.',
@@ -157,6 +192,43 @@ describe('MoverProfileForm', () => {
       serviceTypes: ['HOME'],
       regions: ['서울', '경기'],
     })
+  })
+
+  it('올린 이미지 URL로 등록하고 올리는 중에는 등록할 수 없다', async () => {
+    const { user, fillValidForm, submit } = renderMoverProfileForm()
+    await fillValidForm()
+
+    await uploadImage(user)
+    expect(submit).toBeDisabled()
+
+    finishUpload()
+    expect(submit).toBeEnabled()
+
+    await user.click(submit)
+    expect(createProfileState.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ imageUrl: IMAGE_URL }),
+    )
+  })
+
+  it('이미지 오류를 받으면 새 이미지를 올릴 때까지 등록할 수 없다', async () => {
+    const { user, fillValidForm, submit } = renderMoverProfileForm()
+    await fillValidForm()
+
+    act(() =>
+      createProfileState.onFieldErrors({
+        imageUrl: '이미지를 다시 선택해 주세요.',
+      }),
+    )
+
+    const input = screen.getByLabelText('프로필 이미지')
+    expect(input).toHaveAccessibleDescription('이미지를 다시 선택해 주세요.')
+    expect(submit).toBeDisabled()
+
+    await uploadImage(user)
+    finishUpload()
+
+    expect(input).not.toHaveAccessibleDescription()
+    expect(submit).toBeEnabled()
   })
 
   it('서비스나 지역을 모두 해제하면 오류를 보여 주고 등록할 수 없다', async () => {
@@ -196,6 +268,7 @@ describe('MoverProfileForm', () => {
     const { fields, services, regions, submit } = renderMoverProfileForm()
 
     for (const control of [
+      screen.getByLabelText('프로필 이미지'),
       ...Object.values(fields),
       ...services.querySelectorAll('button'),
       ...regions.querySelectorAll('button'),
@@ -260,6 +333,19 @@ describe('MoverProfileForm 수정', () => {
     act(() => updateProfileState.mutate.mock.calls[0][1].onSuccess())
 
     expect(router.push).toHaveBeenCalledWith('/mover/mypage')
+  })
+
+  it('이미지만 바꾸면 이미지 URL만 수정한다', async () => {
+    const { user, submit } = renderMoverProfileForm('edit')
+
+    await uploadImage(user)
+    finishUpload()
+    await user.click(submit)
+
+    expect(updateProfileState.mutate).toHaveBeenCalledWith(
+      { imageUrl: IMAGE_URL },
+      expect.anything(),
+    )
   })
 
   it('다시 불러온 프로필은 고치지 않은 항목에 반영하고 보내지 않는다', async () => {

@@ -1,3 +1,4 @@
+import type { Mover } from '@/features/movers/types'
 import api from '@/lib/api'
 import type { components, operations } from '@/lib/api-schema'
 
@@ -54,5 +55,10 @@ export async function confirmQuote(quoteId: string) {
   const { data } = await api.post<Schemas['QuoteDetail']>(
     `/quotes/${quoteId}/confirm`,
   )
+  return data
+}
+
+export async function getQuoteDetail(quoteId: string) {
+  const { data } = await api.get<QuoteDetail>(`/quotes/${quoteId}`)
   return data
 }

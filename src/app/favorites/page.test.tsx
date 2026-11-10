@@ -74,7 +74,7 @@ describe('FavoritesPage', () => {
     render(<FavoritesPage />)
 
     expect(
-      screen.getByRole('heading', { name: '찜한 기사님' }),
+      screen.getByRole('heading', { name: '찜한 기사님 (1)' }),
     ).toBeInTheDocument()
     expect(screen.getByText('김무빙')).toBeInTheDocument()
   })
@@ -162,13 +162,16 @@ describe('FavoritesPage', () => {
     )
   })
 
-  it('전체 선택에 찜한 기사님 전체 수를 보여준다', () => {
+  it('전체 선택 숫자는 불러온 목록 기준이고 제목에 전체 찜 수를 보여준다', () => {
     vi.mocked(useFavoriteMovers).mockReturnValue(
       createFavoritesResult({ totalCount: 5 }),
     )
 
     render(<FavoritesPage />)
 
-    expect(screen.getByText('전체 선택 (0/5)')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: '찜한 기사님 (5)' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('전체 선택 (0/1)')).toBeInTheDocument()
   })
 })

@@ -18,6 +18,7 @@ export function useRemoveFavorite(moverId: MoverId) {
         queryClient.invalidateQueries({
           queryKey: queryKeys.movers.detail(moverId),
         }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.quotes.all }),
       ])
     },
     onError: (error) => {

@@ -50,7 +50,7 @@ export default function MyMoverProfile() {
 
   const imageUrl = mover.imageUrl || '/assets/images/profile.png'
   const nickname = mover.nickname?.trim() || '익명'
-  const favoriteCount = mover.favoriteCount ?? '-'
+  const favoriteCount = mover.favoriteCount
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const description =
     mover.description?.trim() || '등록된 상세 설명이 없습니다.'

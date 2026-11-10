@@ -32,7 +32,7 @@ export default function QuoteDetail() {
   const nickname = mover.nickname?.trim() || '익명'
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
-  const favoriteCount = mover.favoriteCount ?? '-'
+  const favoriteCount = mover.favoriteCount
 
   // 이벤트 핸들러
   async function handleCopyLink() {

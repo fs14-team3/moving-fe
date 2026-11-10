@@ -32,6 +32,7 @@ function createQuote(
       nickname,
       imageUrl: null,
       intro: `${nickname} 기사님 소개`,
+      description: '고객님의 물품을 안전하게 운송해 드립니다.',
       careerYears: 7,
       serviceTypes: ['OFFICE'],
       averageRating: 5,

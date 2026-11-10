@@ -30,11 +30,13 @@ function createReview(id: string, nickname: string): MyReview {
       nickname,
       imageUrl: null,
       intro: `${nickname} 기사님 소개`,
+      description: null,
       careerYears: 7,
       serviceTypes: ['SMALL'],
       averageRating: 5,
       reviewCount: 178,
       confirmedCount: 334,
+      favoriteCount: 136,
       isFavorite: false,
     },
   }

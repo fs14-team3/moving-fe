@@ -315,6 +315,39 @@ describe('MoverDetailPage', () => {
     )
   })
 
+  it('확정된 요청이면 지정 견적을 요청하지 않는다', async () => {
+    const createDesignation = vi.fn()
+
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: { ...MOCK_MOVE_REQUEST, status: 'CONFIRMED' },
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useCreateDesignation).mockReturnValue({
+      mutate: createDesignation,
+      isPending: false,
+    })
+    const user = userEvent.setup()
+
+    render(<MoverDetailPage />)
+
+    await user.click(screen.getByRole('button', { name: '지정 견적 요청하기' }))
+
+    expect(createDesignation).not.toHaveBeenCalled()
+    expect(toast.info).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.requestNotPending,
+    )
+  })
+
   it('진행 중인 견적을 다시 불러오다 실패해도 불러온 견적으로 지정 견적을 요청한다', async () => {
     const createDesignation = vi.fn()
 

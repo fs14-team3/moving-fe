@@ -204,6 +204,11 @@ export default function MoverDetailPage() {
       return
     }
 
+    if (activeMoveRequest.status !== 'PENDING') {
+      toast.info(TOAST_MESSAGES.estimate.requestNotPending)
+      return
+    }
+
     createDesignation(
       {
         requestId: activeMoveRequest.id,

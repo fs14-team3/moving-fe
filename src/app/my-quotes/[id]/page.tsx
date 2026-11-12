@@ -3,32 +3,36 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import { MOVE_TYPE } from '@/components/common/modal/Modal'
+import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
+import {
+  ConfirmedLabel,
+  QuoteDetailHeader,
+  QuoteInfo,
+  QuotePrice,
+} from '@/components/quotes/QuoteDetail'
 import KakaoScript from '@/components/share/KakaoScript'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
 import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
-import { formatRequestDate } from '@/features/my-quotes/format'
 import { useConfirmQuote } from '@/features/my-quotes/hooks/useConfirmQuote'
 import { useQuoteDetail } from '@/features/my-quotes/hooks/useQuoteDetail'
+import { useQuoteNotFound } from '@/features/my-quotes/hooks/useQuoteNotFound'
 import { formatMoveDate } from '@/features/received-requests/format'
 import {
   copyCurrentLink,
   shareToFacebook,
   shareToKakao,
 } from '@/features/share/utils'
-import { isApiError } from '@/lib/api-error'
 import { cn } from '@/lib/cn'
-import { Heart, LoaderCircle, Star } from 'lucide-react'
+import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
-import { useParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 
 export default function QuoteDetail() {
   // 라우팅 및 API 상태
-  const router = useRouter()
   const { id } = useParams<{ id: string }>()
 
   const { user, isPending: isUserPending } = useCurrentUser()
@@ -44,57 +48,26 @@ export default function QuoteDetail() {
     useRemoveFavorite(quote?.mover.id ?? '')
 
   const { mutate: confirmQuote, isPending: isConfirming } = useConfirmQuote()
-  const isNotFound =
-    isApiError(error) && (error.status === 400 || error.status === 404)
+  const isNotFound = useQuoteNotFound(error, '/my-quotes')
 
   const isFavoritePending = isAddingFavorite || isRemovingFavorite
   const isFavoriteDisabled = isUserPending || isFavoritePending
 
-  // 부수 효과
-  useEffect(() => {
-    if (!isNotFound) return
-
-    toast.error(TOAST_MESSAGES.quote.notFound, {
-      id: 'quote-not-found',
-    })
-    router.replace('/my-quotes')
-  }, [isNotFound, router])
-
   // 비동기 상태 처리
   if (isPending) {
-    return (
-      <main
-        role="status"
-        className="flex min-h-page flex-col items-center justify-center gap-4"
-      >
-        <LoaderCircle
-          aria-hidden="true"
-          className="size-8 animate-spin text-primary-400"
-        />
-        <span className="text-base text-gray-400 md:text-lg">
-          견적 정보를 불러오고 있습니다.
-        </span>
-      </main>
-    )
+    return <Loading fullPage label="견적 정보를 불러오고 있습니다." />
   }
 
   if (isNotFound) return null
 
   if (isError && !quote) {
     return (
-      <main className="flex min-h-page flex-col items-center justify-center gap-4">
-        <p role="alert" className="text-base text-gray-400 md:text-lg">
-          견적 정보를 불러오지 못했습니다.
-        </p>
-        <Button
-          variant="outlined"
-          disabled={isRefetching}
-          onClick={() => refetch()}
-          className="h-10 w-auto rounded-xl px-5 text-sm lg:h-10 lg:w-auto"
-        >
-          다시 시도
-        </Button>
-      </main>
+      <LoadError
+        fullPage
+        message="견적 정보를 불러오지 못했습니다."
+        isRetrying={isRefetching}
+        onRetry={() => refetch()}
+      />
     )
   }
 
@@ -169,17 +142,7 @@ export default function QuoteDetail() {
       <KakaoScript />
 
       <div className="bg-gray-50">
-        <header className="px-[30px] py-[14px] md:px-18 lg:mx-auto lg:max-w-[1354px] lg:px-18 lg:py-8">
-          <h1 className="text-lg leading-6 font-semibold lg:text-2xl lg:leading-8">
-            견적 상세
-          </h1>
-        </header>
-
-        <div className="relative">
-          <div
-            aria-hidden="true"
-            className="h-[122px] w-full bg-[url('/assets/images/mover_detail_banner.png')] bg-cover bg-center bg-no-repeat md:h-[157px] lg:h-45"
-          />
+        <QuoteDetailHeader>
           <div className="absolute inset-x-0 top-0 mx-auto h-full max-w-[1354px]">
             <Image
               src={imageUrl}
@@ -189,7 +152,7 @@ export default function QuoteDetail() {
               className="absolute top-20 left-4 rounded-xl md:top-20 md:left-18 md:size-25 lg:top-[97px] lg:size-[134px]"
             />
           </div>
-        </div>
+        </QuoteDetailHeader>
 
         <div
           className={cn(
@@ -204,19 +167,7 @@ export default function QuoteDetail() {
                   moveType={quote.moveRequest.moveType}
                   isDesignated={quote.isDesignated}
                 />
-                {quote.status === 'CONFIRMED' && (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Image
-                      src="/assets/icons/confirmed-badge.svg"
-                      width={16}
-                      height={16}
-                      alt=""
-                    />
-                    <p className="text-base leading-6 font-bold text-primary-400">
-                      확정견적
-                    </p>
-                  </div>
-                )}
+                {quote.status === 'CONFIRMED' && <ConfirmedLabel />}
                 {isQuotePending && (
                   <p className="shrink-0 text-base leading-6 font-semibold text-gray-400">
                     견적대기
@@ -299,62 +250,11 @@ export default function QuoteDetail() {
               </button>
             </div>
 
-            <section className="flex items-center justify-between border-b border-line-100 py-5 md:justify-start md:gap-[61px] md:py-8">
-              <h2 className="text-base leading-6 font-semibold md:text-xl md:leading-8">
-                견적가
-              </h2>
-              <p className="text-xl leading-8 font-bold md:text-2xl">
-                {quote.price.toLocaleString()}원
-              </p>
-            </section>
-
-            <section className="border-b border-line-100 py-5 md:py-8 lg:border-none">
-              <h2 className="pb-5 text-base leading-6 font-semibold md:pb-8 md:text-xl md:leading-8">
-                견적 정보
-              </h2>
-              <dl className="flex flex-col gap-3 md:gap-4">
-                <div className="flex items-center justify-between gap-6 md:justify-start">
-                  <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
-                    견적 요청일
-                  </dt>
-                  <dd className="text-base leading-6 font-medium">
-                    {formatRequestDate(quote.moveRequest.createdAt)}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-6 md:justify-start">
-                  <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
-                    서비스
-                  </dt>
-                  <dd className="text-base leading-6 font-medium">
-                    {MOVE_TYPE[quote.moveRequest.moveType].label}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-6 md:justify-start">
-                  <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
-                    이용일
-                  </dt>
-                  <dd className="text-base leading-6 font-medium">
-                    {formatMoveDate(quote.moveRequest.moveDate)}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-6 md:justify-start">
-                  <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
-                    출발지
-                  </dt>
-                  <dd className="text-base leading-6 font-medium">
-                    {quote.moveRequest.from.address}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-6 md:justify-start">
-                  <dt className="text-base leading-6 font-normal text-gray-400 md:w-[90px]">
-                    도착지
-                  </dt>
-                  <dd className="text-base leading-6 font-medium">
-                    {quote.moveRequest.to.address}
-                  </dd>
-                </div>
-              </dl>
-            </section>
+            <QuotePrice price={quote.price} />
+            <QuoteInfo
+              moveRequest={quote.moveRequest}
+              className="border-b border-line-100 lg:border-none"
+            />
           </article>
 
           <aside>

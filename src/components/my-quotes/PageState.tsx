@@ -14,14 +14,31 @@ export function PageBody({ children }: { children: ReactNode }) {
   )
 }
 
-export function Loading({ label }: { label: string }) {
+export function Loading({
+  label,
+  fullPage = false,
+}: {
+  label: string
+  fullPage?: boolean
+}) {
   return (
-    <div role="status" className="flex justify-center py-10">
+    <div
+      role="status"
+      className={
+        fullPage
+          ? 'flex min-h-page flex-col items-center justify-center gap-4'
+          : 'flex justify-center py-10'
+      }
+    >
       <LoaderCircle
         aria-hidden="true"
         className="size-8 animate-spin text-primary-400"
       />
-      <span className="sr-only">{label}</span>
+      <span
+        className={fullPage ? 'text-base text-gray-400 md:text-lg' : 'sr-only'}
+      >
+        {label}
+      </span>
     </div>
   )
 }
@@ -29,17 +46,28 @@ export function Loading({ label }: { label: string }) {
 export function LoadError({
   message,
   onRetry,
+  isRetrying = false,
+  fullPage = false,
 }: {
   message: string
   onRetry: () => void
+  isRetrying?: boolean
+  fullPage?: boolean
 }) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-6 py-20">
+    <div
+      role="alert"
+      className={cn(
+        'flex flex-col items-center gap-6',
+        fullPage ? 'min-h-page justify-center' : 'py-20',
+      )}
+    >
       <p className="text-base font-semibold text-black-400 lg:text-lg">
         {message}
       </p>
       <Button
         variant="outlined"
+        disabled={isRetrying}
         onClick={onRetry}
         className="w-auto px-8 lg:w-auto"
       >

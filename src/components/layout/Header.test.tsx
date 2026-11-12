@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Header from '@/components/layout/Header'
 import { NAV_ITEMS } from '@/constants/navigation'
+import { setMyProfile } from '@/features/profile/lib/cache'
 import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 
@@ -24,7 +25,7 @@ vi.mock('@/features/notifications/api', () => ({
   readNotification: vi.fn(),
 }))
 
-function createUser(role: Role): Me {
+function createUser(role: Role, overrides: Partial<Me> = {}): Me {
   return {
     id: 'user-1',
     role,
@@ -35,6 +36,7 @@ function createUser(role: Role): Me {
     isProfileComplete: true,
     customerProfile: null,
     moverProfile: null,
+    ...overrides,
   }
 }
 
@@ -49,6 +51,7 @@ function renderHeader(user?: Me | null) {
       <Header />
     </QueryClientProvider>,
   )
+  return queryClient
 }
 
 function toLabelsAndHrefs(links: HTMLElement[]) {
@@ -111,6 +114,26 @@ describe('Header', () => {
       expect(screen.getByRole('button', { name: '알림' })).toBeInTheDocument()
     },
   )
+
+  it('프로필을 수정하면 새로고침 없이 헤더의 프로필 이미지를 바꾼다', async () => {
+    const before = 'https://images.example.com/profile-images/before.png'
+    const after = 'https://images.example.com/profile-images/after.png'
+    const queryClient = renderHeader(
+      createUser('CUSTOMER', { customerProfile: { imageUrl: before } }),
+    )
+    const getImageSrc = () =>
+      decodeURIComponent(
+        screen
+          .getByRole('button', { name: '프로필 메뉴' })
+          .querySelector('img')
+          ?.getAttribute('src') ?? '',
+      )
+    expect(getImageSrc()).toContain(before)
+
+    await setMyProfile(queryClient, 'CUSTOMER', { imageUrl: after })
+
+    await waitFor(() => expect(getImageSrc()).toContain(after))
+  })
 
   it.each(['/login', '/signup', '/mover/login', '/mover/signup'])(
     '%s에서는 비회원에게 로그인 버튼과 로그인 메뉴를 보여 주지 않는다',

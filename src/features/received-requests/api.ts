@@ -50,7 +50,7 @@ export async function rejectRequest(requestId: string) {
 
 export async function getRejectedRequests(query: RejectedRequestQuery = {}) {
   const { data } = await api.get<Schemas['RejectedRequestListResponse']>(
-    '/movers/me/rejected-requests',
+    '/movers/me/rejections',
     { params: query },
   )
   return data

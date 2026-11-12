@@ -8,9 +8,9 @@ import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
 import { useConfirmQuote } from '@/features/my-quotes/hooks/useConfirmQuote'
 import { useQuoteDetail } from '@/features/my-quotes/hooks/useQuoteDetail'
 import { ApiError } from '@/lib/api-error'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const navigation = vi.hoisted(() => ({
   quoteId: 'quote-1',
@@ -83,6 +83,15 @@ const customer: Me = {
 }
 
 describe('QuoteDetailPage', () => {
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open')
+    }
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     navigation.quoteId = 'quote-1'
@@ -228,7 +237,30 @@ describe('QuoteDetailPage', () => {
     expect(addFavorite).toHaveBeenCalled()
   })
 
-  it('견적 확정하기를 누르면 그 견적을 확정한다', async () => {
+  it('견적 확정하기를 누르면 확인 모달을 열고, 확정하기를 눌러야 그 견적을 확정한다', async () => {
+    const confirmQuote = vi.fn(
+      (_quoteId: string, options?: { onSettled?: () => void }) =>
+        options?.onSettled?.(),
+    )
+    vi.mocked(useConfirmQuote).mockReturnValue({
+      mutate: confirmQuote,
+      isPending: false,
+    } as unknown as ReturnType<typeof useConfirmQuote>)
+
+    const user = userEvent.setup()
+    render(<QuoteDetail />)
+    await user.click(screen.getByRole('button', { name: '견적 확정하기' }))
+    const dialog = screen.getByRole('dialog', { name: '견적 확정' })
+
+    expect(confirmQuote).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: '확정하기' }))
+
+    expect(confirmQuote).toHaveBeenCalledWith('quote-1', expect.anything())
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('확인 모달에서 취소하면 확정하지 않고 닫는다', async () => {
     const confirmQuote = vi.fn()
     vi.mocked(useConfirmQuote).mockReturnValue({
       mutate: confirmQuote,
@@ -238,8 +270,10 @@ describe('QuoteDetailPage', () => {
     const user = userEvent.setup()
     render(<QuoteDetail />)
     await user.click(screen.getByRole('button', { name: '견적 확정하기' }))
+    await user.click(screen.getByRole('button', { name: '취소' }))
 
-    expect(confirmQuote).toHaveBeenCalledWith('quote-1')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(confirmQuote).not.toHaveBeenCalled()
   })
 
   it('확정된 견적은 확정하기 버튼을 보여 주지 않는다', () => {

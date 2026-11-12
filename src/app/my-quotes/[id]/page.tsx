@@ -2,6 +2,7 @@
 
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
+import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
 import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import KakaoScript from '@/components/share/KakaoScript'
@@ -23,7 +24,7 @@ import { cn } from '@/lib/cn'
 import { Heart, LoaderCircle, Star } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export default function QuoteDetail() {
@@ -44,6 +45,8 @@ export default function QuoteDetail() {
     useRemoveFavorite(quote?.mover.id ?? '')
 
   const { mutate: confirmQuote, isPending: isConfirming } = useConfirmQuote()
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+  const closeConfirmModal = () => setIsConfirmModalOpen(false)
   const isNotFound =
     isApiError(error) && (error.status === 400 || error.status === 404)
 
@@ -368,13 +371,21 @@ export default function QuoteDetail() {
                 </p>
                 <Button
                   disabled={isConfirming}
-                  onClick={() => confirmQuote(id)}
+                  onClick={() => setIsConfirmModalOpen(true)}
                   className="w-full cursor-pointer lg:mt-[30px] lg:w-80"
                 >
                   견적 확정하기
                 </Button>
               </section>
             )}
+            <ConfirmQuoteModal
+              open={isConfirmModalOpen}
+              onClose={closeConfirmModal}
+              isConfirming={isConfirming}
+              onConfirm={() =>
+                confirmQuote(id, { onSettled: closeConfirmModal })
+              }
+            />
 
             <section className="mb-10 flex flex-col gap-3 py-5 md:py-8 md:pb-16 lg:mb-0 lg:gap-5 lg:px-0 lg:pt-10">
               <h2 className="text-base leading-8 font-semibold lg:text-xl">

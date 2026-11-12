@@ -63,6 +63,10 @@ describe('useRemoveFavorite', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.movers.detail('mover-1'),
     })
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.quotes.all,
+    })
   })
 
   it('찜 해제에 실패하면 오류 토스트를 표시한다', async () => {

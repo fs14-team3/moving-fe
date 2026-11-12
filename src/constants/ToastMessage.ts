@@ -12,6 +12,10 @@ export const TOAST_MESSAGES = {
     notFound: '기사님 정보를 찾을 수 없습니다.',
   },
 
+  quote: {
+    notFound: '견적 정보를 찾을 수 없습니다.',
+  },
+
   favorite: {
     loginRequired: '로그인 후 이용할 수 있습니다.',
     customerOnly: '일반 회원만 이용할 수 있습니다.',

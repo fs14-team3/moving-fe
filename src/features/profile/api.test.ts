@@ -4,6 +4,7 @@ import {
   createProfile,
   updateBasicInfo,
   updateProfile,
+  uploadImage,
 } from '@/features/profile/api'
 import api from '@/lib/api'
 
@@ -50,5 +51,19 @@ describe('updateBasicInfo', () => {
 
     await expect(updateBasicInfo({ name: '김코드' })).resolves.toEqual(me)
     expect(patch).toHaveBeenCalledWith('/users/me', { name: '김코드' })
+  })
+})
+
+describe('uploadImage', () => {
+  it('file 필드에 담아 /uploads/images로 올리고 받은 URL을 반환한다', async () => {
+    const url = 'https://images.example.com/profile-images/user-1/a'
+    const post = vi.spyOn(api, 'post').mockResolvedValue({ data: { url } })
+    const file = new File(['image'], 'me.png', { type: 'image/png' })
+
+    await expect(uploadImage(file)).resolves.toBe(url)
+
+    const [path, body] = post.mock.calls[0]
+    expect(path).toBe('/uploads/images')
+    expect((body as FormData).get('file')).toBe(file)
   })
 })

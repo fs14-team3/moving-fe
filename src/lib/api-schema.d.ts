@@ -440,6 +440,7 @@ export interface paths {
      *     한 요청에 기사님을 최대 3명까지 지정할 수 있으며, 동시에 요청해도 인원과 중복 제한을 지킵니다(§7.1.1).
      *     이 요청에 이미 견적을 보냈거나 요청을 반려한 기사님은 지정할 수 없습니다.
      *     지정 요청은 기사님에게 라벨로 강조 표시하며, 기사님의 서비스 가능 지역과 관계없이 요청할 수 있습니다.
+     *     지정된 기사님에게 지정 견적 요청 알림을 보내고, 같은 요청의 새 견적 요청 알림이 있으면 지정 알림으로 바꿉니다.
      */
     post: operations['designateMover']
     delete?: never
@@ -943,6 +944,7 @@ export interface components {
       /** Format: uri */
       imageUrl: string | null
       intro: string | null
+      description: string | null
       careerYears: number | null
       serviceTypes: components['schemas']['ServiceType'][] | null
       /**
@@ -953,11 +955,12 @@ export interface components {
       averageRating: number
       reviewCount: number
       confirmedCount: number
+      /** @description 기사님이 받은 전체 찜 수 */
+      favoriteCount: number
       /** @description 로그인한 일반 유저가 아니면 null */
       isFavorite: boolean | null
     }
     MoverDetail: components['schemas']['MoverSummary'] & {
-      description: string | null
       regions: components['schemas']['Region'][] | null
       /** @description 1~5점별 리뷰 수. 리뷰가 없는 점수는 0입니다. */
       ratingCounts: {

@@ -20,7 +20,6 @@ export default function QuoteMoverInfo({
   const rating = mover.averageRating.toFixed(1)
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
-  const favoriteCount = mover.favoriteCount ?? '-'
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
@@ -53,7 +52,7 @@ export default function QuoteMoverInfo({
               }
             />
             <span className="sr-only">찜</span>
-            {favoriteCount}
+            {mover.favoriteCount}
           </p>
         </div>
         <div className="flex items-center gap-1.5">

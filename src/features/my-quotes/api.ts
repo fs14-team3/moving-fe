@@ -1,14 +1,10 @@
+import type { Mover } from '@/features/movers/types'
 import api from '@/lib/api'
 import type { components, operations } from '@/lib/api-schema'
-import type { Mover } from '@/features/movers/types'
 
 type Schemas = components['schemas']
 
-// TODO: 기사님 정보에 찜 수(favoriteCount)가 아직 명세에 없어 기사님 찾기와 같은 확장 타입을 쓴다.
-// BE 응답에 들어오면 Schemas['CustomerQuote']만 쓴다.
-export type CustomerQuote = Omit<Schemas['CustomerQuote'], 'mover'> & {
-  mover: Mover
-}
+export type CustomerQuote = Schemas['CustomerQuote']
 
 export type QuoteDetail = Omit<Schemas['QuoteDetail'], 'mover'> & {
   mover: Mover
@@ -61,5 +57,10 @@ export async function confirmQuote(quoteId: string) {
   const { data } = await api.post<Schemas['QuoteDetail']>(
     `/quotes/${quoteId}/confirm`,
   )
+  return data
+}
+
+export async function getQuoteDetail(quoteId: string) {
+  const { data } = await api.get<QuoteDetail>(`/quotes/${quoteId}`)
   return data
 }

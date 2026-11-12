@@ -73,7 +73,6 @@ function HistoryQuoteItem({
   const intro = quote.mover.intro?.trim() || '등록된 소개가 없습니다.'
 
   return (
-    // TODO: 견적 상세 페이지(/my-quotes/[quoteId])를 만들면 이 주소에 연결된다.
     <Link
       href={`/my-quotes/${quote.id}`}
       className="block rounded-xl focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"

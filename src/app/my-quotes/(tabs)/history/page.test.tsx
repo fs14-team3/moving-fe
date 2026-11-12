@@ -32,6 +32,7 @@ function createQuote(
       nickname,
       imageUrl: null,
       intro: `${nickname} 기사님 소개`,
+      description: null,
       careerYears: 7,
       serviceTypes: ['OFFICE'],
       averageRating: 5,

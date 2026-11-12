@@ -5,6 +5,7 @@ import type {
   Profile,
   ProfileCreate,
   ProfileUpdate,
+  UploadResponse,
 } from '@/features/profile/types'
 import api from '@/lib/api'
 
@@ -30,4 +31,13 @@ export async function updateBasicInfo(body: BasicInfoUpdate) {
 
 export async function changePassword(body: PasswordChange) {
   await api.patch('/users/me/password', body)
+}
+
+export async function uploadImage(file: File) {
+  const body = new FormData()
+  body.append('file', file)
+  const { data } = await api.post<UploadResponse>('/uploads/images', body, {
+    timeout: 30_000,
+  })
+  return data.url
 }

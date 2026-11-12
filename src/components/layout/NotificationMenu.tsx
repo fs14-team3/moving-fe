@@ -1,9 +1,11 @@
 'use client'
 
+import type { Role } from '@/features/auth/types'
 import type {
   Notification,
   NotificationType,
 } from '@/features/notifications/api'
+import { toMessageParts } from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
@@ -21,7 +23,7 @@ import {
   type ReactNode,
 } from 'react'
 
-// 서버가 문구를 주지 않았을 때 보여줄 기본 문구
+// payload로 문구를 만들 수 없고 서버 문구도 없을 때 보여줄 기본 문구
 const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   NEW_REQUEST: '새로운 견적 요청이 도착했어요',
   NEW_QUOTE: '새로운 견적이 도착했어요',
@@ -30,9 +32,27 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
 }
 
-// TODO(#87): 시안처럼 이사 종류·지역 등을 강조하려면 BE에 payload 구조를 받아서 문구를 조합한다.
-function toMessage(notification: Notification) {
-  return notification.message || DEFAULT_MESSAGE[notification.type]
+function NotificationMessage({
+  notification,
+  role,
+}: {
+  notification: Notification
+  role: Role
+}) {
+  const parts = toMessageParts(notification, role)
+  if (!parts) {
+    return notification.message || DEFAULT_MESSAGE[notification.type]
+  }
+
+  return parts.map(({ text, highlight }, index) =>
+    highlight ? (
+      <span key={index} className="text-primary-400">
+        {text}
+      </span>
+    ) : (
+      text
+    ),
+  )
 }
 
 function PanelStatus({ children }: { children: ReactNode }) {
@@ -43,7 +63,7 @@ function PanelStatus({ children }: { children: ReactNode }) {
   )
 }
 
-export default function NotificationMenu() {
+export default function NotificationMenu({ role }: { role: Role }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -153,7 +173,7 @@ export default function NotificationMenu() {
         {notifications.map((notification) => (
           <li key={notification.id} className="px-4 py-4 md:px-6">
             <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-              {toMessage(notification)}
+              <NotificationMessage notification={notification} role={role} />
             </p>
             <time
               dateTime={notification.createdAt}

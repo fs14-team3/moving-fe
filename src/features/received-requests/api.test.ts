@@ -68,7 +68,7 @@ describe('getRejectedRequests', () => {
     await expect(getRejectedRequests({ cursor: 'cursor-2' })).resolves.toEqual(
       page,
     )
-    expect(get).toHaveBeenCalledWith('/movers/me/rejected-requests', {
+    expect(get).toHaveBeenCalledWith('/movers/me/rejections', {
       params: { cursor: 'cursor-2' },
     })
   })

@@ -67,7 +67,7 @@ export const queryKeys = {
     // GET /movers/me/received-requests
     list: (query: ListQuery<'listReceivedRequests'> = {}) =>
       [...queryKeys.receivedRequests.lists(), query] as const,
-    // GET /movers/me/rejected-requests
+    // GET /movers/me/rejections
     rejected: (query: ListQuery<'listMyRejectedRequests'> = {}) =>
       [...queryKeys.receivedRequests.all, 'rejected', query] as const,
   },

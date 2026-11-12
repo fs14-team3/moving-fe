@@ -110,7 +110,7 @@ export default function QuoteDetail() {
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
   const isFavorite = mover.isFavorite
-  const favoriteCount = mover.favoriteCount ?? '-'
+  const favoriteCount = mover.favoriteCount
   const moveTypeLabel = MOVE_TYPE[quote.moveRequest.moveType].label
   const moveDateLabel = formatMoveDate(quote.moveRequest.moveDate)
   const priceLabel = `${quote.price.toLocaleString()}원`

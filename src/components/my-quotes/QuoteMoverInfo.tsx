@@ -1,7 +1,7 @@
-import { Heart, Star } from 'lucide-react'
-import Image from 'next/image'
 import type { CustomerQuote } from '@/features/my-quotes/api'
 import { cn } from '@/lib/cn'
+import { Heart, Star } from 'lucide-react'
+import Image from 'next/image'
 
 type QuoteMoverInfoProps = {
   mover: CustomerQuote['mover']

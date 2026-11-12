@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getSentQuotes } from '@/features/sent-quotes/api'
+import { getSentQuote, getSentQuotes } from '@/features/sent-quotes/api'
 import api from '@/lib/api'
 
 afterEach(() => {
@@ -15,5 +15,15 @@ describe('getSentQuotes', () => {
     expect(get).toHaveBeenCalledWith('/movers/me/quotes', {
       params: { cursor: 'cursor-2' },
     })
+  })
+})
+
+describe('getSentQuote', () => {
+  it('견적 ID로 보낸 견적 하나를 반환한다', async () => {
+    const quote = { id: 'quote-1' }
+    const get = vi.spyOn(api, 'get').mockResolvedValue({ data: quote })
+
+    await expect(getSentQuote('quote-1')).resolves.toEqual(quote)
+    expect(get).toHaveBeenCalledWith('/movers/me/quotes/quote-1')
   })
 })

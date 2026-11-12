@@ -16,3 +16,8 @@ export async function getSentQuotes(query: SentQuoteQuery = {}) {
   )
   return data
 }
+
+export async function getSentQuote(quoteId: string) {
+  const { data } = await api.get<SentQuote>(`/movers/me/quotes/${quoteId}`)
+  return data
+}

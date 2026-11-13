@@ -276,7 +276,7 @@ export default function MoverDetailPage() {
 
                 <button
                   type="button"
-                  aria-label={isFavorite ? '찜 해제' : '찜하기'}
+                  aria-label={isFavorite ? '찜 해제하기' : '찜하기'}
                   disabled={isFavoriteDisabled}
                   onClick={handleFavorite}
                   className="flex cursor-pointer items-center gap-[6px] disabled:cursor-not-allowed disabled:opacity-50"
@@ -392,7 +392,7 @@ export default function MoverDetailPage() {
                     className={
                       isFavorite
                         ? 'size-6 fill-red-500 text-red-500'
-                        : 'size-6 fill-black text-black'
+                        : 'size-6 fill-transparent text-gray-300'
                     }
                   />
                 </button>
@@ -412,7 +412,11 @@ export default function MoverDetailPage() {
                   icon={
                     <Heart
                       aria-hidden="true"
-                      className="size-5 fill-black text-black"
+                      className={
+                        isFavorite
+                          ? 'size-5 fill-red-500 text-red-500'
+                          : 'size-5 fill-transparent text-gray-300'
+                      }
                     />
                   }
                   variant="outlined"

@@ -22,6 +22,11 @@ export async function getActiveMoveRequest() {
   return data
 }
 
+// 받은 견적이 없는 요청만 삭제할 수 있다. 견적이 있으면 409(REQUEST_HAS_QUOTES)
+export async function deleteMoveRequest(requestId: RequestId) {
+  await api.delete(`/move-requests/${requestId}`)
+}
+
 export async function createDesignation(
   requestId: RequestId,
   moverId: MoverId,

@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Button from '@/components/common/button/Button'
 import ActiveRequestSummary from '@/components/my-quotes/ActiveRequestSummary'
+import DeleteRequestModal from '@/components/my-quotes/DeleteRequestModal'
 import {
   Empty,
   LoadError,
@@ -10,6 +12,7 @@ import {
 } from '@/components/my-quotes/PageState'
 import PendingQuoteCard from '@/components/my-quotes/PendingQuoteCard'
 import { useActiveMoveRequest } from '@/features/move-request/hooks/useActiveMoveRequest'
+import { useDeleteMoveRequest } from '@/features/move-request/hooks/useDeleteMoveRequest'
 import type { MoveRequestResponse } from '@/features/move-request/types'
 import { useConfirmQuote } from '@/features/my-quotes/hooks/useConfirmQuote'
 import { usePendingQuotes } from '@/features/my-quotes/hooks/usePendingQuotes'
@@ -63,6 +66,9 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
 export default function PendingQuotesPage() {
   const { activeMoveRequest, isPending, isError, isRefetching, refetch } =
     useActiveMoveRequest()
+  const { mutate: deleteRequest, isPending: isDeleting } =
+    useDeleteMoveRequest()
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   if (isPending) {
     return (
@@ -101,10 +107,26 @@ export default function PendingQuotesPage() {
     )
   }
 
+  // 견적이 하나라도 도착한 요청은 BE에서 삭제를 막는다.
+  const canDelete =
+    activeMoveRequest.status === 'PENDING' && activeMoveRequest.quoteCount === 0
+
   return (
     <>
-      {/* TODO(#98): 견적 요청 삭제 API가 생기면 onDelete에 연결한다. */}
-      <ActiveRequestSummary request={activeMoveRequest} />
+      <ActiveRequestSummary
+        request={activeMoveRequest}
+        onDelete={canDelete ? () => setIsDeleteOpen(true) : undefined}
+      />
+      <DeleteRequestModal
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={() =>
+          deleteRequest(activeMoveRequest.id, {
+            onSettled: () => setIsDeleteOpen(false),
+          })
+        }
+        isDeleting={isDeleting}
+      />
       <PageBody>
         {/* 견적을 확정한 요청의 견적은 받았던 견적 탭에서 보여준다. */}
         {activeMoveRequest.status === 'PENDING' ? (

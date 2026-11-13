@@ -1,7 +1,3 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import WritableReviewsPage from '@/app/my-reviews/(tabs)/page'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import {
@@ -10,6 +6,10 @@ import {
   type ReviewTarget,
 } from '@/features/reviews/api'
 import { ApiError } from '@/lib/api-error'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
 
@@ -37,12 +37,14 @@ function createTarget(quoteId: string, nickname: string): ReviewTarget {
       nickname,
       imageUrl: null,
       intro: `${nickname} 기사님 소개`,
+      description: `${nickname} 기사님 소개`,
       careerYears: 7,
       serviceTypes: ['SMALL'],
       averageRating: 5,
       reviewCount: 178,
       confirmedCount: 334,
       isFavorite: false,
+      favoriteCount: 136,
     },
   }
 }

@@ -2,16 +2,9 @@ import type { components, operations } from '@/lib/api-schema'
 
 type Schemas = components['schemas']
 
-export type Mover = Schemas['MoverSummary'] & {
-  // TODO: BE 응답 반영 후 임시 확장 타입 제거
-  description?: string | null
-  favoriteCount?: number
-}
+export type Mover = Schemas['MoverSummary']
 
-export type MoverDetail = Schemas['MoverDetail'] & {
-  // TODO: 상세 API 응답에 포함되는지 BE 명세 확정 후 확인
-  favoriteCount?: number
-}
+export type MoverDetail = Schemas['MoverDetail']
 
 export type Review = Schemas['Review']
 

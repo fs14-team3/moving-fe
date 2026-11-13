@@ -69,7 +69,7 @@ export default function Header() {
           <div className="flex items-center gap-6 lg:gap-8">
             {user && (
               <>
-                <NotificationMenu />
+                <NotificationMenu role={user.role} />
                 <ProfileMenu user={user} />
               </>
             )}

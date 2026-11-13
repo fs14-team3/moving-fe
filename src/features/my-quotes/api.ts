@@ -4,15 +4,9 @@ import type { components, operations } from '@/lib/api-schema'
 
 type Schemas = components['schemas']
 
-// TODO: 기사님 정보에 찜 수(favoriteCount)가 아직 명세에 없어 기사님 찾기와 같은 확장 타입을 쓴다.
-// BE 응답에 들어오면 Schemas['CustomerQuote']만 쓴다.
-export type CustomerQuote = Omit<Schemas['CustomerQuote'], 'mover'> & {
-  mover: Mover
-}
+export type CustomerQuote = Schemas['CustomerQuote']
 
-export type QuoteDetail = Omit<Schemas['QuoteDetail'], 'mover'> & {
-  mover: Mover
-}
+export type QuoteDetail = Schemas['QuoteDetail']
 
 type RequestQuoteQuery = NonNullable<
   operations['listQuotesForRequest']['parameters']['query']

@@ -12,6 +12,7 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
     nickname: '김코드',
     imageUrl: null,
     intro: '고객님의 물품을 안전하게 운송해 드립니다.',
+    description: '고객님의 물품을 안전하게 운송해 드립니다.',
     careerYears: 7,
     serviceTypes: ['SMALL'],
     averageRating: 5,
@@ -19,6 +20,9 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
     confirmedCount: 334,
     isFavorite: true,
     favoriteCount: 136,
+    regions: ['서울'],
+    ratingCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    isDesignated: true,
   },
   moveRequest: {
     id: 'request-1',
@@ -41,14 +45,3 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
     confirmedAt: null,
   },
 }
-
-// export const MOCK_CONFIRMED_QUOTE_DETAIL: QuoteDetail = {
-//   ...MOCK_QUOTE_DETAIL,
-//   status: 'CONFIRMED',
-//   confirmedAt: '2026-11-06T03:00:00.000Z',
-//   moveRequest: {
-//     ...MOCK_QUOTE_DETAIL.moveRequest,
-//     status: 'CONFIRMED',
-//     confirmedAt: '2026-11-06T03:00:00.000Z',
-//   },
-// }

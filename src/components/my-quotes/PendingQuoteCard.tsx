@@ -57,7 +57,6 @@ export default function PendingQuoteCard({
 
       {/* 모바일은 견적 확정하기를 위에, 태블릿 이상은 상세보기를 왼쪽에 둔다. */}
       <div className="mt-6 flex flex-col-reverse gap-2 md:flex-row md:gap-3 lg:mt-8">
-        {/* TODO: 견적 상세 페이지(/my-quotes/[quoteId])를 만들면 이 주소에 연결된다. */}
         <Button
           variant="outlined"
           href={`/my-quotes/${quote.id}`}

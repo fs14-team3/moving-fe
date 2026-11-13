@@ -1,6 +1,4 @@
-import type { components, operations } from '@/lib/api-schema'
-
-type Schemas = components['schemas']
+import type { operations } from '@/lib/api-schema'
 
 // 조회 API가 받는 query 파라미터. 쿼리 키에 그대로 넣어서 조건이 바뀌면 다시 불러온다.
 type Query<T extends keyof operations> = NonNullable<
@@ -77,8 +75,7 @@ export const queryKeys = {
     all: ['sentQuotes'] as const,
     lists: () => [...queryKeys.sentQuotes.all, 'list'] as const,
     // GET /movers/me/quotes
-    // TODO(#85): 명세에 들어오면 ListQuery<'…'>로 바꾼다.
-    list: (query: { status?: Schemas['QuoteStatus'] } = {}) =>
+    list: (query: ListQuery<'listMySentQuotes'> = {}) =>
       [...queryKeys.sentQuotes.lists(), query] as const,
   },
 

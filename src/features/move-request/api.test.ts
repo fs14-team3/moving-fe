@@ -1,6 +1,7 @@
 import {
   createDesignation,
   createMoveRequest,
+  deleteMoveRequest,
   getActiveMoveRequest,
 } from '@/features/move-request/api'
 import api from '@/lib/api'
@@ -24,6 +25,15 @@ describe('createMoveRequest', () => {
       '/move-requests',
       MOCK_CREATE_MOVE_REQUEST_BODY,
     )
+  })
+})
+
+describe('deleteMoveRequest', () => {
+  it('견적 요청을 삭제한다', async () => {
+    const remove = vi.spyOn(api, 'delete').mockResolvedValue({ data: '' })
+
+    await expect(deleteMoveRequest('request-1')).resolves.toBeUndefined()
+    expect(remove).toHaveBeenCalledWith('/move-requests/request-1')
   })
 })
 

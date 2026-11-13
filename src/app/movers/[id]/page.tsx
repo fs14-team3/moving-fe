@@ -380,13 +380,22 @@ export default function MoverDetailPage() {
               </p>
 
               <div className="flex w-full items-center gap-2 lg:flex-col lg:gap-4">
-                <IconButton
-                  icon="like"
+                <button
+                  type="button"
                   aria-label={isFavorite ? '찜 해제' : '찜하기'}
                   disabled={isFavoriteDisabled}
                   onClick={handleFavorite}
-                  className="size-[54px] disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
-                />
+                  className="flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-line-200 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+                >
+                  <Heart
+                    aria-hidden="true"
+                    className={
+                      isFavorite
+                        ? 'size-6 fill-red-500 text-red-500'
+                        : 'size-6 fill-transparent text-gray-300'
+                    }
+                  />
+                </button>
                 <Button
                   onClick={handleDesignate}
                   disabled={
@@ -403,7 +412,11 @@ export default function MoverDetailPage() {
                   icon={
                     <Heart
                       aria-hidden="true"
-                      className="size-5 fill-black text-black"
+                      className={
+                        isFavorite
+                          ? 'size-5 fill-red-500 text-red-500'
+                          : 'size-5 fill-transparent text-gray-300'
+                      }
                     />
                   }
                   variant="outlined"

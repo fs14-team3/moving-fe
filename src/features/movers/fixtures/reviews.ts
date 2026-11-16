@@ -1,4 +1,4 @@
-import type { Review } from '../types'
+import type { MoverReviewSummary, Review } from '../types'
 
 export const MOCK_REVIEWS = [
   {
@@ -66,4 +66,4 @@ export const MOCK_REVIEW_SUMMARY = {
     { key: 'SPEED', mentionCount: 4, positiveCount: 3, negativeCount: 0 },
     { key: 'PRICE', mentionCount: 3, positiveCount: 1, negativeCount: 1 },
   ],
-}
+} satisfies MoverReviewSummary

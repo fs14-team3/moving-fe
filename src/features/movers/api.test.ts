@@ -1,6 +1,7 @@
 import {
   getMover,
   getMoverReviews,
+  getMoverReviewSummary,
   getMovers,
   getMyMover,
 } from '@/features/movers/api'
@@ -8,7 +9,10 @@ import {
   MOCK_MOVER_DETAILS,
   MOCK_MOVERS,
 } from '@/features/movers/fixtures/movers'
-import { MOCK_REVIEWS } from '@/features/movers/fixtures/reviews'
+import {
+  MOCK_REVIEW_SUMMARY,
+  MOCK_REVIEWS,
+} from '@/features/movers/fixtures/reviews'
 import api from '@/lib/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -75,5 +79,18 @@ describe('getMoverReviews', () => {
 
     await expect(getMoverReviews('1', params)).resolves.toEqual(reviewResponse)
     expect(get).toHaveBeenCalledWith('/movers/1/reviews', { params })
+  })
+})
+
+describe('getMoverReviewSummary', () => {
+  it('기사님 ID로 AI 리뷰 요약을 조회한다', async () => {
+    const get = vi.spyOn(api, 'get').mockResolvedValue({
+      data: MOCK_REVIEW_SUMMARY,
+    })
+
+    await expect(getMoverReviewSummary('1')).resolves.toEqual(
+      MOCK_REVIEW_SUMMARY,
+    )
+    expect(get).toHaveBeenCalledWith('/movers/1/review-summary')
   })
 })

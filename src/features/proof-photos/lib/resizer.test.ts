@@ -42,12 +42,6 @@ describe('resizeProofPhoto', () => {
     vi.resetModules()
     FakeWorker.instances = []
     vi.stubGlobal('Worker', FakeWorker)
-    vi.stubGlobal(
-      'OffscreenCanvas',
-      class {
-        convertToBlob() {}
-      },
-    )
   })
 
   afterEach(() => {
@@ -91,12 +85,7 @@ describe('resizeProofPhoto', () => {
 
     expect(await first.image.text()).toBe('main')
     expect(await second.image.text()).toBe('main')
-    expect(resizePhoto).toHaveBeenNthCalledWith(
-      2,
-      expect.any(Function),
-      file,
-      'image/jpeg',
-    )
+    expect(resizePhoto).toHaveBeenNthCalledWith(2, file, 'image/jpeg')
     expect(FakeWorker.instances).toHaveLength(1)
     expect(FakeWorker.instances[0].terminate).toHaveBeenCalledOnce()
   })

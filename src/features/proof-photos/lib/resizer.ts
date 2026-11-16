@@ -12,13 +12,6 @@ let worker: Worker | undefined
 let workerFailed = false
 let queue: Promise<unknown> = Promise.resolve()
 
-function createDomContext(width: number, height: number) {
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  return canvas.getContext('2d')
-}
-
 async function canEncodeWebp() {
   const canvas = document.createElement('canvas')
   canvas.width = 2
@@ -36,15 +29,6 @@ export function pickPhotoType() {
   return photoType
 }
 
-function canUseWorker() {
-  return (
-    !workerFailed &&
-    typeof Worker === 'function' &&
-    typeof OffscreenCanvas === 'function' &&
-    'convertToBlob' in OffscreenCanvas.prototype
-  )
-}
-
 function resizeInWorker(file: File, type: ProofPhotoType) {
   const current = (worker ??= new Worker(
     new URL('./resize.worker.ts', import.meta.url),
@@ -57,7 +41,7 @@ function resizeInWorker(file: File, type: ProofPhotoType) {
       current.terminate()
       worker = undefined
       workerFailed = true
-      resolve(resizePhoto(createDomContext, file, type))
+      resolve(resizePhoto(file, type))
     }
     current.postMessage({ file, type })
   })
@@ -65,9 +49,7 @@ function resizeInWorker(file: File, type: ProofPhotoType) {
 
 export function resizeProofPhoto(file: File, type: ProofPhotoType) {
   const result = queue.then(() =>
-    canUseWorker()
-      ? resizeInWorker(file, type)
-      : resizePhoto(createDomContext, file, type),
+    workerFailed ? resizePhoto(file, type) : resizeInWorker(file, type),
   )
   queue = result.catch(() => {})
   return result

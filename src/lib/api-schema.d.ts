@@ -211,7 +211,7 @@ export interface paths {
     put?: never
     /**
      * 프로필 이미지 업로드
-     * @description 프로필 등록·수정에 사용할 이미지 URL을 반환합니다. 저장소, 허용 형식 및 용량 제한은 추후 결정합니다.
+     * @description JPG·PNG·WEBP 이미지 한 장(5MB 이하, 1,300만 화소 이하)을 받아 방향을 바로잡고 EXIF(위치 정보 포함) 등 메타데이터를 지운 뒤, 같은 형식으로 S3에 저장하고 프로필 등록·수정의 imageUrl에 넣을 URL을 반환합니다. 형식은 보낸 Content-Type이 아니라 파일 내용으로 확인하며, `file` 외 다른 필드는 받지 않습니다. 형식·용량·화소 초과, 파일 누락, 손상된 이미지 오류는 400 `details`의 `file` 필드로 알려 줍니다.
      */
     post: operations['uploadImage']
     delete?: never
@@ -277,6 +277,27 @@ export interface paths {
      *     최근에 작성된 리뷰부터 보여주며, 작성자 이름은 첫 글자만 남기고 `*`로 가립니다.
      */
     get: operations['listMoverReviews']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/movers/{moverId}/review-summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 기사님 리뷰 AI 요약
+     * @description 공개 API. 리뷰가 10건 미만이거나 요약을 만들 수 없으면 `null`입니다.
+     *     리뷰 수가 바뀌면 다시 생성하고, 생성에 실패했을 때 이전 저장본이 있으면 이를 반환합니다.
+     */
+    get: operations['getMoverReviewSummary']
     put?: never
     post?: never
     delete?: never
@@ -419,7 +440,13 @@ export interface paths {
     get: operations['getMoveRequest']
     put?: never
     post?: never
-    delete?: never
+    /**
+     * 견적 요청 삭제
+     * @description 요청자 본인의 이사 요청만 삭제할 수 있습니다.
+     *     견적이 한 건도 없는 요청만 삭제할 수 있으며,
+     *     지정 요청, 반려 기록, 연결된 알림은 함께 삭제됩니다.
+     */
+    delete: operations['deleteMoveRequest']
     options?: never
     head?: never
     patch?: never
@@ -532,7 +559,7 @@ export interface paths {
      * @description 로그인한 기사님이 본인이 보낸 견적을 최신순으로 조회합니다.
      *     로그인 세션으로 인증하며, 비로그인은 401, 고객은 403을 반환합니다.
      *     견적 상태별 필터링과 커서 기반 페이지네이션을 지원합니다.
-     *     고객명은 닉네임을 우선 사용하며, 닉네임이 없으면 사용자 이름을 반환합니다.
+     *     고객명은 User.name을 사용하며, 이름이 없으면 null을 반환합니다.
      */
     get: operations['listMySentQuotes']
     put?: never
@@ -543,14 +570,20 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/movers/me/rejected-requests': {
+  '/movers/me/rejections': {
     parameters: {
       query?: never
       header?: never
       path?: never
       cookie?: never
     }
-    /** 반려한 요청 목록 */
+    /**
+     * 반려한 요청 목록
+     * @description 로그인한 기사님이 본인이 반려한 이사 요청 목록을 조회합니다.
+     *     반려 시각 최신순으로 정렬합니다.
+     *     이사 요청의 상태가 변경되더라도 반려 이력은 목록에 유지됩니다.
+     *     요청 상태에 따른 별도 필터링은 적용하지 않습니다.
+     */
     get: operations['listMyRejectedRequests']
     put?: never
     post?: never
@@ -612,7 +645,7 @@ export interface paths {
     put?: never
     /**
      * 리뷰 작성
-     * @description 호출자 본인의 완료된 이사에서 확정된 견적의 기사님에게 리뷰를 작성합니다(§11.1). 완료 판정 방식과 리뷰 중복 정책은 추후 결정하며, 다음 날까지 기다려야 한다는 별도 제한은 두지 않습니다.
+     * @description 호출자 본인의 확정된 견적에 대해 리뷰를 작성합니다(§11.1). 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 작성할 수 있습니다. 동일 견적에 대해서는 리뷰를 한 번만 작성할 수 있습니다.
      */
     post: operations['createReview']
     delete?: never
@@ -780,10 +813,12 @@ export interface components {
       | 'MOVER_ALREADY_RESPONDED'
       | 'DESIGNATION_LIMIT_REACHED'
       | 'REQUEST_NOT_PENDING'
+      | 'REQUEST_HAS_QUOTES'
       | 'QUOTE_LIMIT_REACHED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
+      | 'UPLOAD_NOT_CONFIGURED'
       | 'SOCIAL_LOGIN_FAILED'
     ErrorResponse: {
       error: {
@@ -1102,6 +1137,7 @@ export interface components {
     RequestForMover: {
       /** Format: uuid */
       id: string
+      /** @description 고객의 User.name을 반환하며, 이름이 없으면 null을 반환합니다. */
       customerName: string | null
       moveType: components['schemas']['ServiceType']
       /** Format: date */
@@ -1159,6 +1195,18 @@ export interface components {
     }
     MoverReviewListResponse: components['schemas']['OffsetMeta'] & {
       items: components['schemas']['Review'][]
+    }
+    MoverReviewSummary: {
+      reviewCount: number
+      summary: string
+      aspects: components['schemas']['ReviewSummaryAspect'][]
+    } | null
+    ReviewSummaryAspect: {
+      /** @enum {string} */
+      key: 'PUNCTUALITY' | 'HANDLING' | 'SPEED' | 'COMMUNICATION' | 'PRICE'
+      mentionCount: number
+      positiveCount: number
+      negativeCount: number
     }
     /** @description 리뷰 대상인(또는 리뷰할 수 있는) 완료된 이사 */
     ReviewTarget: {
@@ -1767,6 +1815,15 @@ export interface operations {
       }
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   listMovers: {
@@ -1861,6 +1918,31 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['MoverReviewListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
+      404: components['responses']['NotFound']
+    }
+  }
+  getMoverReviewSummary: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description 기사님의 user id */
+        moverId: components['parameters']['MoverIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 리뷰 요약. 없으면 null */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoverReviewSummary']
         }
       }
       400: components['responses']['ValidationError']
@@ -2083,6 +2165,7 @@ export interface operations {
           'application/json': components['schemas']['MoveRequestHistoryResponse']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }
@@ -2111,6 +2194,39 @@ export interface operations {
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
       404: components['responses']['NotFound']
+    }
+  }
+  deleteMoveRequest: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        requestId: components['parameters']['RequestIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 삭제 완료. 응답 본문 없음. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
+      /** @description `REQUEST_HAS_QUOTES`. 이미 견적이 제출된 요청은 삭제할 수 없습니다. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   designateMover: {
@@ -2331,7 +2447,8 @@ export interface operations {
       query?: {
         /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
         cursor?: components['parameters']['Cursor']
-        limit?: components['parameters']['Limit']
+        /** @description 페이지 크기 */
+        limit?: number
       }
       header?: never
       path?: never
@@ -2348,6 +2465,7 @@ export interface operations {
           'application/json': components['schemas']['RejectedRequestListResponse']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }

@@ -120,12 +120,13 @@ export function useProofPhotoUploads(quoteId: string) {
     const { image, thumbnail } = resized
 
     if (!previewUrls.current.has(id)) {
-      const previewUrl = URL.createObjectURL(thumbnail)
-      previewUrls.current.set(id, previewUrl)
-      update(id, { previewUrl })
+      previewUrls.current.set(id, URL.createObjectURL(thumbnail))
     }
-
-    update(id, { status: 'uploading', progress: 0 })
+    update(id, {
+      previewUrl: previewUrls.current.get(id),
+      status: 'uploading',
+      progress: 0,
+    })
     const total = image.size + thumbnail.size
     const loaded = [0, 0]
     let shown = 0

@@ -1,9 +1,10 @@
 'use client'
 
+import Button from '@/components/common/button/Button'
 import Modal from '@/components/common/modal/Modal'
 import { REVIEW_ASPECT_OPTIONS } from '@/constants/review'
-import { MOCK_REVIEW_SUMMARY } from '@/features/movers/fixtures/reviews'
-import { Info, Sparkles } from 'lucide-react'
+import { useMoverReviewSummary } from '@/features/movers/hooks/useMoverReviewSummary'
+import { Info, LoaderCircle, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
 type ReviewSummaryProps = {
@@ -13,6 +14,46 @@ type ReviewSummaryProps = {
 export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
   const [isOpen, setIsOpen] = useState(false)
 
+  const { reviewSummary, isPending, isError, refetch, isRefetching } =
+    useMoverReviewSummary(moverId)
+
+  if (isPending) {
+    return (
+      <div
+        role="status"
+        className="mt-8 mb-8 flex min-h-60 flex-col items-center justify-center gap-4 lg:mt-0 lg:mb-10"
+      >
+        <LoaderCircle
+          aria-hidden="true"
+          className="size-8 animate-spin text-primary-400"
+        />
+        <p className="text-base text-gray-400 md:text-lg">
+          리뷰 요약을 불러오고 있습니다.
+        </p>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="mt-8 mb-8 flex min-h-60 flex-col items-center justify-center gap-4 lg:mt-0 lg:mb-10">
+        <p role="alert" className="text-base text-gray-400 md:text-lg">
+          리뷰 요약을 불러오지 못했습니다.
+        </p>
+        <Button
+          variant="outlined"
+          disabled={isRefetching}
+          onClick={() => refetch()}
+          className="h-10 w-auto rounded-xl px-5 text-sm lg:h-10 lg:w-auto"
+        >
+          다시 시도
+        </Button>
+      </div>
+    )
+  }
+
+  if (!reviewSummary) return null
+
   return (
     <div className="mt-8 mb-8 flex flex-col gap-4 rounded-[20px] p-5 shadow-[2px_2px_10px_0px_rgba(220,220,220,0.20),_-2px_-2px_10px_0px_rgba(220,220,220,0.20)] md:gap-6 md:p-8 lg:mt-0 lg:mb-10">
       <header className="flex items-center justify-between">
@@ -20,7 +61,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
           <Sparkles className="size-4 fill-blue-500 text-blue-500" />
           리뷰 요약{' '}
           <span className="text-sm font-normal text-gray-500">
-            ({MOCK_REVIEW_SUMMARY.reviewCount}건 기준)
+            ({reviewSummary.reviewCount}건 기준)
           </span>
         </h2>
         <button
@@ -34,7 +75,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
       </header>
 
       <p className="text-base leading-6 font-normal text-black-300 md:text-lg">
-        {MOCK_REVIEW_SUMMARY.summary}
+        {reviewSummary.summary}
       </p>
 
       <div className="h-px bg-line-100" />
@@ -45,7 +86,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
           <span className="w-12 text-right">부정</span>
         </div>
 
-        {MOCK_REVIEW_SUMMARY.aspects.map((aspect) => (
+        {reviewSummary.aspects.map((aspect) => (
           <div key={aspect.key} className="flex items-baseline">
             <span className="font-normal text-gray-500">
               {
@@ -68,7 +109,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
 
       <div className="hidden text-center text-sm leading-6 md:mx-auto md:grid md:w-full md:max-w-xl md:grid-cols-[max-content_repeat(5,minmax(0,1fr))] md:gap-x-4 md:gap-y-2">
         <span />
-        {MOCK_REVIEW_SUMMARY.aspects.map((aspect) => (
+        {reviewSummary.aspects.map((aspect) => (
           <span key={aspect.key} className="font-normal text-gray-500">
             {
               REVIEW_ASPECT_OPTIONS.find(
@@ -79,14 +120,14 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
         ))}
 
         <span className="text-left font-normal text-gray-500">긍정</span>
-        {MOCK_REVIEW_SUMMARY.aspects.map((aspect) => (
+        {reviewSummary.aspects.map((aspect) => (
           <span key={`${aspect.key}-positive`} className="font-semibold">
             <span className="tabular-nums">{aspect.positiveCount}</span>건
           </span>
         ))}
 
         <span className="text-left font-normal text-gray-500">부정</span>
-        {MOCK_REVIEW_SUMMARY.aspects.map((aspect) => (
+        {reviewSummary.aspects.map((aspect) => (
           <span key={`${aspect.key}-negative`} className="font-semibold">
             <span className="tabular-nums">{aspect.negativeCount}</span>건
           </span>

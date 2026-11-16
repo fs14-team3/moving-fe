@@ -11,7 +11,7 @@ vi.mock('@/features/auth/hooks/useLogout', () => ({
   useLogout: () => logoutState,
 }))
 
-function createUser(role: Role): Me {
+function createUser(role: Role, overrides: Partial<Me> = {}): Me {
   return {
     id: 'user-1',
     role,
@@ -22,14 +22,18 @@ function createUser(role: Role): Me {
     isProfileComplete: true,
     customerProfile: null,
     moverProfile: null,
+    ...overrides,
   }
 }
 
-function renderProfileMenu(role: Role = 'CUSTOMER') {
+function renderProfileMenu(
+  role: Role = 'CUSTOMER',
+  overrides: Partial<Me> = {},
+) {
   const user = userEvent.setup()
   render(
     <>
-      <ProfileMenu user={createUser(role)} />
+      <ProfileMenu user={createUser(role, overrides)} />
       <p>바깥 영역</p>
     </>,
   )
@@ -37,10 +41,35 @@ function renderProfileMenu(role: Role = 'CUSTOMER') {
   return { user, trigger, open: () => user.click(trigger) }
 }
 
+function getProfileImageSrc(trigger: HTMLElement) {
+  return decodeURIComponent(
+    trigger.querySelector('img')?.getAttribute('src') ?? '',
+  )
+}
+
+const IMAGE_URL = 'https://images.example.com/profile-images/user-1.png'
+
 describe('ProfileMenu', () => {
   beforeEach(() => {
     logoutState.mutate.mockClear()
     logoutState.isPending = false
+  })
+
+  it.each([
+    ['CUSTOMER', { customerProfile: { imageUrl: IMAGE_URL } }],
+    ['MOVER', { moverProfile: { imageUrl: IMAGE_URL } }],
+  ] as const)('%s가 등록한 프로필 이미지를 보여 준다', (role, overrides) => {
+    const { trigger } = renderProfileMenu(role, overrides)
+
+    expect(getProfileImageSrc(trigger)).toContain(IMAGE_URL)
+  })
+
+  it('프로필 이미지가 없으면 기본 이미지를 보여 준다', () => {
+    const { trigger } = renderProfileMenu('CUSTOMER', {
+      customerProfile: { imageUrl: null },
+    })
+
+    expect(getProfileImageSrc(trigger)).toContain('/assets/icons/profile.svg')
   })
 
   it('프로필 버튼을 누를 때마다 메뉴를 열고 닫는다', async () => {

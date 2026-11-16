@@ -34,7 +34,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
     )
   }
 
-  if (isError) {
+  if (isError && !reviewSummary) {
     return (
       <div className="mt-8 mb-8 flex min-h-60 flex-col items-center justify-center gap-4 lg:mt-0 lg:mb-10">
         <p role="alert" className="text-base text-gray-400 md:text-lg">
@@ -53,6 +53,17 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
   }
 
   if (!reviewSummary) return null
+
+  const aspects = REVIEW_ASPECT_OPTIONS.map(({ value, label }) => {
+    const counts = reviewSummary.aspects.find((aspect) => aspect.key === value)
+
+    return {
+      key: value,
+      label,
+      positiveCount: counts?.positiveCount ?? 0,
+      negativeCount: counts?.negativeCount ?? 0,
+    }
+  })
 
   return (
     <div className="mt-8 mb-8 flex flex-col gap-4 rounded-[20px] p-5 shadow-[2px_2px_10px_0px_rgba(220,220,220,0.20),_-2px_-2px_10px_0px_rgba(220,220,220,0.20)] md:gap-6 md:p-8 lg:mt-0 lg:mb-10">
@@ -74,19 +85,20 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
         </button>
       </header>
 
-      <p className="text-base leading-6 font-normal text-black-300 md:text-lg">
+      <p className="text-base leading-6 font-normal text-black-300 md:text-lg md:leading-8">
         {reviewSummary.summary}
       </p>
 
       <div className="h-px bg-line-100" />
 
-      <div className="flex w-full max-w-64 flex-col gap-2 text-sm leading-6 md:hidden">
+      {/* 모바일 버전 */}
+      <div className="mx-auto flex w-full max-w-64 flex-col gap-2 text-sm leading-6 md:hidden">
         <div className="flex justify-end gap-4 text-gray-500">
           <span className="w-12 text-right">긍정</span>
           <span className="w-12 text-right">부정</span>
         </div>
 
-        {reviewSummary.aspects.map((aspect) => (
+        {aspects.map((aspect) => (
           <div key={aspect.key} className="flex items-baseline">
             <span className="font-normal text-gray-500">
               {
@@ -107,9 +119,10 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
         ))}
       </div>
 
+      {/* 데스크탑·태블릿 버전 */}
       <div className="hidden text-center text-sm leading-6 md:mx-auto md:grid md:w-full md:max-w-xl md:grid-cols-[max-content_repeat(5,minmax(0,1fr))] md:gap-x-4 md:gap-y-2">
         <span />
-        {reviewSummary.aspects.map((aspect) => (
+        {aspects.map((aspect) => (
           <span key={aspect.key} className="font-normal text-gray-500">
             {
               REVIEW_ASPECT_OPTIONS.find(
@@ -120,14 +133,14 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
         ))}
 
         <span className="text-left font-normal text-gray-500">긍정</span>
-        {reviewSummary.aspects.map((aspect) => (
+        {aspects.map((aspect) => (
           <span key={`${aspect.key}-positive`} className="font-semibold">
             <span className="tabular-nums">{aspect.positiveCount}</span>건
           </span>
         ))}
 
         <span className="text-left font-normal text-gray-500">부정</span>
-        {reviewSummary.aspects.map((aspect) => (
+        {aspects.map((aspect) => (
           <span key={`${aspect.key}-negative`} className="font-semibold">
             <span className="tabular-nums">{aspect.negativeCount}</span>건
           </span>

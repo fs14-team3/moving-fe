@@ -6,12 +6,15 @@ import { useCallback, useId, useRef, useState } from 'react'
 import { PROFILE_MENU_ITEMS } from '@/constants/navigation'
 import type { Me, Role } from '@/features/auth/types'
 import { useLogout } from '@/features/auth/hooks/useLogout'
+import { PROFILE_FIELD } from '@/features/profile/lib/cache'
 import { useDismiss } from '@/hooks/useDismiss'
 
 const NAME_SUFFIX: Record<Role, string> = {
   CUSTOMER: '고객님',
   MOVER: '기사님',
 }
+
+const DEFAULT_PROFILE_IMAGE = '/assets/icons/profile.svg'
 
 type ProfileMenuProps = {
   user: Me
@@ -23,6 +26,8 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelId = useId()
   const { mutate: logout, isPending } = useLogout()
+  const profileImage =
+    user[PROFILE_FIELD[user.role]]?.imageUrl || DEFAULT_PROFILE_IMAGE
 
   const close = useCallback(() => setIsOpen(false), [])
 
@@ -40,11 +45,11 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         className="flex items-center gap-4"
       >
         <Image
-          src="/assets/icons/profile.svg"
+          src={profileImage}
           alt=""
-          width={24}
-          height={24}
-          className="size-6 lg:size-9"
+          width={36}
+          height={36}
+          className="size-6 shrink-0 rounded-full object-cover lg:size-9"
         />
         {user.name && (
           <span className="hidden text-lg font-medium text-black-400 lg:inline">

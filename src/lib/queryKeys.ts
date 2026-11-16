@@ -65,7 +65,7 @@ export const queryKeys = {
     // GET /movers/me/received-requests
     list: (query: ListQuery<'listReceivedRequests'> = {}) =>
       [...queryKeys.receivedRequests.lists(), query] as const,
-    // GET /movers/me/rejected-requests
+    // GET /movers/me/rejections
     rejected: (query: ListQuery<'listMyRejectedRequests'> = {}) =>
       [...queryKeys.receivedRequests.all, 'rejected', query] as const,
   },
@@ -77,6 +77,8 @@ export const queryKeys = {
     // GET /movers/me/quotes
     list: (query: ListQuery<'listMySentQuotes'> = {}) =>
       [...queryKeys.sentQuotes.lists(), query] as const,
+    detail: (quoteId: string) =>
+      [...queryKeys.sentQuotes.all, 'detail', quoteId] as const,
   },
 
   quotes: {

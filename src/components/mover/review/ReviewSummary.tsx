@@ -92,7 +92,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
       <div className="h-px bg-line-100" />
 
       {/* 모바일 버전 */}
-      <div className="mx-auto flex w-full max-w-64 flex-col gap-2 text-sm leading-6 md:hidden">
+      <div className="mx-auto flex w-full max-w-56 flex-col gap-2 text-sm leading-6 md:hidden">
         <div className="flex justify-end gap-4 text-gray-500">
           <span className="w-12 text-right">긍정</span>
           <span className="w-12 text-right">부정</span>
@@ -120,7 +120,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
       </div>
 
       {/* 데스크탑·태블릿 버전 */}
-      <div className="hidden text-center text-sm leading-6 md:mx-auto md:grid md:w-full md:max-w-xl md:grid-cols-[max-content_repeat(5,minmax(0,1fr))] md:gap-x-4 md:gap-y-2">
+      <div className="hidden text-center text-sm leading-6 md:mx-auto md:grid md:w-full md:max-w-md md:grid-cols-[max-content_repeat(5,minmax(0,1fr))] md:gap-x-4 md:gap-y-2">
         <span />
         {aspects.map((aspect) => (
           <span key={aspect.key} className="font-normal text-gray-500">
@@ -132,14 +132,14 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
           </span>
         ))}
 
-        <span className="text-left font-normal text-gray-500">긍정</span>
+        <span className="pr-7 text-left font-normal text-gray-500">긍정</span>
         {aspects.map((aspect) => (
           <span key={`${aspect.key}-positive`} className="font-semibold">
             <span className="tabular-nums">{aspect.positiveCount}</span>건
           </span>
         ))}
 
-        <span className="text-left font-normal text-gray-500">부정</span>
+        <span className="pr-7 text-left font-normal text-gray-500">부정</span>
         {aspects.map((aspect) => (
           <span key={`${aspect.key}-negative`} className="font-semibold">
             <span className="tabular-nums">{aspect.negativeCount}</span>건

@@ -634,6 +634,52 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/quotes/{quoteId}/proof-photos': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 작업 사진 목록
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다.
+     */
+    get: operations['listProofPhotos']
+    put?: never
+    /**
+     * 작업 사진 업로드 확정
+     * @description `POST /quotes/{quoteId}/proof-photos/uploads`로 받은 업로드 정보로 사진과 썸네일을 S3에 모두 올린 뒤, 사진 한 장마다 `uploadId`를 보내 확정합니다. 확정된 사진만 목록에 나타납니다. 같은 `uploadId`를 다시 보내면 이미 저장된 사진을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다.
+     */
+    post: operations['confirmProofPhoto']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/proof-photos/uploads': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 작업 사진 업로드 정보 발급
+     * @description 기사님이 본인의 확정된 견적에 올릴 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 받을 수 있으며, 이미 확정된 사진과 합쳐 100장을 넘을 수 없습니다.
+     *
+     *     사진마다 `image`(긴 변 약 2000px)와 `thumbnail`(긴 변 약 300px)을 브라우저에서 WebP나 JPEG로 다시 인코딩해 각각 올립니다. 다시 인코딩해야 위치 정보 등 EXIF 메타데이터가 지워지므로 원본 파일을 그대로 올리지 않습니다. `contentType`에는 인코딩한 형식을 보내며 사진과 썸네일 모두 이 형식이어야 합니다. `.jpg` 파일도 `image/jpeg`입니다. Safari처럼 canvas가 WebP로 인코딩하지 못하는 브라우저에서는 `image/jpeg`를 씁니다. `url`로 `multipart/form-data` POST를 보내며, `fields`를 그대로 담고 파일은 마지막 `file` 필드에 넣습니다. S3가 `Content-Type`이 `contentType`과 같은지, 크기(사진 5MB, 썸네일 512KB 이하), 발급 후 10분 이내인지 확인합니다. 두 파일을 모두 올린 뒤 `POST /quotes/{quoteId}/proof-photos`로 확정합니다.
+     */
+    post: operations['createProofPhotoUploads']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reviews': {
     parameters: {
       query?: never
@@ -839,6 +885,7 @@ export interface components {
       | 'PROFILE_REQUIRED'
       | 'NOT_IN_SERVICE_AREA'
       | 'REVIEW_NOT_ALLOWED'
+      | 'PROOF_PHOTO_NOT_ALLOWED'
       | 'NOT_FOUND'
       | 'PROFILE_ALREADY_EXISTS'
       | 'ACTIVE_REQUEST_EXISTS'
@@ -848,6 +895,8 @@ export interface components {
       | 'REQUEST_NOT_PENDING'
       | 'REQUEST_HAS_QUOTES'
       | 'QUOTE_LIMIT_REACHED'
+      | 'PROOF_PHOTO_LIMIT_REACHED'
+      | 'PROOF_PHOTO_NOT_UPLOADED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -877,6 +926,51 @@ export interface components {
     UploadResponse: {
       /** Format: uri */
       url: string
+    }
+    ProofPhoto: {
+      /** Format: uuid */
+      id: string
+      /** Format: uri */
+      url: string
+      /** Format: uri */
+      thumbnailUrl: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    ProofPhotoUploadCreate: {
+      /** @example 10 */
+      count: number
+      /**
+       * @example image/webp
+       * @enum {string}
+       */
+      contentType: 'image/jpeg' | 'image/webp'
+    }
+    ProofPhotoUploadList: {
+      items: components['schemas']['ProofPhotoUpload'][]
+    }
+    ProofPhotoUpload: {
+      /** Format: uuid */
+      uploadId: string
+      image: components['schemas']['PresignedPost']
+      thumbnail: components['schemas']['PresignedPost']
+    }
+    /** @description S3 presigned POST. `url`로 `fields`와 마지막 `file` 필드를 담은 `multipart/form-data`를 보냅니다. */
+    PresignedPost: {
+      /** Format: uri */
+      url: string
+      fields: {
+        [key: string]: string
+      }
+    }
+    ProofPhotoConfirm: {
+      /** Format: uuid */
+      uploadId: string
+    }
+    ProofPhotoList: {
+      items: components['schemas']['ProofPhoto'][]
+      /** @example 100 */
+      maxCount: number
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -2554,6 +2648,143 @@ export interface operations {
       404: components['responses']['NotFound']
       /** @description `REQUEST_NOT_PENDING` (이미 확정되었거나 만료됨) */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  listProofPhotos: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 작업 사진 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+    }
+  }
+  confirmProofPhoto: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProofPhotoConfirm']
+      }
+    }
+    responses: {
+      /** @description 확정 완료 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhoto']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림) 또는 `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createProofPhotoUploads: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProofPhotoUploadCreate']
+      }
+    }
+    responses: {
+      /** @description 업로드 정보 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoUploadList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (확정된 사진과 합쳐 100장을 넘음) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
         headers: {
           [name: string]: unknown
         }

@@ -12,7 +12,7 @@ import {
 import {
   pickPhotoType,
   resizeProofPhoto,
-} from '@/features/proof-photos/lib/resizer'
+} from '@/features/proof-photos/lib/resizeProofPhoto'
 import { isApiError } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 

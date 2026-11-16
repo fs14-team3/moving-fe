@@ -9,7 +9,7 @@ import {
   type ProofPhotoList,
 } from '@/features/proof-photos/api'
 import { useProofPhotoUploads } from '@/features/proof-photos/hooks/useProofPhotoUploads'
-import { resizeProofPhoto } from '@/features/proof-photos/lib/resizer'
+import { resizeProofPhoto } from '@/features/proof-photos/lib/resizeProofPhoto'
 import { ApiError } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 
@@ -19,7 +19,7 @@ vi.mock('@/features/proof-photos/api', () => ({
   confirmProofPhoto: vi.fn(),
 }))
 
-vi.mock('@/features/proof-photos/lib/resizer', () => ({
+vi.mock('@/features/proof-photos/lib/resizeProofPhoto', () => ({
   pickPhotoType: vi.fn(async () => 'image/webp'),
   resizeProofPhoto: vi.fn(),
 }))

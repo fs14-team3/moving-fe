@@ -32,7 +32,7 @@ const file = new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })
 
 async function load() {
   const { resizeProofPhoto } =
-    await import('@/features/proof-photos/lib/resizer')
+    await import('@/features/proof-photos/lib/resizeProofPhoto')
   const { resizePhoto } = await import('@/features/proof-photos/lib/resize')
   return { resizeProofPhoto, resizePhoto: vi.mocked(resizePhoto) }
 }

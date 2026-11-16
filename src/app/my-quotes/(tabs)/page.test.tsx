@@ -7,20 +7,27 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
+import { toast } from 'sonner'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import PendingQuotesPage from '@/app/my-quotes/(tabs)/page'
-import { getActiveMoveRequest } from '@/features/move-request/api'
+import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import {
+  deleteMoveRequest,
+  getActiveMoveRequest,
+} from '@/features/move-request/api'
 import { MOCK_MOVE_REQUEST } from '@/features/move-request/fixtures/moveRequests'
 import {
   confirmQuote,
   getRequestQuotes,
   type CustomerQuote,
 } from '@/features/my-quotes/api'
+import { ApiError } from '@/lib/api-error'
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 vi.mock('@/features/move-request/api', () => ({
   getActiveMoveRequest: vi.fn(),
+  deleteMoveRequest: vi.fn(),
 }))
 
 vi.mock('@/features/my-quotes/api', () => ({
@@ -29,6 +36,7 @@ vi.mock('@/features/my-quotes/api', () => ({
 }))
 
 const mockGetActiveMoveRequest = vi.mocked(getActiveMoveRequest)
+const mockDeleteMoveRequest = vi.mocked(deleteMoveRequest)
 const mockGetRequestQuotes = vi.mocked(getRequestQuotes)
 const mockConfirmQuote = vi.mocked(confirmQuote)
 
@@ -77,6 +85,11 @@ async function findCard(nickname: string) {
   return name.closest('article')!
 }
 
+async function openDeleteModal(user: UserEvent) {
+  await user.click(await screen.findByRole('button', { name: '삭제하기' }))
+  return screen.getByRole('dialog', { name: '견적 요청 삭제' })
+}
+
 function mockTwoPendingQuotes() {
   mockGetActiveMoveRequest.mockResolvedValue({
     moveRequest: MOCK_MOVE_REQUEST,
@@ -106,12 +119,12 @@ describe('PendingQuotesPage', () => {
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('진행 중인 요청 정보와 받은 견적을 카드로 보여 준다', async () => {
     mockGetActiveMoveRequest.mockResolvedValue({
-      moveRequest: MOCK_MOVE_REQUEST,
+      moveRequest: { ...MOCK_MOVE_REQUEST, quoteCount: 2 },
     })
     mockGetRequestQuotes.mockResolvedValue({
       items: [
@@ -130,7 +143,8 @@ describe('PendingQuotesPage', () => {
     expect(screen.getByText('서울특별시 중구')).toBeInTheDocument()
     expect(screen.getByText('부산광역시 해운대구')).toBeInTheDocument()
     expect(screen.getByText('2026년 11월 20일 (금)')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '삭제하기' })).toBeInTheDocument()
+    // 견적이 도착한 요청은 삭제할 수 없다.
+    expect(screen.queryByRole('button', { name: '삭제하기' })).toBeNull()
     expect(mockGetRequestQuotes).toHaveBeenCalledWith('request-1')
 
     const designated = await findCard('김코드')
@@ -239,6 +253,109 @@ describe('PendingQuotesPage', () => {
       await screen.findByText(/기사님들이 열심히 확인 중이에요/),
     ).toBeInTheDocument()
     expect(mockGetRequestQuotes).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: '삭제하기' })).toBeNull()
+  })
+
+  it('견적이 없는 요청은 확인 모달을 거쳐 삭제하고, 견적 요청 안내를 보여 준다', async () => {
+    const user = userEvent.setup()
+    mockGetActiveMoveRequest
+      .mockResolvedValueOnce({ moveRequest: MOCK_MOVE_REQUEST })
+      .mockResolvedValue({ moveRequest: null })
+    mockGetRequestQuotes.mockResolvedValue({ items: [] })
+    mockDeleteMoveRequest.mockResolvedValue()
+
+    renderPage()
+
+    const dialog = await openDeleteModal(user)
+    expect(dialog).toHaveTextContent('삭제한 요청은 되돌릴 수 없어요.')
+    expect(mockDeleteMoveRequest).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: '삭제하기' }))
+
+    expect(mockDeleteMoveRequest).toHaveBeenCalledWith('request-1')
+    expect(
+      await screen.findByText('진행 중인 견적 요청이 없어요'),
+    ).toBeInTheDocument()
+    expect(toast.success).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.deleteSuccess,
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it.each(['취소', '닫기'])(
+    '삭제 모달에서 %s를 누르면 삭제하지 않고 닫는다',
+    async (name) => {
+      const user = userEvent.setup()
+      mockGetActiveMoveRequest.mockResolvedValue({
+        moveRequest: MOCK_MOVE_REQUEST,
+      })
+      mockGetRequestQuotes.mockResolvedValue({ items: [] })
+
+      renderPage()
+
+      const dialog = await openDeleteModal(user)
+      await user.click(within(dialog).getByRole('button', { name }))
+
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(mockDeleteMoveRequest).not.toHaveBeenCalled()
+    },
+  )
+
+  it('삭제 중에는 다시 삭제하거나 모달을 닫을 수 없다', async () => {
+    const user = userEvent.setup()
+    mockGetActiveMoveRequest.mockResolvedValue({
+      moveRequest: MOCK_MOVE_REQUEST,
+    })
+    mockGetRequestQuotes.mockResolvedValue({ items: [] })
+    mockDeleteMoveRequest.mockReturnValue(new Promise(() => {}))
+
+    renderPage()
+    const dialog = await openDeleteModal(user)
+    const deleteButton = within(dialog).getByRole('button', {
+      name: '삭제하기',
+    })
+    await user.click(deleteButton)
+
+    await waitFor(() => expect(deleteButton).toBeDisabled())
+    expect(deleteButton).toHaveAttribute('aria-busy', 'true')
+    expect(within(dialog).getByRole('button', { name: '취소' })).toBeDisabled()
+
+    await user.click(deleteButton)
+    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    await user.click(dialog)
+    fireEvent(dialog, new Event('cancel', { cancelable: true }))
+
+    expect(screen.getByRole('dialog', { name: '견적 요청 삭제' })).toBeVisible()
+    expect(mockDeleteMoveRequest).toHaveBeenCalledOnce()
+  })
+
+  it('그사이 견적이 도착해 삭제하지 못하면 알리고 요청 정보를 다시 불러온다', async () => {
+    const user = userEvent.setup()
+    mockGetActiveMoveRequest
+      .mockResolvedValueOnce({ moveRequest: MOCK_MOVE_REQUEST })
+      .mockResolvedValue({
+        moveRequest: { ...MOCK_MOVE_REQUEST, quoteCount: 1 },
+      })
+    mockGetRequestQuotes
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValue({ items: [createQuote('quote-1', '김코드')] })
+    mockDeleteMoveRequest.mockRejectedValue(
+      new ApiError('REQUEST_HAS_QUOTES', '견적이 있는 요청입니다.', 409),
+    )
+
+    renderPage()
+
+    const dialog = await openDeleteModal(user)
+    await user.click(within(dialog).getByRole('button', { name: '삭제하기' }))
+
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.requestHasQuotes,
+    )
+    expect(await findCard('김코드')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: '삭제하기' })).toBeNull(),
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('진행 중인 요청이 없으면 견적 요청 안내를 보여 준다', async () => {

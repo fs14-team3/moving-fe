@@ -1,4 +1,3 @@
-import type { Mover } from '@/features/movers/types'
 import api from '@/lib/api'
 import type { components, operations } from '@/lib/api-schema'
 

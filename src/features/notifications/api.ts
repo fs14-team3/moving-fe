@@ -11,10 +11,11 @@ type NotificationQuery = NonNullable<
   operations['listNotifications']['parameters']['query']
 >
 
-// TODO(#87): BE 알림 PR(#52)이 머지되면 api:types를 다시 생성하고 생성된 타입으로 바꾼다.
-// 아래 두 응답과 unread-count · {id}/read 경로는 #52 명세를 보고 미리 맞춰 둔 것이다.
-type UnreadCountResponse = { unreadCount: number }
-type ReadResponse = { updated: boolean }
+type UnreadCountResponse =
+  operations['getUnreadNotificationCount']['responses']['200']['content']['application/json']
+
+type ReadResponse =
+  operations['readNotification']['responses']['200']['content']['application/json']
 
 // #52부터는 읽지 않은 알림만 최신순으로 내려준다.
 export async function getNotifications(query: NotificationQuery = {}) {

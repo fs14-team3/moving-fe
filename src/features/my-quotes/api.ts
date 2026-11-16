@@ -6,9 +6,7 @@ type Schemas = components['schemas']
 
 export type CustomerQuote = Schemas['CustomerQuote']
 
-export type QuoteDetail = Omit<Schemas['QuoteDetail'], 'mover'> & {
-  mover: Mover
-}
+export type QuoteDetail = Schemas['QuoteDetail']
 
 type RequestQuoteQuery = NonNullable<
   operations['listQuotesForRequest']['parameters']['query']

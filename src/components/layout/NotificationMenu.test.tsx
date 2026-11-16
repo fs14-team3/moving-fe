@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import NotificationMenu from '@/components/layout/NotificationMenu'
+import type { Role } from '@/features/auth/types'
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -42,14 +43,14 @@ function mockPage(items: Notification[]) {
   })
 }
 
-function renderMenu() {
+function renderMenu(role: Role = 'CUSTOMER') {
   const user = userEvent.setup()
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   render(
     <QueryClientProvider client={queryClient}>
-      <NotificationMenu />
+      <NotificationMenu role={role} />
       <p>바깥 영역</p>
     </QueryClientProvider>,
   )
@@ -108,6 +109,26 @@ describe('NotificationMenu', () => {
     // 서버가 문구를 주지 않으면 알림 종류에 맞는 기본 문구를 보여 준다.
     expect(within(panel).getByText('견적이 확정되었어요')).toBeInTheDocument()
     expect(within(panel).getByText('3시간 전')).toBeInTheDocument()
+  })
+
+  it('payload로 시안 문구를 만들고 이사 종류 같은 부분을 강조한다', async () => {
+    mockPage([
+      createNotification({
+        id: '1',
+        message: null,
+        payload: { moverNickname: '김코드', moveType: 'SMALL' },
+      }),
+    ])
+    const { open } = renderMenu()
+
+    await open()
+
+    const panel = getPanel()
+    const highlight = await within(panel).findByText('소형이사 견적')
+    expect(highlight).toHaveClass('text-primary-400')
+    expect(highlight.parentElement).toHaveTextContent(
+      '김코드 기사님의 소형이사 견적이 도착했어요',
+    )
   })
 
   it('알림이 없으면 빈 목록 안내를 보여 준다', async () => {

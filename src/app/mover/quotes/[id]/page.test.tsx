@@ -26,6 +26,33 @@ vi.mock('@/features/sent-quotes/hooks/useSentQuote', () => ({
   useSentQuote: vi.fn(),
 }))
 
+vi.mock('@/components/proof-photos/ProofPhotoSection', () => ({
+  default: ({
+    canUpload,
+    emptyMessage,
+  }: {
+    canUpload?: boolean
+    emptyMessage: string
+  }) => (
+    <section aria-label="작업 사진">
+      {canUpload && '사진 올리기'}
+      {emptyMessage}
+    </section>
+  ),
+}))
+
+function confirmedQuote(moveDate: string) {
+  return {
+    ...MOCK_SENT_QUOTE,
+    status: 'CONFIRMED' as const,
+    moveRequest: {
+      ...MOCK_SENT_QUOTE.moveRequest,
+      status: 'CONFIRMED' as const,
+      moveDate,
+    },
+  }
+}
+
 function createQuoteResult(
   overrides: Partial<ReturnType<typeof useSentQuote>> = {},
 ) {
@@ -73,6 +100,40 @@ describe('SentQuoteDetailPage', () => {
     render(<SentQuoteDetailPage />)
 
     expect(screen.getByText('확정견적')).toBeInTheDocument()
+  })
+
+  it('확정되지 않은 견적은 작업 사진을 보여 주지 않는다', () => {
+    render(<SentQuoteDetailPage />)
+
+    expect(
+      screen.queryByRole('region', { name: '작업 사진' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('이사일이 지난 확정 견적은 작업 사진을 올릴 수 있다', () => {
+    vi.mocked(useSentQuote).mockReturnValue(
+      createQuoteResult({ quote: confirmedQuote('2026-11-01') }),
+    )
+
+    render(<SentQuoteDetailPage />)
+
+    expect(screen.getByRole('region', { name: '작업 사진' })).toHaveTextContent(
+      '사진 올리기',
+    )
+  })
+
+  it('이사일이 지나지 않은 확정 견적은 올릴 수 있는 날을 안내한다', () => {
+    vi.mocked(useSentQuote).mockReturnValue(
+      createQuoteResult({ quote: confirmedQuote('2099-12-31') }),
+    )
+
+    render(<SentQuoteDetailPage />)
+
+    const section = screen.getByRole('region', { name: '작업 사진' })
+    expect(section).not.toHaveTextContent('사진 올리기')
+    expect(section).toHaveTextContent(
+      '이사일 다음 날부터 작업 사진을 올릴 수 있어요.',
+    )
   })
 
   it('불러오는 동안 로딩 상태를 보여준다', () => {

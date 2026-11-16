@@ -3,7 +3,7 @@ import { queryKeys } from '@/lib/queryKeys'
 import type { Me, Role } from '@/features/auth/types'
 import type { Profile } from '@/features/profile/types'
 
-const PROFILE_FIELD = {
+export const PROFILE_FIELD = {
   CUSTOMER: 'customerProfile',
   MOVER: 'moverProfile',
 } as const satisfies Record<Role, keyof Me>

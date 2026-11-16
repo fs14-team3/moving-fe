@@ -2,6 +2,7 @@
 
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
+import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
 import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
@@ -29,6 +30,7 @@ import { cn } from '@/lib/cn'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 export default function QuoteDetail() {
@@ -48,6 +50,8 @@ export default function QuoteDetail() {
     useRemoveFavorite(quote?.mover.id ?? '')
 
   const { mutate: confirmQuote, isPending: isConfirming } = useConfirmQuote()
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
+  const closeConfirmModal = () => setIsConfirmModalOpen(false)
   const isNotFound = useQuoteNotFound(error, '/my-quotes')
 
   const isFavoritePending = isAddingFavorite || isRemovingFavorite
@@ -83,7 +87,7 @@ export default function QuoteDetail() {
   const careerYears =
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
   const isFavorite = mover.isFavorite
-  const favoriteCount = mover.favoriteCount ?? '-'
+  const favoriteCount = mover.favoriteCount
   const moveTypeLabel = MOVE_TYPE[quote.moveRequest.moveType].label
   const moveDateLabel = formatMoveDate(quote.moveRequest.moveDate)
   const priceLabel = `${quote.price.toLocaleString()}원`
@@ -268,13 +272,21 @@ export default function QuoteDetail() {
                 </p>
                 <Button
                   disabled={isConfirming}
-                  onClick={() => confirmQuote(id)}
+                  onClick={() => setIsConfirmModalOpen(true)}
                   className="w-full cursor-pointer lg:mt-[30px] lg:w-80"
                 >
                   견적 확정하기
                 </Button>
               </section>
             )}
+            <ConfirmQuoteModal
+              open={isConfirmModalOpen}
+              onClose={closeConfirmModal}
+              isConfirming={isConfirming}
+              onConfirm={() =>
+                confirmQuote(id, { onSettled: closeConfirmModal })
+              }
+            />
 
             <section className="mb-10 flex flex-col gap-3 py-5 md:py-8 md:pb-16 lg:mb-0 lg:gap-5 lg:px-0 lg:pt-10">
               <h2 className="text-base leading-8 font-semibold lg:text-xl">

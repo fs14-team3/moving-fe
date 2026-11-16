@@ -32,10 +32,15 @@ export type PhotoUpload = {
 type Job = { upload: PhotoUpload; presigned?: ProofPhotoUpload }
 
 function toFailure(error: unknown) {
-  if (isApiError(error) && error.code === 'PROOF_PHOTO_LIMIT_REACHED') {
+  const code = isApiError(error) ? error.code : undefined
+  if (code === 'PROOF_PHOTO_LIMIT_REACHED') {
     return { error: '최대 장수를 넘었어요', retryable: false }
   }
-  return { error: '올리지 못했어요', retryable: true }
+  return {
+    error: '올리지 못했어요',
+    retryable: true,
+    ...(code === 'PROOF_PHOTO_NOT_UPLOADED' && { uploadId: undefined }),
+  }
 }
 
 async function runPool<T>(items: T[], run: (item: T) => Promise<void>) {
@@ -153,13 +158,7 @@ export function useProofPhotoUploads(quoteId: string) {
       await addToList(await confirmProofPhoto(quoteId, uploadId))
       remove(upload.id)
     } catch (error) {
-      const notUploaded =
-        isApiError(error) && error.code === 'PROOF_PHOTO_NOT_UPLOADED'
-      update(upload.id, {
-        status: 'failed',
-        ...toFailure(error),
-        ...(notUploaded && { uploadId: undefined }),
-      })
+      update(upload.id, { status: 'failed', ...toFailure(error) })
     }
   }
 

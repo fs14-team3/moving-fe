@@ -1,4 +1,5 @@
 import type { ProofPhotoType } from '@/features/proof-photos/api'
+import { stripGainMap } from '@/features/proof-photos/lib/stripGainMap'
 
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 type Canvas = Context['canvas']
@@ -76,7 +77,7 @@ export async function resizePhoto(
   file: Blob,
   type: ProofPhotoType,
 ): Promise<ResizedPhoto> {
-  const bitmap = await createImageBitmap(file, {
+  const bitmap = await createImageBitmap(await stripGainMap(file), {
     imageOrientation: 'from-image',
   })
   const [width, height] = fit(bitmap.width, bitmap.height, IMAGE_EDGE)

@@ -86,6 +86,21 @@ describe('resizePhoto', () => {
     })
   })
 
+  it('GainMap을 지운 JPEG를 디코딩한다', async () => {
+    const { createContext } = setup(4032, 3024)
+    const jpeg = [0xff, 0xd8, 0xff, 0xd9]
+    const file = new Blob([new Uint8Array([...jpeg, ...jpeg])], {
+      type: 'image/jpeg',
+    })
+
+    await resizePhoto(createContext, file, 'image/jpeg')
+
+    const [decoded] = vi.mocked(createImageBitmap).mock.calls[0]
+    expect(new Uint8Array(await (decoded as Blob).arrayBuffer())).toEqual(
+      new Uint8Array(jpeg),
+    )
+  })
+
   it('브라우저가 요청한 형식으로 인코딩하지 못하면 실패한다', async () => {
     const { createContext } = setup(4032, 3024, 'image/png')
 

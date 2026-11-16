@@ -77,6 +77,8 @@ export const queryKeys = {
     // GET /movers/me/quotes
     list: (query: ListQuery<'listMySentQuotes'> = {}) =>
       [...queryKeys.sentQuotes.lists(), query] as const,
+    detail: (quoteId: string) =>
+      [...queryKeys.sentQuotes.all, 'detail', quoteId] as const,
   },
 
   quotes: {

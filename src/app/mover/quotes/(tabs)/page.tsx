@@ -38,7 +38,6 @@ function SentQuoteCard({ quote }: { quote: SentQuote }) {
   const isCompleted = isMoveCompleted(quote.moveRequest)
 
   return (
-    // TODO: 보낸 견적 상세 페이지(/mover/quotes/[quoteId])를 만들면 이 주소에 연결된다.
     <Link
       href={`/mover/quotes/${quote.id}`}
       className="relative block rounded-2xl focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"

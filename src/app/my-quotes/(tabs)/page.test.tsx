@@ -1,6 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { toast } from 'sonner'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import PendingQuotesPage from '@/app/my-quotes/(tabs)/page'
@@ -79,9 +85,27 @@ async function findCard(nickname: string) {
   return name.closest('article')!
 }
 
-async function openDeleteModal(user: ReturnType<typeof userEvent.setup>) {
+async function openDeleteModal(user: UserEvent) {
   await user.click(await screen.findByRole('button', { name: '삭제하기' }))
   return screen.getByRole('dialog', { name: '견적 요청 삭제' })
+}
+
+function mockTwoPendingQuotes() {
+  mockGetActiveMoveRequest.mockResolvedValue({
+    moveRequest: MOCK_MOVE_REQUEST,
+  })
+  mockGetRequestQuotes.mockResolvedValue({
+    items: [createQuote('quote-1', '김코드'), createQuote('quote-2', '이코드')],
+  })
+}
+
+async function openConfirmModal(user: UserEvent, nickname: string) {
+  await user.click(
+    await screen.findByRole('button', {
+      name: `${nickname} 기사님 견적 확정하기`,
+    }),
+  )
+  return screen.getByRole('dialog', { name: '견적 확정' })
 }
 
 describe('PendingQuotesPage', () => {
@@ -141,27 +165,65 @@ describe('PendingQuotesPage', () => {
     expect(within(general).queryByText('지정 견적 요청')).toBeNull()
   })
 
-  it('견적 확정하기를 누르면 그 견적을 확정한다', async () => {
+  it('견적 확정하기를 누르면 확인 모달을 열고, 확정하기를 눌러야 그 견적을 확정한다', async () => {
     const user = userEvent.setup()
-    mockGetActiveMoveRequest.mockResolvedValue({
-      moveRequest: MOCK_MOVE_REQUEST,
-    })
-    mockGetRequestQuotes.mockResolvedValue({
-      items: [createQuote('quote-1', '김코드')],
-    })
+    mockTwoPendingQuotes()
     mockConfirmQuote.mockResolvedValue(
       {} as Awaited<ReturnType<typeof confirmQuote>>,
     )
 
     renderPage()
+    const dialog = await openConfirmModal(user, '이코드')
 
-    await user.click(
-      await screen.findByRole('button', {
-        name: '김코드 기사님 견적 확정하기',
-      }),
+    expect(mockConfirmQuote).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: '확정하기' }))
+
+    expect(mockConfirmQuote).toHaveBeenCalledExactlyOnceWith('quote-2')
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )
+  })
 
-    expect(mockConfirmQuote).toHaveBeenCalledWith('quote-1')
+  it.each([
+    ['취소', (dialog: HTMLElement) => within(dialog).getByText('취소')],
+    ['닫기', (dialog: HTMLElement) => within(dialog).getByLabelText('닫기')],
+    ['배경', (dialog: HTMLElement) => dialog],
+  ])('확인 모달에서 %s 선택 시 확정하지 않고 닫는다', async (_, getTarget) => {
+    const user = userEvent.setup()
+    mockTwoPendingQuotes()
+
+    renderPage()
+    const dialog = await openConfirmModal(user, '김코드')
+    await user.click(getTarget(dialog))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(mockConfirmQuote).not.toHaveBeenCalled()
+  })
+
+  it('확정 처리 중에는 다시 확정하거나 모달을 닫을 수 없다', async () => {
+    const user = userEvent.setup()
+    mockTwoPendingQuotes()
+    mockConfirmQuote.mockReturnValue(new Promise(() => {}))
+
+    renderPage()
+    const dialog = await openConfirmModal(user, '김코드')
+    const confirmButton = within(dialog).getByRole('button', {
+      name: '확정하기',
+    })
+    await user.click(confirmButton)
+
+    await waitFor(() => expect(confirmButton).toBeDisabled())
+    expect(confirmButton).toHaveAttribute('aria-busy', 'true')
+    expect(within(dialog).getByRole('button', { name: '취소' })).toBeDisabled()
+
+    await user.click(confirmButton)
+    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    await user.click(dialog)
+    fireEvent(dialog, new Event('cancel', { cancelable: true }))
+
+    expect(screen.getByRole('dialog', { name: '견적 확정' })).toBeVisible()
+    expect(mockConfirmQuote).toHaveBeenCalledOnce()
   })
 
   it('받은 견적이 없으면 견적을 기다리는 안내를 보여 준다', async () => {
@@ -220,20 +282,51 @@ describe('PendingQuotesPage', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('모달을 닫으면 삭제하지 않는다', async () => {
+  it.each(['취소', '닫기'])(
+    '삭제 모달에서 %s를 누르면 삭제하지 않고 닫는다',
+    async (name) => {
+      const user = userEvent.setup()
+      mockGetActiveMoveRequest.mockResolvedValue({
+        moveRequest: MOCK_MOVE_REQUEST,
+      })
+      mockGetRequestQuotes.mockResolvedValue({ items: [] })
+
+      renderPage()
+
+      const dialog = await openDeleteModal(user)
+      await user.click(within(dialog).getByRole('button', { name }))
+
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(mockDeleteMoveRequest).not.toHaveBeenCalled()
+    },
+  )
+
+  it('삭제 중에는 다시 삭제하거나 모달을 닫을 수 없다', async () => {
     const user = userEvent.setup()
     mockGetActiveMoveRequest.mockResolvedValue({
       moveRequest: MOCK_MOVE_REQUEST,
     })
     mockGetRequestQuotes.mockResolvedValue({ items: [] })
+    mockDeleteMoveRequest.mockReturnValue(new Promise(() => {}))
 
     renderPage()
-
     const dialog = await openDeleteModal(user)
-    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    const deleteButton = within(dialog).getByRole('button', {
+      name: '삭제하기',
+    })
+    await user.click(deleteButton)
 
-    expect(screen.queryByRole('dialog')).toBeNull()
-    expect(mockDeleteMoveRequest).not.toHaveBeenCalled()
+    await waitFor(() => expect(deleteButton).toBeDisabled())
+    expect(deleteButton).toHaveAttribute('aria-busy', 'true')
+    expect(within(dialog).getByRole('button', { name: '취소' })).toBeDisabled()
+
+    await user.click(deleteButton)
+    await user.click(within(dialog).getByRole('button', { name: '닫기' }))
+    await user.click(dialog)
+    fireEvent(dialog, new Event('cancel', { cancelable: true }))
+
+    expect(screen.getByRole('dialog', { name: '견적 요청 삭제' })).toBeVisible()
+    expect(mockDeleteMoveRequest).toHaveBeenCalledOnce()
   })
 
   it('그사이 견적이 도착해 삭제하지 못하면 알리고 요청 정보를 다시 불러온다', async () => {

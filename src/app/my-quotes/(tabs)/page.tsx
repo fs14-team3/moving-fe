@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Button from '@/components/common/button/Button'
+import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
 import ActiveRequestSummary from '@/components/my-quotes/ActiveRequestSummary'
 import DeleteRequestModal from '@/components/my-quotes/DeleteRequestModal'
 import {
@@ -32,6 +33,8 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
   const { pendingQuotes, hasData, isPending, isError, refetch } =
     usePendingQuotes(request.id)
   const { mutate: confirmQuote, isPending: isConfirming } = useConfirmQuote()
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null)
+  const closeConfirmModal = () => setSelectedQuoteId(null)
 
   if (isPending) return <Loading label="받은 견적을 불러오고 있습니다." />
 
@@ -48,18 +51,29 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
   if (pendingQuotes.length === 0) return <NoQuotes />
 
   return (
-    <ul className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-      {pendingQuotes.map((quote) => (
-        <li key={quote.id}>
-          <PendingQuoteCard
-            quote={quote}
-            moveType={request.moveType}
-            onConfirm={() => confirmQuote(quote.id)}
-            confirmDisabled={isConfirming}
-          />
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+        {pendingQuotes.map((quote) => (
+          <li key={quote.id}>
+            <PendingQuoteCard
+              quote={quote}
+              moveType={request.moveType}
+              onConfirm={() => setSelectedQuoteId(quote.id)}
+              confirmDisabled={isConfirming}
+            />
+          </li>
+        ))}
+      </ul>
+      <ConfirmQuoteModal
+        open={selectedQuoteId !== null}
+        onClose={closeConfirmModal}
+        isConfirming={isConfirming}
+        onConfirm={() => {
+          if (!selectedQuoteId) return
+          confirmQuote(selectedQuoteId, { onSettled: closeConfirmModal })
+        }}
+      />
+    </>
   )
 }
 

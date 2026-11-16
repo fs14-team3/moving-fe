@@ -5,6 +5,7 @@ import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import GeneralModal from '@/components/common/modal/GeneralModal'
 import ReviewSection from '@/components/mover/review/ReviewSection'
+import ReviewSummary from '@/components/mover/review/ReviewSummary'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import KakaoScript from '@/components/share/KakaoScript'
 import { getServiceTypeLabel } from '@/constants/services'
@@ -453,7 +454,8 @@ export default function MoverDetailPage() {
             </section>
           </div>
 
-          <ReviewSection mover={mover} />
+          <ReviewSummary moverId={mover.id} />
+          <ReviewSection mover={mover} className="lg:col-start-1" />
         </div>
       </main>
     </>

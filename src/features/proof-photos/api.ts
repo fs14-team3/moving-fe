@@ -8,8 +8,6 @@ export type ProofPhoto = Schemas['ProofPhoto']
 
 export type ProofPhotoList = Schemas['ProofPhotoList']
 
-export type ProofPhotoUpload = Schemas['ProofPhotoUpload']
-
 export type ProofPhotoType = Schemas['ProofPhotoUploadCreate']['contentType']
 
 export async function getProofPhotos(quoteId: string) {

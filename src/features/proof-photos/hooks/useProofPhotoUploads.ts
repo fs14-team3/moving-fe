@@ -7,7 +7,6 @@ import {
   type ProofPhoto,
   type ProofPhotoList,
   type ProofPhotoType,
-  type ProofPhotoUpload,
 } from '@/features/proof-photos/api'
 import {
   pickPhotoType,
@@ -28,8 +27,6 @@ export type PhotoUpload = {
   error?: string
   retryable?: boolean
 }
-
-type Job = { upload: PhotoUpload; presigned?: ProofPhotoUpload }
 
 function toFailure(error: unknown) {
   const code = isApiError(error) ? error.code : undefined
@@ -102,7 +99,6 @@ export function useProofPhotoUploads(quoteId: string) {
 
   async function sendToStorage(
     { id, file }: PhotoUpload,
-    presigned: ProofPhotoUpload,
     type: ProofPhotoType,
     signal: AbortSignal,
   ) {
@@ -122,11 +118,13 @@ export function useProofPhotoUploads(quoteId: string) {
     if (!previewUrls.current.has(id)) {
       previewUrls.current.set(id, URL.createObjectURL(thumbnail))
     }
-    update(id, {
-      previewUrl: previewUrls.current.get(id),
-      status: 'uploading',
-      progress: 0,
-    })
+    update(id, { previewUrl: previewUrls.current.get(id) })
+    const [presigned] = await createProofPhotoUploads(
+      quoteId,
+      { count: 1, contentType: type },
+      signal,
+    )
+    update(id, { status: 'uploading', progress: 0 })
     const total = image.size + thumbnail.size
     const loaded = [0, 0]
     let shown = 0
@@ -149,14 +147,13 @@ export function useProofPhotoUploads(quoteId: string) {
   }
 
   async function process(
-    { upload, presigned }: Job,
+    upload: PhotoUpload,
     type: ProofPhotoType,
     signal: AbortSignal,
   ) {
     try {
       const uploadId =
-        upload.uploadId ??
-        (presigned && (await sendToStorage(upload, presigned, type, signal)))
+        upload.uploadId ?? (await sendToStorage(upload, type, signal))
       if (!uploadId) return
 
       update(upload.id, { status: 'confirming' })
@@ -171,29 +168,7 @@ export function useProofPhotoUploads(quoteId: string) {
   async function run(batch: PhotoUpload[]) {
     const { signal } = controller.current
     const type = await pickPhotoType()
-    const toSend = batch.filter(({ uploadId }) => !uploadId)
-    let presigned: ProofPhotoUpload[] = []
-
-    try {
-      if (toSend.length > 0) {
-        presigned = await createProofPhotoUploads(
-          quoteId,
-          { count: toSend.length, contentType: type },
-          signal,
-        )
-      }
-    } catch (error) {
-      for (const { id } of toSend) {
-        update(id, { status: 'failed', ...toFailure(error) })
-      }
-    }
-
-    const jobs = batch.flatMap((upload): Job[] => {
-      if (upload.uploadId) return [{ upload }]
-      const next = presigned.shift()
-      return next ? [{ upload, presigned: next }] : []
-    })
-    await runPool(jobs, (job) => process(job, type, signal))
+    await runPool(batch, (upload) => process(upload, type, signal))
     void queryClient.invalidateQueries({
       queryKey: queryKeys.proofPhotos.list(quoteId),
     })

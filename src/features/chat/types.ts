@@ -7,7 +7,7 @@ export type ChatParticipant = {
   role: Role
 }
 
-export type ChatQuoteStatus = 'CONFIRMED' | 'NOT_SELECTED' | 'PENDING'
+type ChatQuoteStatus = 'CONFIRMED' | 'NOT_SELECTED' | 'PENDING'
 
 export type ChatRoom = {
   chatRoomId: string

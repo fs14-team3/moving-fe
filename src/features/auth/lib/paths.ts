@@ -14,9 +14,9 @@ export function getLoginPath(role: Role, redirect: string) {
   return `${LOGIN_PATH[role]}?${new URLSearchParams({ redirect })}`
 }
 
-export const CHAT_LOGIN_PATH = '/chat-login'
+const CHAT_LOGIN_PATH = '/chat-login'
 
-export function getChatLoginPath(redirect: string) {
+function getChatLoginPath(redirect: string) {
   return `${CHAT_LOGIN_PATH}?${new URLSearchParams({ redirect })}`
 }
 

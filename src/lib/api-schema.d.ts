@@ -759,6 +759,29 @@ export interface paths {
     patch: operations['readNotification']
     trace?: never
   }
+  '/estimates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 이사 예상 비용
+     * @description 견적 요청 전에 이사 유형 · 날짜 · 출발지 · 도착지로 대략적인 예상 비용을 계산합니다.
+     *     거리는 카카오 로컬 API로 주소를 좌표로 바꾼 뒤 직선거리에 1.3을 곱해 구합니다.
+     *     유형별 기본료에 거리 요금을 더하고, 주말 · 공휴일이면 추가 비용을 붙입니다(겹치면 높은 비율 하나만 적용).
+     *     계산값의 ±15%를 만 원 단위로 반올림해 범위로 반환합니다.
+     */
+    get: operations['getMoveEstimate']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -770,6 +793,16 @@ export interface components {
      * @enum {string}
      */
     ServiceType: 'SMALL' | 'HOME' | 'OFFICE'
+    MoveEstimate: {
+      /** @description 예상 이동 거리 (km, 소수점 첫째 자리) */
+      distanceKm: number
+      /** @description 예상 비용 최솟값 (원, 만 원 단위) */
+      minPrice: number
+      /** @description 예상 비용 최댓값 (원, 만 원 단위) */
+      maxPrice: number
+      /** @description 적용된 추가 비용 사유. WEEKEND 주말, HOLIDAY 공휴일 */
+      surcharges: ('WEEKEND' | 'HOLIDAY')[]
+    }
     /** @description 시/도 줄임 명칭: 서울, 경기, 인천, 강원, 충북, 충남, 세종, 대전, 전북, 전남, 광주, 경북, 경남, 대구, 울산, 부산, 제주 */
     Region: string
     /** @enum {string} */
@@ -2715,6 +2748,55 @@ export interface operations {
       }
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
+    }
+  }
+  getMoveEstimate: {
+    parameters: {
+      query: {
+        moveType: components['schemas']['ServiceType']
+        /** @description 이사 날짜. 한국 시간 기준 오늘 또는 이후 */
+        moveDate: string
+        /** @description 출발지 주소. 끝의 괄호 참고 항목은 빼고 검색합니다. */
+        from: string
+        /** @description 도착지 주소. 끝의 괄호 참고 항목은 빼고 검색합니다. */
+        to: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 예상 비용 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoveEstimate']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `ADDRESS_NOT_FOUND`. 출발지나 도착지 주소로 좌표를 찾지 못한 경우 */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `SERVICE_UNAVAILABLE`. 서버에 카카오 REST API 키(`KAKAO_CLIENT_ID`)가 없거나 카카오 API 호출에 실패한 경우 */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
 }

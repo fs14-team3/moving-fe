@@ -107,4 +107,13 @@ export const queryKeys = {
     // GET /notifications/unread-count
     unreadCount: () => [...queryKeys.notifications.all, 'unreadCount'] as const,
   },
+
+  chats: {
+    all: ['chats'] as const,
+    // GET /chats
+    list: () => [...queryKeys.chats.all, 'list'] as const,
+    // GET /chats/{chatRoomId}
+    detail: (chatRoomId: string) =>
+      [...queryKeys.chats.all, 'detail', chatRoomId] as const,
+  },
 }

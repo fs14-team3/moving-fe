@@ -373,4 +373,13 @@ describe('AuthGuard', () => {
       '/profile/register',
     )
   })
+
+  it('비회원이 채팅 페이지에 접근하면 역할 선택 페이지로 보낸다', () => {
+    renderGuard('/chats/room-1?filter=recent', null)
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
+    expect(navigation.router.replace).toHaveBeenCalledWith(
+      '/chat-login?redirect=%2Fchats%2Froom-1%3Ffilter%3Drecent',
+    )
+  })
 })

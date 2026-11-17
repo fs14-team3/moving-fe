@@ -1,7 +1,10 @@
 import type { Me, Role } from '@/features/auth/types'
 
 export type RouteAccess =
-  'PUBLIC' | 'GUEST' | { role: Role; hasProfile: boolean }
+  | 'PUBLIC'
+  | 'GUEST'
+  | { role: Role; hasProfile: boolean }
+  | { roles: readonly Role[]; hasProfile: boolean }
 
 const ROUTE_ACCESS: Record<string, RouteAccess> = {
   '/login': 'GUEST',
@@ -17,6 +20,8 @@ const ROUTE_ACCESS: Record<string, RouteAccess> = {
   '/request': { role: 'CUSTOMER', hasProfile: true },
   '/my-quotes': { role: 'CUSTOMER', hasProfile: true },
   '/my-reviews': { role: 'CUSTOMER', hasProfile: true },
+  '/chat-login': 'GUEST',
+  '/chats': { roles: ['CUSTOMER', 'MOVER'], hasProfile: true },
 }
 
 const ROUTES = Object.keys(ROUTE_ACCESS).sort((a, b) => b.length - a.length)
@@ -33,5 +38,14 @@ export function getRouteAccess(pathname: string): RouteAccess {
 export function canAccess(access: RouteAccess, user: Me | null) {
   if (access === 'PUBLIC') return true
   if (access === 'GUEST') return !user
+
+  if ('roles' in access) {
+    return (
+      !!user &&
+      access.roles.includes(user.role) &&
+      user.hasProfile === access.hasProfile
+    )
+  }
+
   return user?.role === access.role && user.hasProfile === access.hasProfile
 }

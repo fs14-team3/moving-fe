@@ -64,7 +64,7 @@ function mockPhotos(
   vi.mocked(useProofPhotos).mockReturnValue({
     photos,
     maxCount,
-    canDelete: false,
+    canEdit: true,
     isPending: false,
     isLoadingError: false,
     isRefetchError: false,
@@ -117,6 +117,8 @@ describe('ProofPhotoSection', () => {
   })
 
   it('올라온 작업 사진과 장수를 보여준다', () => {
+    mockPhotos(PHOTOS, 100, { canEdit: false })
+
     render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     expect(useProofPhotos).toHaveBeenCalledWith('quote-1')
@@ -130,17 +132,28 @@ describe('ProofPhotoSection', () => {
   })
 
   it('사진이 없으면 안내 문구를 보여준다', () => {
-    mockPhotos([])
+    mockPhotos([], 100, { canEdit: false })
 
     render(<ProofPhotoSection quoteId="quote-1" emptyMessage="사진 없음" />)
 
     expect(screen.getByText('사진 없음')).toBeInTheDocument()
   })
 
+  it('올릴 수 있는데 사진이 없으면 올려 달라고 안내한다', () => {
+    mockPhotos([])
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="사진 없음" />)
+
+    expect(
+      screen.getByText('이사 현장 사진을 올려 주세요.'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '사진 올리기' })).toBeEnabled()
+  })
+
   it('사진을 고르면 한 번 더 확인한 뒤 올리기 시작한다', async () => {
     const user = userEvent.setup()
     const { container } = render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+      <ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />,
     )
     const files = photoFiles(3)
 
@@ -149,7 +162,7 @@ describe('ProofPhotoSection', () => {
     const dialog = screen.getByRole('dialog', { name: '작업 사진 올리기' })
     expect(dialog).toHaveTextContent('3장을 올릴까요?')
     expect(dialog).toHaveTextContent(
-      '고객님이 리뷰를 작성하면 삭제할 수 없어요.',
+      '고객님이 리뷰를 작성하면 올리거나 삭제할 수 없어요.',
     )
 
     await user.click(within(dialog).getByRole('button', { name: '올리기' }))
@@ -161,7 +174,7 @@ describe('ProofPhotoSection', () => {
     mockPhotos(PHOTOS, 4)
     const user = userEvent.setup()
     const { container } = render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+      <ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />,
     )
 
     await user.upload(fileInput(container), photoFiles(3))
@@ -186,9 +199,7 @@ describe('ProofPhotoSection', () => {
       isUploading: true,
     })
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     expect(screen.getByRole('button', { name: '사진 올리기' })).toBeDisabled()
     expect(screen.getByText('1장을 올리고 있어요.')).toBeInTheDocument()
@@ -204,9 +215,7 @@ describe('ProofPhotoSection', () => {
     })
     const user = userEvent.setup()
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
     expect(screen.getByText('1장을 올리지 못했어요.')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '모두 다시 시도' }))
@@ -240,7 +249,6 @@ describe('ProofPhotoSection', () => {
 
   it('삭제할 수 있으면 크게 본 사진을 확인 후 삭제하고 다음 사진을 보여준다', async () => {
     const user = userEvent.setup()
-    mockPhotos(PHOTOS, 100, { canDelete: true })
     deletion.mutate.mockImplementation((_id, { onSuccess, onSettled }) => {
       onSuccess()
       onSettled()
@@ -266,7 +274,7 @@ describe('ProofPhotoSection', () => {
 
   it('마지막 한 장을 삭제하면 크게 보기를 닫는다', async () => {
     const user = userEvent.setup()
-    mockPhotos(PHOTOS.slice(0, 1), 100, { canDelete: true })
+    mockPhotos(PHOTOS.slice(0, 1))
     deletion.mutate.mockImplementation((_id, { onSuccess, onSettled }) => {
       onSuccess()
       onSettled()
@@ -286,6 +294,7 @@ describe('ProofPhotoSection', () => {
 
   it('삭제할 수 없으면 크게 보기에 삭제 버튼이 없다', async () => {
     const user = userEvent.setup()
+    mockPhotos(PHOTOS, 100, { canEdit: false })
 
     render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
     await user.click(
@@ -306,9 +315,7 @@ describe('ProofPhotoSection', () => {
       uploadedIds: ['b'],
     })
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     expect(screen.getByText('1장을 올렸어요.')).toBeVisible()
     const tile = (name: string) =>
@@ -326,9 +333,7 @@ describe('ProofPhotoSection', () => {
       failed: [failed],
     })
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     expect(screen.queryByText('1장을 올렸어요.')).not.toBeInTheDocument()
     expect(screen.getByText('1장을 올리지 못했어요.')).toBeVisible()
@@ -347,9 +352,7 @@ describe('ProofPhotoSection', () => {
       isUploading: true,
     })
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     expect(screen.getByText('다시 시도하는 중')).toBeVisible()
   })
@@ -377,9 +380,7 @@ describe('ProofPhotoSection', () => {
     })
     const user = userEvent.setup()
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     expect(
       screen.getByText('작업 사진을 새로 불러오지 못했어요.'),
@@ -398,7 +399,7 @@ describe('ProofPhotoSection', () => {
 
   it('고른 사진, 올리는 중인 사진, 다시 올릴 수 있는 사진이 있으면 나가기 전에 묻는다', async () => {
     const { container, rerender } = render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+      <ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />,
     )
     expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
 
@@ -414,9 +415,7 @@ describe('ProofPhotoSection', () => {
       uploads: [failedUpload()],
       failed: [failedUpload()],
     })
-    rerender(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    rerender(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
     expect(useLeaveGuard).toHaveBeenLastCalledWith(true)
 
     const unreadable = { ...failedUpload(), retryable: false }
@@ -425,9 +424,7 @@ describe('ProofPhotoSection', () => {
       uploads: [unreadable],
       failed: [unreadable],
     })
-    rerender(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    rerender(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
     expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
   })
 
@@ -435,9 +432,7 @@ describe('ProofPhotoSection', () => {
     vi.mocked(useLeaveGuard).mockReturnValue({ ...leaveGuard, isOpen: true })
     const user = userEvent.setup()
 
-    render(
-      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
-    )
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
 
     const dialog = screen.getByRole('dialog', { name: '페이지를 나갈까요?' })
     expect(dialog).toHaveTextContent('아직 올리지 못한 사진이 있어요.')

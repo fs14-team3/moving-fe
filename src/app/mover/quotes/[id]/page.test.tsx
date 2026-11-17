@@ -27,17 +27,8 @@ vi.mock('@/features/sent-quotes/hooks/useSentQuote', () => ({
 }))
 
 vi.mock('@/components/proof-photos/ProofPhotoSection', () => ({
-  default: ({
-    canUpload,
-    emptyMessage,
-  }: {
-    canUpload?: boolean
-    emptyMessage: string
-  }) => (
-    <section aria-label="작업 사진">
-      {canUpload && '사진 올리기'}
-      {emptyMessage}
-    </section>
+  default: ({ emptyMessage }: { emptyMessage: string }) => (
+    <section aria-label="작업 사진">{emptyMessage}</section>
   ),
 }))
 
@@ -110,7 +101,7 @@ describe('SentQuoteDetailPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('이사일이 지난 확정 견적은 작업 사진을 올릴 수 있다', () => {
+  it('이사일이 지난 확정 견적은 올릴 수 없을 때 리뷰가 작성되었다고 안내한다', () => {
     vi.mocked(useSentQuote).mockReturnValue(
       createQuoteResult({ quote: confirmedQuote('2026-11-01') }),
     )
@@ -118,7 +109,7 @@ describe('SentQuoteDetailPage', () => {
     render(<SentQuoteDetailPage />)
 
     expect(screen.getByRole('region', { name: '작업 사진' })).toHaveTextContent(
-      '사진 올리기',
+      '고객님이 리뷰를 작성해 작업 사진을 올릴 수 없어요.',
     )
   })
 
@@ -129,9 +120,7 @@ describe('SentQuoteDetailPage', () => {
 
     render(<SentQuoteDetailPage />)
 
-    const section = screen.getByRole('region', { name: '작업 사진' })
-    expect(section).not.toHaveTextContent('사진 올리기')
-    expect(section).toHaveTextContent(
+    expect(screen.getByRole('region', { name: '작업 사진' })).toHaveTextContent(
       '이사일 다음 날부터 작업 사진을 올릴 수 있어요.',
     )
   })

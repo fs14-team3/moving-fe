@@ -42,7 +42,6 @@ export default function SentQuoteDetailPage() {
   if (!quote) return null
 
   const isConfirmed = quote.status === 'CONFIRMED'
-  const canUpload = isConfirmed && isMoveCompleted(quote.moveRequest)
 
   return (
     <div className="bg-gray-50">
@@ -71,10 +70,9 @@ export default function SentQuoteDetailPage() {
           {isConfirmed && (
             <ProofPhotoSection
               quoteId={quote.id}
-              canUpload={canUpload}
               emptyMessage={
-                canUpload
-                  ? '이사 현장 사진을 올려 주세요.'
+                isMoveCompleted(quote.moveRequest)
+                  ? '고객님이 리뷰를 작성해 작업 사진을 올릴 수 없어요.'
                   : '이사일 다음 날부터 작업 사진을 올릴 수 있어요.'
               }
             />

@@ -31,14 +31,12 @@ function UploadedMark() {
 
 type ProofPhotoSectionProps = {
   quoteId: string
-  canUpload?: boolean
   emptyMessage: string
   className?: string
 }
 
 export default function ProofPhotoSection({
   quoteId,
-  canUpload = false,
   emptyMessage,
   className,
 }: ProofPhotoSectionProps) {
@@ -50,7 +48,7 @@ export default function ProofPhotoSection({
   const {
     photos,
     maxCount,
-    canDelete,
+    canEdit,
     isPending,
     isLoadingError,
     isRefetchError,
@@ -111,7 +109,11 @@ export default function ProofPhotoSection({
     }
 
     if (photos.length === 0 && uploads.length === 0) {
-      return <p className="text-base leading-6 text-gray-400">{emptyMessage}</p>
+      return (
+        <p className="text-base leading-6 text-gray-400">
+          {canEdit ? '이사 현장 사진을 올려 주세요.' : emptyMessage}
+        </p>
+      )
     }
 
     return (
@@ -171,7 +173,7 @@ export default function ProofPhotoSection({
           )}
         </div>
 
-        {canUpload && (
+        {canEdit && (
           <>
             <input
               ref={inputRef}
@@ -259,7 +261,7 @@ export default function ProofPhotoSection({
       >
         {selected.length}장을 올릴까요?
         <br />
-        고객님이 리뷰를 작성하면 삭제할 수 없어요.
+        고객님이 리뷰를 작성하면 올리거나 삭제할 수 없어요.
       </ConfirmModal>
 
       <ConfirmModal
@@ -292,7 +294,7 @@ export default function ProofPhotoSection({
         index={viewing}
         onChange={setViewing}
         onClose={() => setViewing(null)}
-        onDelete={canDelete ? (photo) => setDeletingId(photo.id) : undefined}
+        onDelete={canEdit ? (photo) => setDeletingId(photo.id) : undefined}
       />
     </section>
   )

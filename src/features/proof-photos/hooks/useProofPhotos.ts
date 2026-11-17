@@ -18,7 +18,7 @@ export function useProofPhotos(quoteId: string) {
   return {
     photos: data?.items ?? [],
     maxCount: data?.maxCount ?? 0,
-    canDelete: data?.canDelete ?? false,
+    canEdit: data?.canEdit ?? false,
     isPending,
     isLoadingError,
     isRefetchError,

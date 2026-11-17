@@ -643,7 +643,7 @@ export interface paths {
     }
     /**
      * 작업 사진 목록
-     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canDelete`가 `true`일 때만 사진 삭제 버튼을 보여 줍니다.
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canEdit`이 `true`일 때만 사진 올리기와 삭제 버튼을 보여 줍니다.
      */
     get: operations['listProofPhotos']
     put?: never
@@ -670,7 +670,7 @@ export interface paths {
     post?: never
     /**
      * 작업 사진 삭제
-     * @description 기사님이 본인 견적의 작업 사진을 삭제합니다. 일반 유저가 리뷰를 작성한 뒤에는 삭제할 수 없습니다. 사진과 썸네일 파일도 S3에서 함께 지웁니다.
+     * @description 기사님이 본인 견적의 작업 사진을 삭제합니다. 일반 유저가 리뷰를 작성한 뒤에는 올리기와 마찬가지로 삭제할 수 없습니다. 사진과 썸네일 파일도 S3에서 함께 지웁니다.
      */
     delete: operations['deleteProofPhoto']
     options?: never
@@ -689,7 +689,7 @@ export interface paths {
     put?: never
     /**
      * 작업 사진 업로드 정보 발급
-     * @description 기사님이 본인의 확정된 견적에 올릴 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 받을 수 있으며, 이미 확정된 사진과 합쳐 100장을 넘을 수 없습니다.
+     * @description 기사님이 본인의 확정된 견적에 올릴 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 일반 유저가 리뷰를 작성하기 전까지 받을 수 있으며, 이미 확정된 사진과 합쳐 100장을 넘을 수 없습니다.
      *
      *     사진마다 `image`(긴 변 약 2000px)와 `thumbnail`(긴 변 약 300px)을 브라우저에서 WebP나 JPEG로 다시 인코딩해 각각 올립니다. 다시 인코딩해야 위치 정보 등 EXIF 메타데이터가 지워지므로 원본 파일을 그대로 올리지 않습니다. `contentType`에는 인코딩한 형식을 보내며 사진과 썸네일 모두 이 형식이어야 합니다. `.jpg` 파일도 `image/jpeg`입니다. Safari처럼 canvas가 WebP로 인코딩하지 못하는 브라우저에서는 `image/jpeg`를 씁니다. `url`로 `multipart/form-data` POST를 보내며, `fields`를 그대로 담고 파일은 마지막 `file` 필드에 넣습니다. S3가 `Content-Type`이 `contentType`과 같은지, 크기(사진 5MB, 썸네일 512KB 이하), 발급 후 10분 이내인지 확인합니다. 두 파일을 모두 올린 뒤 `POST /quotes/{quoteId}/proof-photos`로 확정합니다.
      */
@@ -992,10 +992,10 @@ export interface components {
       /** @example 100 */
       maxCount: number
       /**
-       * @description 호출자가 견적을 보낸 기사님이고 리뷰가 아직 없으면 `true`
+       * @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지)
        * @example true
        */
-      canDelete: boolean
+      canEdit: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -2744,7 +2744,7 @@ export interface operations {
         }
       }
       404: components['responses']['NotFound']
-      /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림) 또는 `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정) */
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림), `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정) 또는 `PROOF_PHOTO_REVIEWED` (업로드 정보를 받은 뒤 리뷰가 작성됨) */
       409: {
         headers: {
           [name: string]: unknown
@@ -2851,7 +2851,7 @@ export interface operations {
         }
       }
       404: components['responses']['NotFound']
-      /** @description `PROOF_PHOTO_LIMIT_REACHED` (확정된 사진과 합쳐 100장을 넘음) */
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (확정된 사진과 합쳐 100장을 넘음) 또는 `PROOF_PHOTO_REVIEWED` (리뷰가 작성된 견적) */
       409: {
         headers: {
           [name: string]: unknown

@@ -47,7 +47,7 @@ function renderUploads() {
   const queryClient = new QueryClient()
   queryClient.setQueryData<ProofPhotoList>(
     queryKeys.proofPhotos.list('quote-1'),
-    { items: [], maxCount: 100, canDelete: true },
+    { items: [], maxCount: 100, canEdit: true },
   )
   const view = renderHook(() => useProofPhotoUploads('quote-1'), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -174,7 +174,7 @@ describe('useProofPhotoUploads', () => {
 
     act(() => result.current.start(files(1)))
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
-    finishStaleFetch({ items: [], maxCount: 100, canDelete: true })
+    finishStaleFetch({ items: [], maxCount: 100, canEdit: true })
     await new Promise((resolve) => setTimeout(resolve))
 
     expect(list()?.items.map(({ id }) => id)).toEqual(['photo-a'])
@@ -316,9 +316,12 @@ describe('useProofPhotoUploads', () => {
     expect(confirmProofPhoto).not.toHaveBeenCalled()
   })
 
-  it('최대 장수를 넘으면 다시 시도할 수 없게 실패한다', async () => {
+  it.each([
+    ['PROOF_PHOTO_LIMIT_REACHED', '최대 장수를 넘었어요'],
+    ['PROOF_PHOTO_REVIEWED', '리뷰가 작성되어 올릴 수 없어요'],
+  ])('%s면 다시 시도할 수 없게 실패한다', async (code, message) => {
     vi.mocked(createProofPhotoUploads).mockRejectedValue(
-      new ApiError('PROOF_PHOTO_LIMIT_REACHED', 'Limit', 409),
+      new ApiError(code, 'Conflict', 409),
     )
     const { result } = renderUploads()
 
@@ -326,7 +329,7 @@ describe('useProofPhotoUploads', () => {
 
     await waitFor(() => expect(result.current.failed).toHaveLength(2))
     expect(result.current.failed[0]).toMatchObject({
-      error: '최대 장수를 넘었어요',
+      error: message,
       retryable: false,
     })
     expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)

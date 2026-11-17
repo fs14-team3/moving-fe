@@ -31,8 +31,8 @@ vi.mock('@/components/share/KakaoScript', () => ({
 }))
 
 vi.mock('@/components/proof-photos/ProofPhotoSection', () => ({
-  default: ({ canUpload }: { canUpload?: boolean }) => (
-    <section aria-label="작업 사진">{canUpload && '사진 올리기'}</section>
+  default: ({ emptyMessage }: { emptyMessage: string }) => (
+    <section aria-label="작업 사진">{emptyMessage}</section>
   ),
 }))
 
@@ -299,7 +299,7 @@ describe('QuoteDetailPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('확정된 견적은 기사님이 올린 작업 사진을 볼 수만 있게 보여준다', () => {
+  it('확정된 견적은 기사님이 올린 작업 사진을 보여준다', () => {
     vi.mocked(useQuoteDetail).mockReturnValue(
       createQuoteResult({
         quote: { ...MOCK_QUOTE_DETAIL, status: 'CONFIRMED' },
@@ -308,8 +308,9 @@ describe('QuoteDetailPage', () => {
 
     render(<QuoteDetail />)
 
-    const section = screen.getByRole('region', { name: '작업 사진' })
-    expect(section).not.toHaveTextContent('사진 올리기')
+    expect(screen.getByRole('region', { name: '작업 사진' })).toHaveTextContent(
+      '기사님이 올린 작업 사진이 아직 없어요.',
+    )
   })
 
   it('확정되지 않은 견적은 작업 사진을 보여 주지 않는다', () => {

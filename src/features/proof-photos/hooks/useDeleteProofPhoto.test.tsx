@@ -26,7 +26,7 @@ const LIST: ProofPhotoList = {
     createdAt: '2026-11-16T00:00:00.000Z',
   })),
   maxCount: 100,
-  canDelete: true,
+  canEdit: true,
 }
 
 function renderUseDeleteProofPhoto() {

@@ -16,8 +16,9 @@ export function useDeleteProofPhoto(quoteId: string) {
 
   return useMutation({
     mutationFn: (photoId: string) => deleteProofPhoto(quoteId, photoId),
-    onSuccess: (_data, photoId) => {
+    onSuccess: async (_data, photoId) => {
       toast.success(TOAST_MESSAGES.proofPhoto.deleteSuccess)
+      await queryClient.cancelQueries({ queryKey })
       queryClient.setQueryData<ProofPhotoList>(
         queryKey,
         (list) =>

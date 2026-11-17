@@ -68,6 +68,30 @@ describe('useDeleteProofPhoto', () => {
     expect(invalidateQueries).not.toHaveBeenCalled()
   })
 
+  it('삭제 전에 시작한 목록 조회가 늦게 끝나도 지운 사진을 되살리지 않는다', async () => {
+    vi.mocked(deleteProofPhoto).mockResolvedValue()
+    const { result, queryClient } = renderUseDeleteProofPhoto()
+    let finishStaleFetch: (list: ProofPhotoList) => void = () => {}
+    void queryClient
+      .fetchQuery({
+        queryKey,
+        queryFn: () =>
+          new Promise<ProofPhotoList>((resolve) => {
+            finishStaleFetch = resolve
+          }),
+      })
+      .catch(() => {})
+
+    act(() => result.current.mutate('a'))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    finishStaleFetch(LIST)
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(queryClient.getQueryData<ProofPhotoList>(queryKey)?.items).toEqual([
+      LIST.items[1],
+    ])
+  })
+
   it.each([
     ['PROOF_PHOTO_REVIEWED', 409, TOAST_MESSAGES.proofPhoto.deleteReviewed],
     ['NOT_FOUND', 404, TOAST_MESSAGES.proofPhoto.deleteFailed],

@@ -5,6 +5,7 @@ import type {
   Notification,
   NotificationType,
 } from '@/features/notifications/api'
+import { getNotificationHref } from '@/features/notifications/link'
 import { toMessageParts } from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
@@ -13,6 +14,7 @@ import { useDismiss } from '@/hooks/useDismiss'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
 import { LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   useCallback,
   useEffect,
@@ -170,19 +172,39 @@ export default function NotificationMenu({ role }: { role: Role }) {
         ref={listRef}
         className="max-h-90 divide-y divide-line-200 overflow-y-auto px-2 md:max-h-100 md:px-4"
       >
-        {notifications.map((notification) => (
-          <li key={notification.id} className="px-4 py-4 md:px-6">
-            <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-              <NotificationMessage notification={notification} role={role} />
-            </p>
-            <time
-              dateTime={notification.createdAt}
-              className="mt-1 block text-xs text-gray-300 md:text-sm"
-            >
-              {formatTimeAgo(notification.createdAt)}
-            </time>
-          </li>
-        ))}
+        {notifications.map((notification) => {
+          const href = getNotificationHref(notification, role)
+          const content = (
+            <>
+              <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+                <NotificationMessage notification={notification} role={role} />
+              </p>
+              <time
+                dateTime={notification.createdAt}
+                className="mt-1 block text-xs text-gray-300 md:text-sm"
+              >
+                {formatTimeAgo(notification.createdAt)}
+              </time>
+            </>
+          )
+
+          return (
+            <li key={notification.id}>
+              {/* 누르면 닫으면서 보여 준 알림을 읽음 처리하고 관련 페이지로 이동한다. */}
+              {href ? (
+                <Link
+                  href={href}
+                  onClick={close}
+                  className="block px-4 py-4 transition-colors hover:bg-background-200 md:px-6"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className="px-4 py-4 md:px-6">{content}</div>
+              )}
+            </li>
+          )
+        })}
         {hasNextPage && (
           <li ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage ? (

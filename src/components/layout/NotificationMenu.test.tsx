@@ -238,6 +238,63 @@ describe('NotificationMenu', () => {
     ).toBeNull()
   })
 
+  it('알림을 누르면 닫으면서 읽음 처리하고 관련 페이지로 이동한다', async () => {
+    mockPage([
+      createNotification({ id: '1', quoteId: 'quote-1' }),
+      createNotification({ id: '2', message: '두 번째 알림' }),
+    ])
+    const { user, open } = renderMenu()
+    await open()
+
+    const link = await within(getPanel()).findByRole('link', {
+      name: /김코드 기사님의 소형이사 견적이 도착했어요/,
+    })
+    expect(link).toHaveAttribute('href', '/my-quotes/quote-1')
+
+    await user.click(link)
+
+    expect(queryPanel()).toBeNull()
+    // 누른 알림과 함께 패널에 보여 준 알림을 읽음 처리한다.
+    await waitFor(() => expect(mockRead).toHaveBeenCalledTimes(2))
+    expect(mockRead).toHaveBeenCalledWith('1')
+    expect(mockRead).toHaveBeenCalledWith('2')
+  })
+
+  it('기사님은 받은 요청 알림을 누르면 받은 요청 페이지로 이동한다', async () => {
+    mockPage([
+      createNotification({
+        id: '1',
+        type: 'NEW_REQUEST',
+        message: '김고객 고객님의 소형이사 견적 요청이 도착했어요',
+      }),
+    ])
+    const { open } = renderMenu('MOVER')
+    await open()
+
+    expect(
+      await within(getPanel()).findByRole('link', {
+        name: /김고객 고객님의 소형이사 견적 요청이 도착했어요/,
+      }),
+    ).toHaveAttribute('href', '/mover/requests')
+  })
+
+  it('이동할 곳이 없는 알림은 링크로 만들지 않는다', async () => {
+    mockPage([
+      createNotification({
+        id: '1',
+        type: 'MOVE_DAY',
+        message: '내일은 이사 예정일이에요',
+      }),
+    ])
+    const { open } = renderMenu()
+    await open()
+
+    expect(
+      await within(getPanel()).findByText('내일은 이사 예정일이에요'),
+    ).toBeInTheDocument()
+    expect(within(getPanel()).queryByRole('link')).toBeNull()
+  })
+
   it('읽지 않은 알림을 보여 주지 않았으면 닫아도 읽음 처리하지 않는다', async () => {
     mockPage([])
     const { user, open } = renderMenu()

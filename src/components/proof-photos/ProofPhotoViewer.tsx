@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect } from 'react'
+import Button from '@/components/common/button/Button'
 import Modal from '@/components/common/modal/Modal'
 import type { ProofPhoto } from '@/features/proof-photos/api'
 import { cn } from '@/lib/cn'
@@ -79,19 +80,24 @@ export default function ProofPhotoViewer({
               <ChevronRight aria-hidden="true" className="size-6" />
             </button>
           </div>
-          <div className="relative mt-4 flex items-center justify-center">
+          <div
+            className={cn(
+              'relative mt-4 flex items-center justify-center',
+              onDelete && 'h-10 lg:h-11',
+            )}
+          >
             <p className="text-sm font-medium text-gray-500 md:text-base">
               {index + 1} / {photos.length}
             </p>
             {onDelete && (
-              <button
-                type="button"
+              <Button
+                variant="outlined"
                 onClick={() => onDelete(photo)}
-                className="absolute right-0 flex h-10 cursor-pointer items-center gap-1 text-sm font-semibold text-red-500 md:text-base"
+                icon={<Trash2 aria-hidden="true" className="size-4" />}
+                className="absolute right-0 h-10 w-auto gap-1 rounded-xl border-red-500 px-4 text-sm text-red-500 hover:bg-red-500/10 active:bg-red-500/15 lg:h-11 lg:w-auto lg:text-base"
               >
-                <Trash2 aria-hidden="true" className="size-4 md:size-5" />
                 삭제
-              </button>
+              </Button>
             )}
           </div>
         </>

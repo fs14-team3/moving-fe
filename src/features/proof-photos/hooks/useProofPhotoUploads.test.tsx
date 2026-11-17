@@ -115,6 +115,29 @@ describe('useProofPhotoUploads', () => {
     ).toEqual(['photo-a', 'photo-b'])
   })
 
+  it('올린 사진을 모아 두었다가 다 올리고 잠시 뒤 비우고, 새로 올리면 처음부터 모은다', async () => {
+    vi.useFakeTimers()
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(2)))
+    await advance(0)
+
+    expect(result.current.isUploading).toBe(false)
+    expect([...result.current.uploadedIds].sort()).toEqual([
+      'photo-a',
+      'photo-b',
+    ])
+
+    await advance(3999)
+    expect(result.current.uploadedIds).toHaveLength(2)
+    await advance(1)
+    expect(result.current.uploadedIds).toHaveLength(0)
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    expect(result.current.uploadedIds).toEqual(['photo-c'])
+  })
+
   it('동시에 올리는 사진만 업로드 정보를 받고 나머지는 차례가 오면 받는다', async () => {
     let openGate = () => {}
     const gate = new Promise<void>((resolve) => {

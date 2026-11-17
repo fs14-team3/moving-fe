@@ -1,6 +1,6 @@
 'use client'
 
-import { ImagePlus } from 'lucide-react'
+import { Check, CircleCheck, ImagePlus } from 'lucide-react'
 import Image from 'next/image'
 import { useId, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
@@ -14,6 +14,19 @@ import { useProofPhotoUploads } from '@/features/proof-photos/hooks/useProofPhot
 import { useProofPhotos } from '@/features/proof-photos/hooks/useProofPhotos'
 import { useLeaveGuard } from '@/hooks/useLeaveGuard'
 import { cn } from '@/lib/cn'
+
+function UploadedMark() {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 flex animate-upload-done items-center justify-center bg-black-500/40"
+    >
+      <span className="flex size-10 animate-upload-check items-center justify-center rounded-full bg-primary-400 text-gray-50 motion-reduce:animate-none">
+        <Check strokeWidth={3} className="size-6" />
+      </span>
+    </span>
+  )
+}
 
 type ProofPhotoSectionProps = {
   quoteId: string
@@ -41,7 +54,7 @@ export default function ProofPhotoSection({
     refetch,
     isRefetching,
   } = useProofPhotos(quoteId)
-  const { uploads, isUploading, failed, start, retry, remove } =
+  const { uploads, uploadedIds, isUploading, failed, start, retry, remove } =
     useProofPhotoUploads(quoteId)
 
   const remaining = maxCount - photos.length - uploads.length
@@ -105,6 +118,7 @@ export default function ProofPhotoSection({
                 className="object-cover"
               />
             </button>
+            {uploadedIds.includes(photo.id) && <UploadedMark />}
           </li>
         ))}
         {uploads.map((upload) => (
@@ -172,6 +186,12 @@ export default function ProofPhotoSection({
         {isUploading && (
           <p className="pb-3 text-sm font-medium text-black-200 md:text-base">
             {uploads.length - failed.length}장을 올리고 있어요.
+          </p>
+        )}
+        {!isUploading && failed.length === 0 && uploadedIds.length > 0 && (
+          <p className="flex items-center gap-1 pb-3 text-sm font-medium text-primary-400 md:text-base">
+            <CircleCheck aria-hidden="true" className="size-4 md:size-5" />
+            {uploadedIds.length}장을 올렸어요.
           </p>
         )}
         {!isUploading && failed.length > 0 && (

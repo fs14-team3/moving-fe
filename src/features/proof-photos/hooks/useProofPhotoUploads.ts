@@ -17,6 +17,7 @@ import { queryKeys } from '@/lib/queryKeys'
 
 const CONCURRENCY = 3
 const RETRY_DELAYS = [1000, 3000]
+const DONE_MESSAGE_MS = 4000
 
 export type PhotoUpload = {
   id: number
@@ -59,6 +60,7 @@ async function runPool<T>(items: T[], run: (item: T) => Promise<void>) {
 export function useProofPhotoUploads(quoteId: string) {
   const queryClient = useQueryClient()
   const [uploads, setUploads] = useState<PhotoUpload[]>([])
+  const [uploadedIds, setUploadedIds] = useState<string[]>([])
   const nextId = useRef(0)
   const previewUrls = useRef(new Map<number, string>())
   const controller = useRef(new AbortController())
@@ -75,6 +77,12 @@ export function useProofPhotoUploads(quoteId: string) {
       urls.forEach((url) => URL.revokeObjectURL(url))
     }
   }, [])
+
+  useEffect(() => {
+    if (isUploading || uploadedIds.length === 0) return
+    const timer = setTimeout(() => setUploadedIds([]), DONE_MESSAGE_MS)
+    return () => clearTimeout(timer)
+  }, [isUploading, uploadedIds.length])
 
   function update(id: number, patch: Partial<PhotoUpload>) {
     setUploads((prev) =>
@@ -162,7 +170,9 @@ export function useProofPhotoUploads(quoteId: string) {
         if (!uploadId) return
 
         update(upload.id, { status: 'confirming' })
-        await addToList(await confirmProofPhoto(quoteId, uploadId, signal))
+        const photo = await confirmProofPhoto(quoteId, uploadId, signal)
+        setUploadedIds((prev) => [...prev, photo.id])
+        await addToList(photo)
         remove(upload.id)
         return
       } catch (error) {
@@ -196,6 +206,7 @@ export function useProofPhotoUploads(quoteId: string) {
       progress: 0,
     }))
     setUploads((prev) => [...prev, ...added])
+    setUploadedIds([])
     void run(added)
   }
 
@@ -209,6 +220,7 @@ export function useProofPhotoUploads(quoteId: string) {
 
   return {
     uploads,
+    uploadedIds,
     isUploading,
     failed,
     start,

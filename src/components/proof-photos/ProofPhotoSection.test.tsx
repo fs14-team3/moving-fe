@@ -39,6 +39,7 @@ const PHOTOS = ['a', 'b'].map((id) => ({
 
 const uploads = {
   uploads: [] as PhotoUpload[],
+  uploadedIds: [] as string[],
   isUploading: false,
   failed: [] as PhotoUpload[],
   start: vi.fn(),
@@ -222,6 +223,40 @@ describe('ProofPhotoSection', () => {
     expect(
       within(dialog).getByRole('img', { name: '작업 사진 2' }),
     ).toBeInTheDocument()
+  })
+
+  it('다 올리면 올린 장수를 알리고 방금 올린 사진에 완료 표시를 한다', () => {
+    vi.mocked(useProofPhotoUploads).mockReturnValue({
+      ...uploads,
+      uploadedIds: ['b'],
+    })
+
+    render(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+
+    expect(screen.getByText('1장을 올렸어요.')).toBeVisible()
+    const tile = (name: string) =>
+      screen.getByRole('button', { name }).parentElement
+    expect(tile('작업 사진 1 크게 보기')?.querySelector('svg')).toBeNull()
+    expect(tile('작업 사진 2 크게 보기')?.querySelector('svg')).not.toBeNull()
+  })
+
+  it('올리지 못한 사진이 있으면 완료 문구 대신 실패를 알린다', () => {
+    const failed = failedUpload()
+    vi.mocked(useProofPhotoUploads).mockReturnValue({
+      ...uploads,
+      uploads: [failed],
+      uploadedIds: ['b'],
+      failed: [failed],
+    })
+
+    render(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+
+    expect(screen.queryByText('1장을 올렸어요.')).not.toBeInTheDocument()
+    expect(screen.getByText('1장을 올리지 못했어요.')).toBeVisible()
   })
 
   it('자동으로 다시 올리는 중인 사진은 상태를 보여준다', () => {

@@ -47,7 +47,7 @@ function renderUploads() {
   const queryClient = new QueryClient()
   queryClient.setQueryData<ProofPhotoList>(
     queryKeys.proofPhotos.list('quote-1'),
-    { items: [], maxCount: 100 },
+    { items: [], maxCount: 100, canDelete: true },
   )
   const view = renderHook(() => useProofPhotoUploads('quote-1'), {
     wrapper: ({ children }: { children: ReactNode }) => (
@@ -174,7 +174,7 @@ describe('useProofPhotoUploads', () => {
 
     act(() => result.current.start(files(1)))
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
-    finishStaleFetch({ items: [], maxCount: 100 })
+    finishStaleFetch({ items: [], maxCount: 100, canDelete: true })
     await new Promise((resolve) => setTimeout(resolve))
 
     expect(list()?.items.map(({ id }) => id)).toEqual(['photo-a'])

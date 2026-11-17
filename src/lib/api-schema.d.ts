@@ -643,7 +643,7 @@ export interface paths {
     }
     /**
      * 작업 사진 목록
-     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다.
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canDelete`가 `true`일 때만 사진 삭제 버튼을 보여 줍니다.
      */
     get: operations['listProofPhotos']
     put?: never
@@ -653,6 +653,26 @@ export interface paths {
      */
     post: operations['confirmProofPhoto']
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/proof-photos/{photoId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * 작업 사진 삭제
+     * @description 기사님이 본인 견적의 작업 사진을 삭제합니다. 일반 유저가 리뷰를 작성한 뒤에는 삭제할 수 없습니다. 사진과 썸네일 파일도 S3에서 함께 지웁니다.
+     */
+    delete: operations['deleteProofPhoto']
     options?: never
     head?: never
     patch?: never
@@ -971,6 +991,11 @@ export interface components {
       items: components['schemas']['ProofPhoto'][]
       /** @example 100 */
       maxCount: number
+      /**
+       * @description 호출자가 견적을 보낸 기사님이고 리뷰가 아직 없으면 `true`
+       * @example true
+       */
+      canDelete: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -1461,6 +1486,7 @@ export interface components {
     MoverIdPath: string
     RequestIdPath: string
     QuoteIdPath: string
+    PhotoIdPath: string
     /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
     Cursor: string
     Limit: number
@@ -2719,6 +2745,57 @@ export interface operations {
       }
       404: components['responses']['NotFound']
       /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림) 또는 `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  deleteProofPhoto: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+        photoId: components['parameters']['PhotoIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 삭제 완료. 응답 본문 없음. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인 견적의 사진이 아니거나 이미 삭제됨 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `PROOF_PHOTO_REVIEWED`. 리뷰가 작성된 견적의 사진은 삭제할 수 없습니다. */
       409: {
         headers: {
           [name: string]: unknown

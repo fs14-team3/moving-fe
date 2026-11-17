@@ -10,9 +10,11 @@ import { LOGIN_PATH, SIGNUP_PATH } from '@/features/auth/lib/paths'
 import type { Role } from '@/features/auth/types'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import {
+  bindPhoneInput,
   getEmailError,
   getNameError,
   getNewPasswordError,
+  formatPhone,
   getPasswordConfirmError,
   getPhoneError,
   toPhoneDigits,
@@ -45,10 +47,11 @@ export default function SignupForm({ role }: { role: Role }) {
 
   const name = values.name.trim()
   const email = values.email.trim()
+  const phone = toPhoneDigits(values.phone)
   const errors: FieldErrors = {
     name: getNameError(name),
     email: getEmailError(email),
-    phone: getPhoneError(values.phone),
+    phone: getPhoneError(phone),
     password: getNewPasswordError(values.password),
     passwordConfirm: getPasswordConfirmError(
       values.password,
@@ -87,7 +90,7 @@ export default function SignupForm({ role }: { role: Role }) {
             role,
             name,
             email,
-            phone: values.phone,
+            phone,
             password: values.password,
           })
         }
@@ -112,7 +115,8 @@ export default function SignupForm({ role }: { role: Role }) {
           inputMode="numeric"
           autoComplete="tel-national"
           placeholder="숫자만 입력해 주세요"
-          {...fieldProps('phone', toPhoneDigits)}
+          {...fieldProps('phone', formatPhone)}
+          ref={bindPhoneInput}
         />
         <AuthTextField
           label="비밀번호"

@@ -1,4 +1,4 @@
-import { useId, type ChangeEvent, type ComponentProps } from 'react'
+import { useId, type ChangeEvent, type ComponentProps, type Ref } from 'react'
 import Input from '@/components/common/input/Input'
 import TextArea from '@/components/common/input/TextArea'
 import ProfileField from '@/components/profile/ProfileField'
@@ -16,6 +16,7 @@ type ProfileTextFieldProps = {
   error?: string
   onChange: (value: string) => void
   onBlur: () => void
+  ref?: Ref<HTMLInputElement>
 }
 
 const FULL_WIDTH = 'w-full lg:w-full'
@@ -25,6 +26,7 @@ export default function ProfileTextField({
   required = false,
   multiline = false,
   onChange,
+  ref,
   ...rest
 }: ProfileTextFieldProps) {
   const id = useId()
@@ -39,7 +41,11 @@ export default function ProfileTextField({
 
   return (
     <ProfileField label={label} htmlFor={id} required={required}>
-      {multiline ? <TextArea {...fieldProps} /> : <Input {...fieldProps} />}
+      {multiline ? (
+        <TextArea {...fieldProps} />
+      ) : (
+        <Input {...fieldProps} ref={ref} />
+      )}
     </ProfileField>
   )
 }

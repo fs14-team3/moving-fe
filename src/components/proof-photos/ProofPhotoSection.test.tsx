@@ -272,6 +272,23 @@ describe('ProofPhotoSection', () => {
     expect(within(viewer).getByText('1 / 2')).toBeInTheDocument()
   })
 
+  it('삭제를 확인하는 동안에는 방향키로 사진을 넘기지 않는다', async () => {
+    const user = userEvent.setup()
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
+    await user.click(
+      screen.getByRole('button', { name: '작업 사진 1 크게 보기' }),
+    )
+    const viewer = screen.getByRole('dialog', { name: '작업 사진' })
+    await user.keyboard('{ArrowRight}')
+    await user.click(within(viewer).getByRole('button', { name: '삭제' }))
+    await user.keyboard('{ArrowLeft}')
+
+    expect(within(viewer).getByText('2 / 2')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '삭제하기' }))
+    expect(deletion.mutate).toHaveBeenCalledWith('b', expect.anything())
+  })
+
   it('마지막 한 장을 삭제하면 크게 보기를 닫는다', async () => {
     const user = userEvent.setup()
     mockPhotos(PHOTOS.slice(0, 1))

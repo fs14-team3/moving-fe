@@ -292,6 +292,7 @@ export default function ProofPhotoSection({
       <ProofPhotoViewer
         photos={photos}
         index={viewing}
+        keyboardDisabled={deletingId !== null}
         onChange={setViewing}
         onClose={() => setViewing(null)}
         onDelete={canEdit ? (photo) => setDeletingId(photo.id) : undefined}

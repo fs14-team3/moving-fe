@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn'
 type ProofPhotoViewerProps = {
   photos: ProofPhoto[]
   index: number | null
+  keyboardDisabled?: boolean
   onChange: (index: number) => void
   onClose: () => void
   onDelete?: (photo: ProofPhoto) => void
@@ -22,6 +23,7 @@ const NAV_BUTTON =
 export default function ProofPhotoViewer({
   photos,
   index,
+  keyboardDisabled = false,
   onChange,
   onClose,
   onDelete,
@@ -29,7 +31,7 @@ export default function ProofPhotoViewer({
   const photo = index === null ? undefined : photos[index]
 
   useEffect(() => {
-    if (index === null) return
+    if (index === null || keyboardDisabled) return
     const move = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft' && index > 0) onChange(index - 1)
       if (event.key === 'ArrowRight' && index < photos.length - 1) {
@@ -38,7 +40,7 @@ export default function ProofPhotoViewer({
     }
     addEventListener('keydown', move)
     return () => removeEventListener('keydown', move)
-  }, [index, photos.length, onChange])
+  }, [index, keyboardDisabled, photos.length, onChange])
 
   return (
     <Modal open={photo !== undefined} onClose={onClose} title="작업 사진">

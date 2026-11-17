@@ -3,7 +3,14 @@ import { getProofPhotos } from '@/features/proof-photos/api'
 import { queryKeys } from '@/lib/queryKeys'
 
 export function useProofPhotos(quoteId: string) {
-  const { data, isPending, isError, refetch, isRefetching } = useQuery({
+  const {
+    data,
+    isPending,
+    isLoadingError,
+    isRefetchError,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: queryKeys.proofPhotos.list(quoteId),
     queryFn: () => getProofPhotos(quoteId),
   })
@@ -12,7 +19,8 @@ export function useProofPhotos(quoteId: string) {
     photos: data?.items ?? [],
     maxCount: data?.maxCount ?? 0,
     isPending,
-    isError,
+    isLoadingError,
+    isRefetchError,
     refetch,
     isRefetching,
   }

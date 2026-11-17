@@ -32,8 +32,15 @@ export default function ProofPhotoSection({
   const inputRef = useRef<HTMLInputElement>(null)
   const [selected, setSelected] = useState<File[]>([])
   const [viewing, setViewing] = useState<number | null>(null)
-  const { photos, maxCount, isPending, isError, refetch, isRefetching } =
-    useProofPhotos(quoteId)
+  const {
+    photos,
+    maxCount,
+    isPending,
+    isLoadingError,
+    isRefetchError,
+    refetch,
+    isRefetching,
+  } = useProofPhotos(quoteId)
   const { uploads, isUploading, failed, start, retry, remove } =
     useProofPhotoUploads(quoteId)
 
@@ -63,7 +70,7 @@ export default function ProofPhotoSection({
   function renderBody() {
     if (isPending) return <Loading label="작업 사진을 불러오고 있습니다." />
 
-    if (isError) {
+    if (isLoadingError) {
       return (
         <LoadError
           message="작업 사진을 불러오지 못했습니다."
@@ -126,7 +133,7 @@ export default function ProofPhotoSection({
           >
             작업 사진
           </h2>
-          {!isPending && !isError && (
+          {!isPending && !isLoadingError && (
             <p className="text-sm font-medium text-gray-400 md:text-base">
               {photos.length}/{maxCount}
             </p>
@@ -145,7 +152,9 @@ export default function ProofPhotoSection({
             />
             <Button
               variant="outlined"
-              disabled={isPending || isError || isUploading || remaining <= 0}
+              disabled={
+                isPending || isLoadingError || isUploading || remaining <= 0
+              }
               onClick={() => inputRef.current?.click()}
               icon={<ImagePlus aria-hidden="true" className="size-4" />}
               className="h-10 w-auto gap-1 rounded-xl px-4 text-sm lg:h-11 lg:w-auto lg:text-base"
@@ -182,6 +191,25 @@ export default function ProofPhotoSection({
           </>
         )}
       </div>
+
+      {isRefetchError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 pb-3"
+        >
+          <p className="text-sm font-medium text-red-500 md:text-base">
+            작업 사진을 새로 불러오지 못했어요.
+          </p>
+          <button
+            type="button"
+            disabled={isRefetching}
+            onClick={() => refetch()}
+            className="cursor-pointer text-sm font-semibold text-primary-400 disabled:cursor-not-allowed disabled:opacity-50 md:text-base"
+          >
+            다시 불러오기
+          </button>
+        </div>
+      )}
 
       {renderBody()}
 

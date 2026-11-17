@@ -48,14 +48,20 @@ const uploads = {
 
 const leaveGuard = { isOpen: false, stay: vi.fn(), leave: vi.fn() }
 
-function mockPhotos(photos = PHOTOS, maxCount = 100) {
+function mockPhotos(
+  photos = PHOTOS,
+  maxCount = 100,
+  state: Partial<ReturnType<typeof useProofPhotos>> = {},
+) {
   vi.mocked(useProofPhotos).mockReturnValue({
     photos,
     maxCount,
     isPending: false,
-    isError: false,
+    isLoadingError: false,
+    isRefetchError: false,
     refetch: vi.fn(),
     isRefetching: false,
+    ...state,
   } as unknown as ReturnType<typeof useProofPhotos>)
 }
 
@@ -236,6 +242,48 @@ describe('ProofPhotoSection', () => {
     )
 
     expect(screen.getByText('다시 시도하는 중')).toBeVisible()
+  })
+
+  it('처음 불러오기에 실패하면 다시 시도 화면을 보여준다', async () => {
+    const refetch = vi.fn()
+    mockPhotos([], 0, { isLoadingError: true, refetch })
+    const user = userEvent.setup()
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
+
+    expect(screen.getByText('작업 사진을 불러오지 못했습니다.')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '다시 시도' }))
+    expect(refetch).toHaveBeenCalled()
+  })
+
+  it('새로 불러오기에 실패해도 보던 사진과 실패한 사진을 그대로 보여준다', async () => {
+    const refetch = vi.fn()
+    mockPhotos(PHOTOS, 100, { isRefetchError: true, refetch })
+    const failed = failedUpload()
+    vi.mocked(useProofPhotoUploads).mockReturnValue({
+      ...uploads,
+      uploads: [failed],
+      failed: [failed],
+    })
+    const user = userEvent.setup()
+
+    render(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+
+    expect(
+      screen.getByText('작업 사진을 새로 불러오지 못했어요.'),
+    ).toBeVisible()
+    expect(screen.getByText('2/100')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /크게 보기$/ })).toHaveLength(
+      2,
+    )
+    expect(
+      screen.getByRole('button', { name: '목록에서 빼기' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '다시 불러오기' }))
+    expect(refetch).toHaveBeenCalled()
   })
 
   it('고른 사진, 올리는 중인 사진, 다시 올릴 수 있는 사진이 있으면 나가기 전에 묻는다', async () => {

@@ -44,7 +44,10 @@ function toFailure(error: unknown) {
   if (isApiError(error) && error.code === 'PROOF_PHOTO_DELETED') {
     return { error: '삭제된 사진이에요', retryable: false }
   }
-  return { error: '올리지 못했어요', retryable: true }
+  return {
+    error: '올리지 못했어요',
+    retryable: !isClientError(error) || isNotUploaded(error),
+  }
 }
 
 function wait(ms: number) {
@@ -184,9 +187,9 @@ export function useProofPhotoUploads(quoteId: string) {
       } catch (error) {
         if (signal.aborted) return
         if (isNotUploaded(error)) uploadId = undefined
-        const isTemporary = !isClientError(error) || isNotUploaded(error)
-        if (!isTemporary || attempt === RETRY_DELAYS.length) {
-          update(upload.id, { status: 'failed', uploadId, ...toFailure(error) })
+        const failure = toFailure(error)
+        if (!failure.retryable || attempt === RETRY_DELAYS.length) {
+          update(upload.id, { status: 'failed', uploadId, ...failure })
           return
         }
         update(upload.id, { status: 'retrying', uploadId, progress: 0 })

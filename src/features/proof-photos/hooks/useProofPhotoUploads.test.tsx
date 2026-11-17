@@ -310,23 +310,80 @@ describe('useProofPhotoUploads', () => {
     expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'd', anySignal)
   })
 
-  it('서버가 요청을 거절하면 자동으로 다시 시도하지 않는다', async () => {
+  it.each([403, 404])(
+    '확정 요청이 %i이면 다시 시도하지 않는다',
+    async (status) => {
+      vi.useFakeTimers()
+      vi.mocked(confirmProofPhoto).mockRejectedValue(
+        new ApiError('REQUEST_REJECTED', 'Rejected', status),
+      )
+      const { result } = renderUploads()
+
+      act(() => result.current.start(files(1)))
+      await advance(0)
+      await advance(5000)
+
+      expect(confirmProofPhoto).toHaveBeenCalledOnce()
+      expect(result.current.failed[0]).toMatchObject({
+        error: '올리지 못했어요',
+        retryable: false,
+        uploadId: 'a',
+      })
+
+      act(() => result.current.retry(result.current.failed))
+      await advance(5000)
+
+      expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+      expect(confirmProofPhoto).toHaveBeenCalledOnce()
+    },
+  )
+
+  it.each([403, 404])(
+    '업로드 정보 요청이 %i이면 다시 시도하지 않는다',
+    async (status) => {
+      vi.useFakeTimers()
+      vi.mocked(createProofPhotoUploads).mockRejectedValue(
+        new ApiError('REQUEST_REJECTED', 'Rejected', status),
+      )
+      const { result } = renderUploads()
+
+      act(() => result.current.start(files(1)))
+      await advance(5000)
+
+      expect(result.current.failed[0]).toMatchObject({ retryable: false })
+
+      act(() => result.current.retry(result.current.failed))
+      await advance(5000)
+
+      expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+      expect(uploadToStorage).not.toHaveBeenCalled()
+      expect(confirmProofPhoto).not.toHaveBeenCalled()
+    },
+  )
+
+  it('사진이 없다는 응답이 반복되어도 직접 다시 올릴 수 있다', async () => {
     vi.useFakeTimers()
     vi.mocked(confirmProofPhoto).mockRejectedValue(
-      new ApiError('PROOF_PHOTO_NOT_ALLOWED', 'Not allowed', 403),
+      new ApiError('PROOF_PHOTO_NOT_UPLOADED', 'Not uploaded', 409),
     )
-    const { result } = renderUploads()
+    const { result, list } = renderUploads()
 
     act(() => result.current.start(files(1)))
-    await advance(0)
-    await advance(5000)
+    await advance(4000)
 
-    expect(confirmProofPhoto).toHaveBeenCalledOnce()
-    expect(result.current.failed[0]).toMatchObject({
-      error: '올리지 못했어요',
-      retryable: true,
-      uploadId: 'a',
-    })
+    expect(result.current.failed[0]).toMatchObject({ retryable: true })
+    expect(result.current.failed[0].uploadId).toBeUndefined()
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+
+    vi.mocked(confirmProofPhoto).mockImplementation(async (_, uploadId) =>
+      photo(`photo-${uploadId}`),
+    )
+    act(() => result.current.retry(result.current.failed))
+    await advance(0)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(4)
+    expect(list()?.items.map(({ id }) => id)).toEqual(['photo-d'])
   })
 
   it('열 수 없는 사진은 원본을 올리지 않고 다시 시도할 수 없게 실패한다', async () => {

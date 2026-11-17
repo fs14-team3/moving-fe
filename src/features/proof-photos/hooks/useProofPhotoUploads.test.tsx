@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   confirmProofPhoto,
   createProofPhotoUploads,
@@ -63,6 +63,10 @@ function renderUploads() {
 
 const anySignal = expect.any(AbortSignal)
 
+async function advance(ms: number) {
+  await act(() => vi.advanceTimersByTimeAsync(ms))
+}
+
 describe('useProofPhotoUploads', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -82,6 +86,10 @@ describe('useProofPhotoUploads', () => {
     vi.mocked(confirmProofPhoto)
       .mockReset()
       .mockImplementation(async (_, uploadId) => photo(`photo-${uploadId}`))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('사진마다 올리기 직전에 업로드 정보를 받아 올리고 확정한 뒤 목록에 추가한다', async () => {
@@ -154,41 +162,43 @@ describe('useProofPhotoUploads', () => {
     )
   })
 
-  it('저장소 업로드에 실패하면 다시 시도할 때 새 업로드 정보를 받는다', async () => {
+  it('저장소 업로드에 실패하면 잠시 뒤 새 업로드 정보로 자동으로 다시 올린다', async () => {
+    vi.useFakeTimers()
     vi.mocked(uploadToStorage).mockRejectedValueOnce(new Error('403'))
     const { result, list } = renderUploads()
 
     act(() => result.current.start(files(1)))
+    await advance(0)
 
-    await waitFor(() => expect(result.current.failed).toHaveLength(1))
-    expect(result.current.failed[0]).toMatchObject({
-      error: '올리지 못했어요',
-      retryable: true,
-    })
-    expect(result.current.failed[0].uploadId).toBeUndefined()
+    expect(result.current.uploads[0].status).toBe('retrying')
+    expect(result.current.isUploading).toBe(true)
 
-    act(() => result.current.retry(result.current.failed))
+    await advance(1000)
 
-    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    expect(result.current.uploads).toHaveLength(0)
     expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
     expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b', anySignal)
     expect(list()?.items).toHaveLength(1)
   })
 
-  it('확정 응답을 받지 못하면 같은 업로드 ID로 확정만 다시 요청한다', async () => {
+  it('확정 응답을 받지 못하면 같은 업로드 ID로 확정만 자동으로 다시 요청한다', async () => {
+    vi.useFakeTimers()
     vi.mocked(confirmProofPhoto).mockRejectedValueOnce(
       new ApiError('NETWORK_ERROR', 'Network Error', null),
     )
     const { result } = renderUploads()
 
     act(() => result.current.start(files(1)))
+    await advance(0)
 
-    await waitFor(() => expect(result.current.failed).toHaveLength(1))
-    expect(result.current.failed[0].uploadId).toBe('a')
+    expect(result.current.uploads[0]).toMatchObject({
+      status: 'retrying',
+      uploadId: 'a',
+    })
 
-    act(() => result.current.retry(result.current.failed))
+    await advance(1000)
 
-    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    expect(result.current.uploads).toHaveLength(0)
     expect(createProofPhotoUploads).toHaveBeenCalledOnce()
     expect(uploadToStorage).toHaveBeenCalledTimes(2)
     expect(confirmProofPhoto).toHaveBeenCalledTimes(2)
@@ -199,26 +209,72 @@ describe('useProofPhotoUploads', () => {
     )
   })
 
-  it('S3에 사진이 없다는 응답이면 다시 시도할 때 사진을 다시 올린다', async () => {
+  it('S3에 사진이 없다는 응답이면 사진을 자동으로 다시 올린다', async () => {
+    vi.useFakeTimers()
     vi.mocked(confirmProofPhoto).mockRejectedValueOnce(
       new ApiError('PROOF_PHOTO_NOT_UPLOADED', 'Not uploaded', 409),
     )
     const { result } = renderUploads()
 
     act(() => result.current.start(files(1)))
+    await advance(0)
 
-    await waitFor(() => expect(result.current.failed).toHaveLength(1))
-    expect(result.current.failed[0].uploadId).toBeUndefined()
+    expect(result.current.uploads[0].uploadId).toBeUndefined()
 
-    act(() => result.current.retry(result.current.failed))
+    await advance(1000)
 
-    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    expect(result.current.uploads).toHaveLength(0)
     expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
     expect(confirmProofPhoto).toHaveBeenLastCalledWith(
       'quote-1',
       'b',
       anySignal,
     )
+  })
+
+  it('자동으로 다시 올려도 실패하면 실패를 보여주고 직접 다시 시도할 수 있다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(uploadToStorage).mockRejectedValue(new Error('Network Error'))
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    await advance(1000)
+    await advance(3000)
+
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+    expect(result.current.isUploading).toBe(false)
+    expect(result.current.failed).toHaveLength(1)
+    expect(result.current.failed[0]).toMatchObject({
+      error: '올리지 못했어요',
+      retryable: true,
+    })
+
+    vi.mocked(uploadToStorage).mockResolvedValue()
+    act(() => result.current.retry(result.current.failed))
+    await advance(0)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'd', anySignal)
+  })
+
+  it('서버가 요청을 거절하면 자동으로 다시 시도하지 않는다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(confirmProofPhoto).mockRejectedValue(
+      new ApiError('PROOF_PHOTO_NOT_ALLOWED', 'Not allowed', 403),
+    )
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    await advance(5000)
+
+    expect(confirmProofPhoto).toHaveBeenCalledOnce()
+    expect(result.current.failed[0]).toMatchObject({
+      error: '올리지 못했어요',
+      retryable: true,
+      uploadId: 'a',
+    })
   })
 
   it('열 수 없는 사진은 원본을 올리지 않고 다시 시도할 수 없게 실패한다', async () => {
@@ -269,11 +325,14 @@ describe('useProofPhotoUploads', () => {
   })
 
   it('실패한 사진을 지우면 목록에서 빠진다', async () => {
-    vi.mocked(uploadToStorage).mockRejectedValue(new Error('403'))
+    vi.mocked(createProofPhotoUploads).mockRejectedValue(
+      new ApiError('PROOF_PHOTO_LIMIT_REACHED', 'Limit', 409),
+    )
     const { result } = renderUploads()
 
     act(() => result.current.start(files(1)))
     await waitFor(() => expect(result.current.failed).toHaveLength(1))
+    expect(result.current.failed[0].previewUrl).toBe('blob:preview')
 
     act(() => result.current.remove(result.current.failed[0].id))
 

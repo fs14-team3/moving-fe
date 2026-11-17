@@ -12,15 +12,16 @@ import {
   pickPhotoType,
   resizeProofPhoto,
 } from '@/features/proof-photos/lib/resizeProofPhoto'
-import { isApiError } from '@/lib/api-error'
+import { isApiError, isClientError } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 
 const CONCURRENCY = 3
+const RETRY_DELAYS = [1000, 3000]
 
 export type PhotoUpload = {
   id: number
   file: File
-  status: 'waiting' | 'uploading' | 'confirming' | 'failed'
+  status: 'waiting' | 'uploading' | 'confirming' | 'retrying' | 'failed'
   progress: number
   previewUrl?: string
   uploadId?: string
@@ -28,16 +29,19 @@ export type PhotoUpload = {
   retryable?: boolean
 }
 
+function isNotUploaded(error: unknown) {
+  return isApiError(error) && error.code === 'PROOF_PHOTO_NOT_UPLOADED'
+}
+
 function toFailure(error: unknown) {
-  const code = isApiError(error) ? error.code : undefined
-  if (code === 'PROOF_PHOTO_LIMIT_REACHED') {
+  if (isApiError(error) && error.code === 'PROOF_PHOTO_LIMIT_REACHED') {
     return { error: '최대 장수를 넘었어요', retryable: false }
   }
-  return {
-    error: '올리지 못했어요',
-    retryable: true,
-    ...(code === 'PROOF_PHOTO_NOT_UPLOADED' && { uploadId: undefined }),
-  }
+  return { error: '올리지 못했어요', retryable: true }
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 async function runPool<T>(items: T[], run: (item: T) => Promise<void>) {
@@ -151,17 +155,27 @@ export function useProofPhotoUploads(quoteId: string) {
     type: ProofPhotoType,
     signal: AbortSignal,
   ) {
-    try {
-      const uploadId =
-        upload.uploadId ?? (await sendToStorage(upload, type, signal))
-      if (!uploadId) return
+    let { uploadId } = upload
+    for (let attempt = 0; !signal.aborted; attempt++) {
+      try {
+        uploadId ??= await sendToStorage(upload, type, signal)
+        if (!uploadId) return
 
-      update(upload.id, { status: 'confirming' })
-      await addToList(await confirmProofPhoto(quoteId, uploadId, signal))
-      remove(upload.id)
-    } catch (error) {
-      if (signal.aborted) return
-      update(upload.id, { status: 'failed', ...toFailure(error) })
+        update(upload.id, { status: 'confirming' })
+        await addToList(await confirmProofPhoto(quoteId, uploadId, signal))
+        remove(upload.id)
+        return
+      } catch (error) {
+        if (signal.aborted) return
+        if (isNotUploaded(error)) uploadId = undefined
+        const isTemporary = !isClientError(error) || isNotUploaded(error)
+        if (!isTemporary || attempt === RETRY_DELAYS.length) {
+          update(upload.id, { status: 'failed', uploadId, ...toFailure(error) })
+          return
+        }
+        update(upload.id, { status: 'retrying', uploadId, progress: 0 })
+        await wait(RETRY_DELAYS[attempt])
+      }
     }
   }
 

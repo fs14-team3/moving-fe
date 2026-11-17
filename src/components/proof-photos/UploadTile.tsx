@@ -20,6 +20,12 @@ const OUTLINE = {
   vectorEffect: 'non-scaling-stroke',
 } as const
 
+const STATUS_LABEL: Partial<Record<PhotoUpload['status'], string>> = {
+  waiting: '올릴 준비 중',
+  confirming: '저장하는 중',
+  retrying: '다시 시도하는 중',
+}
+
 function ProgressOutline({ progress }: { progress: number }) {
   return (
     <svg
@@ -50,13 +56,15 @@ function Status({ upload }: { upload: PhotoUpload }) {
     )
   }
 
+  const isRetrying = upload.status === 'retrying'
+
   return (
-    <>
+    <div className="flex flex-col items-center gap-1">
       <LoaderCircle aria-hidden="true" className="size-6 animate-spin" />
-      <span className="sr-only">
-        {upload.status === 'waiting' ? '올릴 준비 중' : '저장하는 중'}
+      <span className={isRetrying ? 'text-xs font-medium' : 'sr-only'}>
+        {STATUS_LABEL[upload.status]}
       </span>
-    </>
+    </div>
   )
 }
 

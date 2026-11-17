@@ -218,6 +218,26 @@ describe('ProofPhotoSection', () => {
     ).toBeInTheDocument()
   })
 
+  it('자동으로 다시 올리는 중인 사진은 상태를 보여준다', () => {
+    const retrying: PhotoUpload = {
+      id: 0,
+      file: photoFiles(1)[0],
+      status: 'retrying',
+      progress: 0,
+    }
+    vi.mocked(useProofPhotoUploads).mockReturnValue({
+      ...uploads,
+      uploads: [retrying],
+      isUploading: true,
+    })
+
+    render(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+
+    expect(screen.getByText('다시 시도하는 중')).toBeVisible()
+  })
+
   it('고른 사진, 올리는 중인 사진, 다시 올릴 수 있는 사진이 있으면 나가기 전에 묻는다', async () => {
     const { container, rerender } = render(
       <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,

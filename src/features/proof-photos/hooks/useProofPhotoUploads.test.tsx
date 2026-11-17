@@ -61,6 +61,8 @@ function renderUploads() {
   return { ...view, list, queryClient }
 }
 
+const anySignal = expect.any(AbortSignal)
+
 describe('useProofPhotoUploads', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -85,14 +87,15 @@ describe('useProofPhotoUploads', () => {
 
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
     expect(createProofPhotoUploads).toHaveBeenCalledOnce()
-    expect(createProofPhotoUploads).toHaveBeenCalledWith('quote-1', {
-      count: 2,
-      contentType: 'image/webp',
-    })
+    expect(createProofPhotoUploads).toHaveBeenCalledWith(
+      'quote-1',
+      { count: 2, contentType: 'image/webp' },
+      anySignal,
+    )
     expect(resizeProofPhoto).toHaveBeenCalledTimes(2)
     expect(uploadToStorage).toHaveBeenCalledTimes(4)
-    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'a')
-    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b')
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'a', anySignal)
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b', anySignal)
     expect(
       list()
         ?.items.map(({ id }) => id)
@@ -148,7 +151,7 @@ describe('useProofPhotoUploads', () => {
 
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
     expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
-    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b')
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b', anySignal)
     expect(list()?.items).toHaveLength(1)
   })
 
@@ -170,7 +173,11 @@ describe('useProofPhotoUploads', () => {
     expect(createProofPhotoUploads).toHaveBeenCalledOnce()
     expect(uploadToStorage).toHaveBeenCalledTimes(2)
     expect(confirmProofPhoto).toHaveBeenCalledTimes(2)
-    expect(confirmProofPhoto).toHaveBeenLastCalledWith('quote-1', 'a')
+    expect(confirmProofPhoto).toHaveBeenLastCalledWith(
+      'quote-1',
+      'a',
+      anySignal,
+    )
   })
 
   it('S3에 사진이 없다는 응답이면 다시 시도할 때 사진을 다시 올린다', async () => {
@@ -191,7 +198,11 @@ describe('useProofPhotoUploads', () => {
 
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
     expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
-    expect(confirmProofPhoto).toHaveBeenLastCalledWith('quote-1', 'b')
+    expect(confirmProofPhoto).toHaveBeenLastCalledWith(
+      'quote-1',
+      'b',
+      anySignal,
+    )
   })
 
   it('열 수 없는 사진은 원본을 올리지 않고 다시 시도할 수 없게 실패한다', async () => {
@@ -224,6 +235,22 @@ describe('useProofPhotoUploads', () => {
       retryable: false,
     })
     expect(result.current.isUploading).toBe(false)
+  })
+
+  it('화면을 떠나면 올리던 요청을 취소한다', async () => {
+    vi.mocked(createProofPhotoUploads).mockResolvedValue(
+      ['a', 'b', 'c', 'd'].map(post),
+    )
+    vi.mocked(uploadToStorage).mockReturnValue(new Promise(() => {}))
+    const { result, unmount } = renderUploads()
+
+    act(() => result.current.start(files(4)))
+    await waitFor(() => expect(uploadToStorage).toHaveBeenCalledTimes(6))
+    const signal = vi.mocked(uploadToStorage).mock.calls[0][3]
+
+    unmount()
+
+    expect(signal?.aborted).toBe(true)
   })
 
   it('실패한 사진을 지우면 목록에서 빠진다', async () => {

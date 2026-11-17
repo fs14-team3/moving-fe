@@ -8,6 +8,7 @@ import {
   type PhotoUpload,
 } from '@/features/proof-photos/hooks/useProofPhotoUploads'
 import { useProofPhotos } from '@/features/proof-photos/hooks/useProofPhotos'
+import { useLeaveGuard } from '@/hooks/useLeaveGuard'
 
 vi.mock('next/image', () => ({
   default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
@@ -23,6 +24,10 @@ vi.mock('@/features/proof-photos/hooks/useProofPhotos', () => ({
 
 vi.mock('@/features/proof-photos/hooks/useProofPhotoUploads', () => ({
   useProofPhotoUploads: vi.fn(),
+}))
+
+vi.mock('@/hooks/useLeaveGuard', () => ({
+  useLeaveGuard: vi.fn(),
 }))
 
 const PHOTOS = ['a', 'b'].map((id) => ({
@@ -41,6 +46,8 @@ const uploads = {
   remove: vi.fn(),
 }
 
+const leaveGuard = { isOpen: false, stay: vi.fn(), leave: vi.fn() }
+
 function mockPhotos(photos = PHOTOS, maxCount = 100) {
   vi.mocked(useProofPhotos).mockReturnValue({
     photos,
@@ -50,6 +57,17 @@ function mockPhotos(photos = PHOTOS, maxCount = 100) {
     refetch: vi.fn(),
     isRefetching: false,
   } as unknown as ReturnType<typeof useProofPhotos>)
+}
+
+function failedUpload(): PhotoUpload {
+  return {
+    id: 0,
+    file: photoFiles(1)[0],
+    status: 'failed',
+    progress: 0,
+    error: '올리지 못했어요',
+    retryable: true,
+  }
 }
 
 function photoFiles(count: number) {
@@ -77,6 +95,7 @@ describe('ProofPhotoSection', () => {
     vi.clearAllMocks()
     mockPhotos()
     vi.mocked(useProofPhotoUploads).mockReturnValue({ ...uploads })
+    vi.mocked(useLeaveGuard).mockReturnValue({ ...leaveGuard })
   })
 
   it('올라온 작업 사진과 장수를 보여준다', () => {
@@ -157,14 +176,7 @@ describe('ProofPhotoSection', () => {
   })
 
   it('실패한 사진을 모두 다시 시도할 수 있다', async () => {
-    const failed: PhotoUpload = {
-      id: 0,
-      file: photoFiles(1)[0],
-      status: 'failed',
-      progress: 0,
-      error: '올리지 못했어요',
-      retryable: true,
-    }
+    const failed = failedUpload()
     vi.mocked(useProofPhotoUploads).mockReturnValue({
       ...uploads,
       uploads: [failed],
@@ -204,5 +216,58 @@ describe('ProofPhotoSection', () => {
     expect(
       within(dialog).getByRole('img', { name: '작업 사진 2' }),
     ).toBeInTheDocument()
+  })
+
+  it('고른 사진, 올리는 중인 사진, 다시 올릴 수 있는 사진이 있으면 나가기 전에 묻는다', async () => {
+    const { container, rerender } = render(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
+
+    const user = userEvent.setup()
+    await user.upload(fileInput(container), photoFiles(1))
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(true)
+
+    await user.click(screen.getByRole('button', { name: '취소' }))
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
+
+    vi.mocked(useProofPhotoUploads).mockReturnValue({
+      ...uploads,
+      uploads: [failedUpload()],
+      failed: [failedUpload()],
+    })
+    rerender(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(true)
+
+    const unreadable = { ...failedUpload(), retryable: false }
+    vi.mocked(useProofPhotoUploads).mockReturnValue({
+      ...uploads,
+      uploads: [unreadable],
+      failed: [unreadable],
+    })
+    rerender(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
+  })
+
+  it('나가려고 하면 확인 창을 띄우고 고른 대로 처리한다', async () => {
+    vi.mocked(useLeaveGuard).mockReturnValue({ ...leaveGuard, isOpen: true })
+    const user = userEvent.setup()
+
+    render(
+      <ProofPhotoSection quoteId="quote-1" canUpload emptyMessage="없음" />,
+    )
+
+    const dialog = screen.getByRole('dialog', { name: '페이지를 나갈까요?' })
+    expect(dialog).toHaveTextContent('아직 올리지 못한 사진이 있어요.')
+
+    await user.click(within(dialog).getByRole('button', { name: '취소' }))
+    expect(leaveGuard.stay).toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: '나가기' }))
+    expect(leaveGuard.leave).toHaveBeenCalled()
   })
 })

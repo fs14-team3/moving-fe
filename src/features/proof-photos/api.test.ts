@@ -26,17 +26,20 @@ describe('createProofPhotoUploads', () => {
   it('장수와 형식을 보내고 업로드 정보를 반환한다', async () => {
     const items = [{ uploadId: 'upload-1' }]
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: { items } })
+    const { signal } = new AbortController()
 
     await expect(
-      createProofPhotoUploads('quote-1', {
-        count: 1,
-        contentType: 'image/webp',
-      }),
+      createProofPhotoUploads(
+        'quote-1',
+        { count: 1, contentType: 'image/webp' },
+        signal,
+      ),
     ).resolves.toEqual(items)
-    expect(post).toHaveBeenCalledWith('/quotes/quote-1/proof-photos/uploads', {
-      count: 1,
-      contentType: 'image/webp',
-    })
+    expect(post).toHaveBeenCalledWith(
+      '/quotes/quote-1/proof-photos/uploads',
+      { count: 1, contentType: 'image/webp' },
+      { signal },
+    )
   })
 })
 
@@ -50,6 +53,7 @@ describe('uploadToStorage', () => {
       })
     const onProgress = vi.fn()
     const file = new Blob(['photo'], { type: 'image/webp' })
+    const { signal } = new AbortController()
 
     await uploadToStorage(
       {
@@ -58,9 +62,10 @@ describe('uploadToStorage', () => {
       },
       file,
       onProgress,
+      signal,
     )
 
-    const [url, body] = post.mock.calls[0]
+    const [url, body, config] = post.mock.calls[0]
     expect(url).toBe('https://bucket.s3.amazonaws.com')
     expect([...(body as FormData).keys()]).toEqual([
       'key',
@@ -69,6 +74,7 @@ describe('uploadToStorage', () => {
     ])
     expect((body as FormData).get('file')).toBeInstanceOf(Blob)
     expect(onProgress).toHaveBeenCalledWith(42)
+    expect(config?.signal).toBe(signal)
   })
 })
 
@@ -76,12 +82,15 @@ describe('confirmProofPhoto', () => {
   it('업로드 ID로 사진을 확정하고 저장된 사진을 반환한다', async () => {
     const photo = { id: 'photo-1' }
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: photo })
+    const { signal } = new AbortController()
 
-    await expect(confirmProofPhoto('quote-1', 'upload-1')).resolves.toEqual(
-      photo,
+    await expect(
+      confirmProofPhoto('quote-1', 'upload-1', signal),
+    ).resolves.toEqual(photo)
+    expect(post).toHaveBeenCalledWith(
+      '/quotes/quote-1/proof-photos',
+      { uploadId: 'upload-1' },
+      { signal },
     )
-    expect(post).toHaveBeenCalledWith('/quotes/quote-1/proof-photos', {
-      uploadId: 'upload-1',
-    })
   })
 })

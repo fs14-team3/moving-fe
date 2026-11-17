@@ -12,6 +12,7 @@ import UploadTile from '@/components/proof-photos/UploadTile'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useProofPhotoUploads } from '@/features/proof-photos/hooks/useProofPhotoUploads'
 import { useProofPhotos } from '@/features/proof-photos/hooks/useProofPhotos'
+import { useLeaveGuard } from '@/hooks/useLeaveGuard'
 import { cn } from '@/lib/cn'
 
 type ProofPhotoSectionProps = {
@@ -37,7 +38,11 @@ export default function ProofPhotoSection({
     useProofPhotoUploads(quoteId)
 
   const remaining = maxCount - photos.length - uploads.length
-  const canRetry = !isUploading && failed.some(({ retryable }) => retryable)
+  const hasRetryable = failed.some(({ retryable }) => retryable)
+  const canRetry = !isUploading && hasRetryable
+  const leaveGuard = useLeaveGuard(
+    selected.length > 0 || isUploading || hasRetryable,
+  )
 
   function select(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? [])
@@ -190,6 +195,18 @@ export default function ProofPhotoSection({
         {selected.length}장을 올릴까요?
         <br />
         올린 사진은 삭제할 수 없어요.
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={leaveGuard.isOpen}
+        onClose={leaveGuard.stay}
+        onConfirm={leaveGuard.leave}
+        title="페이지를 나갈까요?"
+        confirmLabel="나가기"
+      >
+        아직 올리지 못한 사진이 있어요.
+        <br />
+        나가면 사진을 다시 선택해야 해요.
       </ConfirmModal>
 
       <ProofPhotoViewer

@@ -60,21 +60,20 @@ export function useProofPhotoUploads(quoteId: string) {
   const [uploads, setUploads] = useState<PhotoUpload[]>([])
   const nextId = useRef(0)
   const previewUrls = useRef(new Map<number, string>())
+  const controller = useRef(new AbortController())
 
   const isUploading = uploads.some(({ status }) => status !== 'failed')
   const failed = uploads.filter(({ status }) => status === 'failed')
 
   useEffect(() => {
     const urls = previewUrls.current
-    return () => urls.forEach((url) => URL.revokeObjectURL(url))
+    const current = new AbortController()
+    controller.current = current
+    return () => {
+      current.abort()
+      urls.forEach((url) => URL.revokeObjectURL(url))
+    }
   }, [])
-
-  useEffect(() => {
-    if (!isUploading) return
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
-    addEventListener('beforeunload', warn)
-    return () => removeEventListener('beforeunload', warn)
-  }, [isUploading])
 
   function update(id: number, patch: Partial<PhotoUpload>) {
     setUploads((prev) =>
@@ -105,6 +104,7 @@ export function useProofPhotoUploads(quoteId: string) {
     { id, file }: PhotoUpload,
     presigned: ProofPhotoUpload,
     type: ProofPhotoType,
+    signal: AbortSignal,
   ) {
     let resized
     try {
@@ -141,39 +141,46 @@ export function useProofPhotoUploads(quoteId: string) {
       update(id, { progress })
     }
     await Promise.all([
-      uploadToStorage(presigned.image, image, report(0)),
-      uploadToStorage(presigned.thumbnail, thumbnail, report(1)),
+      uploadToStorage(presigned.image, image, report(0), signal),
+      uploadToStorage(presigned.thumbnail, thumbnail, report(1), signal),
     ])
     update(id, { uploadId: presigned.uploadId, progress: 100 })
     return presigned.uploadId
   }
 
-  async function process({ upload, presigned }: Job, type: ProofPhotoType) {
+  async function process(
+    { upload, presigned }: Job,
+    type: ProofPhotoType,
+    signal: AbortSignal,
+  ) {
     try {
       const uploadId =
         upload.uploadId ??
-        (presigned && (await sendToStorage(upload, presigned, type)))
+        (presigned && (await sendToStorage(upload, presigned, type, signal)))
       if (!uploadId) return
 
       update(upload.id, { status: 'confirming' })
-      await addToList(await confirmProofPhoto(quoteId, uploadId))
+      await addToList(await confirmProofPhoto(quoteId, uploadId, signal))
       remove(upload.id)
     } catch (error) {
+      if (signal.aborted) return
       update(upload.id, { status: 'failed', ...toFailure(error) })
     }
   }
 
   async function run(batch: PhotoUpload[]) {
+    const { signal } = controller.current
     const type = await pickPhotoType()
     const toSend = batch.filter(({ uploadId }) => !uploadId)
     let presigned: ProofPhotoUpload[] = []
 
     try {
       if (toSend.length > 0) {
-        presigned = await createProofPhotoUploads(quoteId, {
-          count: toSend.length,
-          contentType: type,
-        })
+        presigned = await createProofPhotoUploads(
+          quoteId,
+          { count: toSend.length, contentType: type },
+          signal,
+        )
       }
     } catch (error) {
       for (const { id } of toSend) {
@@ -186,7 +193,7 @@ export function useProofPhotoUploads(quoteId: string) {
       const next = presigned.shift()
       return next ? [{ upload, presigned: next }] : []
     })
-    await runPool(jobs, (job) => process(job, type))
+    await runPool(jobs, (job) => process(job, type, signal))
     void queryClient.invalidateQueries({
       queryKey: queryKeys.proofPhotos.list(quoteId),
     })

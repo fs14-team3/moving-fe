@@ -57,3 +57,7 @@ export async function confirmProofPhoto(
   )
   return data
 }
+
+export async function deleteProofPhoto(quoteId: string, photoId: string) {
+  await api.delete(`/quotes/${quoteId}/proof-photos/${photoId}`)
+}

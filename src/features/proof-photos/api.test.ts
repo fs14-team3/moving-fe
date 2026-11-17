@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   confirmProofPhoto,
   createProofPhotoUploads,
+  deleteProofPhoto,
   getProofPhotos,
   uploadToStorage,
 } from '@/features/proof-photos/api'
@@ -92,5 +93,15 @@ describe('confirmProofPhoto', () => {
       { uploadId: 'upload-1' },
       { signal },
     )
+  })
+})
+
+describe('deleteProofPhoto', () => {
+  it('견적의 작업 사진을 삭제한다', async () => {
+    const remove = vi.spyOn(api, 'delete').mockResolvedValue({})
+
+    await deleteProofPhoto('quote-1', 'photo-1')
+
+    expect(remove).toHaveBeenCalledWith('/quotes/quote-1/proof-photos/photo-1')
   })
 })

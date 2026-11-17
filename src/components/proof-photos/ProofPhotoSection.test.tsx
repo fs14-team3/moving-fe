@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import { useDeleteProofPhoto } from '@/features/proof-photos/hooks/useDeleteProofPhoto'
 import {
   useProofPhotoUploads,
   type PhotoUpload,
@@ -24,6 +25,10 @@ vi.mock('@/features/proof-photos/hooks/useProofPhotos', () => ({
 
 vi.mock('@/features/proof-photos/hooks/useProofPhotoUploads', () => ({
   useProofPhotoUploads: vi.fn(),
+}))
+
+vi.mock('@/features/proof-photos/hooks/useDeleteProofPhoto', () => ({
+  useDeleteProofPhoto: vi.fn(),
 }))
 
 vi.mock('@/hooks/useLeaveGuard', () => ({
@@ -49,6 +54,8 @@ const uploads = {
 
 const leaveGuard = { isOpen: false, stay: vi.fn(), leave: vi.fn() }
 
+const deletion = { mutate: vi.fn(), isPending: false }
+
 function mockPhotos(
   photos = PHOTOS,
   maxCount = 100,
@@ -57,6 +64,7 @@ function mockPhotos(
   vi.mocked(useProofPhotos).mockReturnValue({
     photos,
     maxCount,
+    canDelete: false,
     isPending: false,
     isLoadingError: false,
     isRefetchError: false,
@@ -103,6 +111,9 @@ describe('ProofPhotoSection', () => {
     mockPhotos()
     vi.mocked(useProofPhotoUploads).mockReturnValue({ ...uploads })
     vi.mocked(useLeaveGuard).mockReturnValue({ ...leaveGuard })
+    vi.mocked(useDeleteProofPhoto).mockReturnValue(
+      deletion as unknown as ReturnType<typeof useDeleteProofPhoto>,
+    )
   })
 
   it('올라온 작업 사진과 장수를 보여준다', () => {
@@ -137,7 +148,9 @@ describe('ProofPhotoSection', () => {
 
     const dialog = screen.getByRole('dialog', { name: '작업 사진 올리기' })
     expect(dialog).toHaveTextContent('3장을 올릴까요?')
-    expect(dialog).toHaveTextContent('올린 사진은 삭제할 수 없어요.')
+    expect(dialog).toHaveTextContent(
+      '고객님이 리뷰를 작성하면 삭제할 수 없어요.',
+    )
 
     await user.click(within(dialog).getByRole('button', { name: '올리기' }))
 
@@ -223,6 +236,68 @@ describe('ProofPhotoSection', () => {
     expect(
       within(dialog).getByRole('img', { name: '작업 사진 2' }),
     ).toBeInTheDocument()
+  })
+
+  it('삭제할 수 있으면 크게 본 사진을 확인 후 삭제하고 다음 사진을 보여준다', async () => {
+    const user = userEvent.setup()
+    mockPhotos(PHOTOS, 100, { canDelete: true })
+    deletion.mutate.mockImplementation((_id, { onSuccess, onSettled }) => {
+      onSuccess()
+      onSettled()
+    })
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
+    await user.click(
+      screen.getByRole('button', { name: '작업 사진 1 크게 보기' }),
+    )
+    const viewer = screen.getByRole('dialog', { name: '작업 사진' })
+    await user.click(within(viewer).getByRole('button', { name: '삭제' }))
+
+    const dialog = screen.getByRole('dialog', { name: '작업 사진 삭제' })
+    await user.click(within(dialog).getByRole('button', { name: '삭제하기' }))
+
+    expect(useDeleteProofPhoto).toHaveBeenCalledWith('quote-1')
+    expect(deletion.mutate).toHaveBeenCalledWith('a', expect.anything())
+    expect(
+      screen.queryByRole('dialog', { name: '작업 사진 삭제' }),
+    ).not.toBeInTheDocument()
+    expect(within(viewer).getByText('1 / 2')).toBeInTheDocument()
+  })
+
+  it('마지막 한 장을 삭제하면 크게 보기를 닫는다', async () => {
+    const user = userEvent.setup()
+    mockPhotos(PHOTOS.slice(0, 1), 100, { canDelete: true })
+    deletion.mutate.mockImplementation((_id, { onSuccess, onSettled }) => {
+      onSuccess()
+      onSettled()
+    })
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
+    await user.click(
+      screen.getByRole('button', { name: '작업 사진 1 크게 보기' }),
+    )
+    await user.click(screen.getByRole('button', { name: '삭제' }))
+    await user.click(screen.getByRole('button', { name: '삭제하기' }))
+
+    expect(
+      screen.queryByRole('dialog', { name: '작업 사진' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('삭제할 수 없으면 크게 보기에 삭제 버튼이 없다', async () => {
+    const user = userEvent.setup()
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
+    await user.click(
+      screen.getByRole('button', { name: '작업 사진 1 크게 보기' }),
+    )
+
+    expect(
+      within(screen.getByRole('dialog', { name: '작업 사진' })).queryByRole(
+        'button',
+        { name: '삭제' },
+      ),
+    ).not.toBeInTheDocument()
   })
 
   it('다 올리면 올린 장수를 알리고 방금 올린 사진에 완료 표시를 한다', () => {

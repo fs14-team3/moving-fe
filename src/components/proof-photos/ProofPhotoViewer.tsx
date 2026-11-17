@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect } from 'react'
 import Modal from '@/components/common/modal/Modal'
@@ -12,6 +12,7 @@ type ProofPhotoViewerProps = {
   index: number | null
   onChange: (index: number) => void
   onClose: () => void
+  onDelete?: (photo: ProofPhoto) => void
 }
 
 const NAV_BUTTON =
@@ -22,6 +23,7 @@ export default function ProofPhotoViewer({
   index,
   onChange,
   onClose,
+  onDelete,
 }: ProofPhotoViewerProps) {
   const photo = index === null ? undefined : photos[index]
 
@@ -77,9 +79,21 @@ export default function ProofPhotoViewer({
               <ChevronRight aria-hidden="true" className="size-6" />
             </button>
           </div>
-          <p className="mt-4 text-center text-sm font-medium text-gray-500 md:text-base">
-            {index + 1} / {photos.length}
-          </p>
+          <div className="relative mt-4 flex items-center justify-center">
+            <p className="text-sm font-medium text-gray-500 md:text-base">
+              {index + 1} / {photos.length}
+            </p>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(photo)}
+                className="absolute right-0 flex h-10 cursor-pointer items-center gap-1 text-sm font-semibold text-red-500 md:text-base"
+              >
+                <Trash2 aria-hidden="true" className="size-4 md:size-5" />
+                삭제
+              </button>
+            )}
+          </div>
         </>
       )}
     </Modal>

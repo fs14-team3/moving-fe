@@ -73,6 +73,9 @@ export const TOAST_MESSAGES = {
   proofPhoto: {
     tooMany: (remaining: number) =>
       `작업 사진은 ${remaining}장 더 올릴 수 있습니다.`,
+    deleteSuccess: '작업 사진을 삭제했습니다.',
+    deleteFailed: '작업 사진 삭제에 실패했습니다.',
+    deleteReviewed: '리뷰가 작성되어 작업 사진을 삭제할 수 없습니다.',
   },
 
   common: {

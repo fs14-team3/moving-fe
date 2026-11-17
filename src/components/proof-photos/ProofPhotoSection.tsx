@@ -10,6 +10,7 @@ import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import ProofPhotoViewer from '@/components/proof-photos/ProofPhotoViewer'
 import UploadTile from '@/components/proof-photos/UploadTile'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import { useDeleteProofPhoto } from '@/features/proof-photos/hooks/useDeleteProofPhoto'
 import { useProofPhotoUploads } from '@/features/proof-photos/hooks/useProofPhotoUploads'
 import { useProofPhotos } from '@/features/proof-photos/hooks/useProofPhotos'
 import { useLeaveGuard } from '@/hooks/useLeaveGuard'
@@ -45,9 +46,11 @@ export default function ProofPhotoSection({
   const inputRef = useRef<HTMLInputElement>(null)
   const [selected, setSelected] = useState<File[]>([])
   const [viewing, setViewing] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const {
     photos,
     maxCount,
+    canDelete,
     isPending,
     isLoadingError,
     isRefetchError,
@@ -56,6 +59,8 @@ export default function ProofPhotoSection({
   } = useProofPhotos(quoteId)
   const { uploads, uploadedIds, isUploading, failed, start, retry, remove } =
     useProofPhotoUploads(quoteId)
+  const { mutate: deletePhoto, isPending: isDeleting } =
+    useDeleteProofPhoto(quoteId)
 
   const remaining = maxCount - photos.length - uploads.length
   const hasRetryable = failed.some(({ retryable }) => retryable)
@@ -78,6 +83,18 @@ export default function ProofPhotoSection({
   function upload() {
     start(selected)
     setSelected([])
+  }
+
+  function confirmDelete() {
+    if (deletingId === null) return
+    const lastIndex = photos.length - 2
+    deletePhoto(deletingId, {
+      onSuccess: () =>
+        setViewing((index) =>
+          index === null || lastIndex < 0 ? null : Math.min(index, lastIndex),
+        ),
+      onSettled: () => setDeletingId(null),
+    })
   }
 
   function renderBody() {
@@ -242,7 +259,20 @@ export default function ProofPhotoSection({
       >
         {selected.length}장을 올릴까요?
         <br />
-        올린 사진은 삭제할 수 없어요.
+        고객님이 리뷰를 작성하면 삭제할 수 없어요.
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={deletingId !== null}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="작업 사진 삭제"
+        confirmLabel="삭제하기"
+        isPending={isDeleting}
+      >
+        이 사진을 삭제할까요?
+        <br />
+        삭제한 사진은 되돌릴 수 없어요.
       </ConfirmModal>
 
       <ConfirmModal
@@ -262,6 +292,7 @@ export default function ProofPhotoSection({
         index={viewing}
         onChange={setViewing}
         onClose={() => setViewing(null)}
+        onDelete={canDelete ? (photo) => setDeletingId(photo.id) : undefined}
       />
     </section>
   )

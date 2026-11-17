@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import Button from '@/components/common/button/Button'
+import ConfirmModal from '@/components/common/modal/ConfirmModal'
 import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
 import ActiveRequestSummary from '@/components/my-quotes/ActiveRequestSummary'
-import DeleteRequestModal from '@/components/my-quotes/DeleteRequestModal'
 import {
   Empty,
   LoadError,
@@ -131,7 +131,7 @@ export default function PendingQuotesPage() {
         request={activeMoveRequest}
         onDelete={canDelete ? () => setIsDeleteOpen(true) : undefined}
       />
-      <DeleteRequestModal
+      <ConfirmModal
         open={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={() =>
@@ -139,8 +139,14 @@ export default function PendingQuotesPage() {
             onSettled: () => setIsDeleteOpen(false),
           })
         }
-        isDeleting={isDeleting}
-      />
+        isPending={isDeleting}
+        title="견적 요청 삭제"
+        confirmLabel="삭제하기"
+      >
+        견적 요청을 삭제할까요?
+        <br />
+        삭제한 요청은 되돌릴 수 없어요.
+      </ConfirmModal>
       <PageBody>
         {/* 견적을 확정한 요청의 견적은 받았던 견적 탭에서 보여준다. */}
         {activeMoveRequest.status === 'PENDING' ? (

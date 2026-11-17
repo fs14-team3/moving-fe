@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import {
   deleteProofPhoto,
@@ -48,6 +48,10 @@ function renderUseDeleteProofPhoto() {
 describe('useDeleteProofPhoto', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('삭제에 성공하면 완료를 알리고 목록에서 사진을 뺀다', async () => {
@@ -104,21 +108,48 @@ describe('useDeleteProofPhoto', () => {
     act(() => result.current.mutate('a'))
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(message))
+    expect(deleteProofPhoto).toHaveBeenCalledOnce()
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey })
   })
 
-  it('네트워크 오류면 실패를 알리고 목록은 그대로 둔다', async () => {
-    vi.mocked(deleteProofPhoto).mockRejectedValue(new Error('Network Error'))
-    const { result, invalidateQueries } = renderUseDeleteProofPhoto()
+  it.each([
+    ['서버 오류', new ApiError('INTERNAL_ERROR', 'Error', 500)],
+    ['네트워크 오류', new ApiError('NETWORK_ERROR', 'Network Error', null)],
+  ])(
+    '%s면 두 번 더 지워 보고 그래도 실패하면 알린 뒤 목록을 다시 불러온다',
+    async (_, error) => {
+      vi.useFakeTimers()
+      vi.mocked(deleteProofPhoto).mockRejectedValue(error)
+      const { result, invalidateQueries } = renderUseDeleteProofPhoto()
 
-    act(() => result.current.mutate('a'))
+      act(() => result.current.mutate('a'))
+      await act(() => vi.advanceTimersByTimeAsync(5000))
 
-    await waitFor(() =>
+      expect(deleteProofPhoto).toHaveBeenCalledTimes(3)
+      expect(result.current.isError).toBe(true)
       expect(toast.error).toHaveBeenCalledWith(
         TOAST_MESSAGES.proofPhoto.deleteFailed,
-      ),
-    )
-    expect(invalidateQueries).not.toHaveBeenCalled()
+      )
+      expect(invalidateQueries).toHaveBeenCalledWith({ queryKey })
+    },
+  )
+
+  it('다시 지워 보다가 성공하면 실패를 알리지 않고 목록에서 사진을 뺀다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(deleteProofPhoto)
+      .mockRejectedValueOnce(new ApiError('INTERNAL_ERROR', 'Error', 500))
+      .mockResolvedValueOnce()
+    const { result, queryClient } = renderUseDeleteProofPhoto()
+
+    act(() => result.current.mutate('a'))
+    await act(() => vi.advanceTimersByTimeAsync(2000))
+
+    expect(deleteProofPhoto).toHaveBeenCalledTimes(2)
+    expect(result.current.isSuccess).toBe(true)
+    expect(toast.error).not.toHaveBeenCalled()
+    expect(queryClient.getQueryData<ProofPhotoList>(queryKey)?.items).toEqual([
+      LIST.items[1],
+    ])
   })
 
   it('인증 오류는 별도의 오류 토스트를 표시하지 않는다', async () => {

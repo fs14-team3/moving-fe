@@ -5,10 +5,8 @@ import {
   deleteProofPhoto,
   type ProofPhotoList,
 } from '@/features/proof-photos/api'
-import { isApiError, isUnauthorized } from '@/lib/api-error'
+import { isApiError, isClientError, isUnauthorized } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
-
-const STALE_STATUSES = [404, 409]
 
 export function useDeleteProofPhoto(quoteId: string) {
   const queryClient = useQueryClient()
@@ -16,6 +14,7 @@ export function useDeleteProofPhoto(quoteId: string) {
 
   return useMutation({
     mutationFn: (photoId: string) => deleteProofPhoto(quoteId, photoId),
+    retry: (failureCount, error) => !isClientError(error) && failureCount < 2,
     onSuccess: async (_data, photoId) => {
       toast.success(TOAST_MESSAGES.proofPhoto.deleteSuccess)
       await queryClient.cancelQueries({ queryKey })
@@ -35,12 +34,7 @@ export function useDeleteProofPhoto(quoteId: string) {
           ? TOAST_MESSAGES.proofPhoto.deleteReviewed
           : TOAST_MESSAGES.proofPhoto.deleteFailed,
       )
-      if (
-        isApiError(error) &&
-        error.status !== null &&
-        STALE_STATUSES.includes(error.status)
-      )
-        void queryClient.invalidateQueries({ queryKey })
+      void queryClient.invalidateQueries({ queryKey })
     },
   })
 }

@@ -309,6 +309,25 @@ describe('ProofPhotoSection', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('삭제에 실패하면 목록을 다시 불러오므로 크게 보기를 닫는다', async () => {
+    const user = userEvent.setup()
+    deletion.mutate.mockImplementation((_id, { onError, onSettled }) => {
+      onError()
+      onSettled()
+    })
+
+    render(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
+    await user.click(
+      screen.getByRole('button', { name: '작업 사진 1 크게 보기' }),
+    )
+    await user.click(screen.getByRole('button', { name: '삭제' }))
+    await user.click(screen.getByRole('button', { name: '삭제하기' }))
+
+    expect(
+      screen.queryByRole('dialog', { name: '작업 사진' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('삭제할 수 없으면 크게 보기에 삭제 버튼이 없다', async () => {
     const user = userEvent.setup()
     mockPhotos(PHOTOS, 100, { canEdit: false })

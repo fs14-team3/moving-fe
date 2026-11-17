@@ -91,6 +91,7 @@ export default function ProofPhotoSection({
         setViewing((index) =>
           index === null || lastIndex < 0 ? null : Math.min(index, lastIndex),
         ),
+      onError: () => setViewing(null),
       onSettled: () => setDeletingId(null),
     })
   }

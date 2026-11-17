@@ -10,7 +10,7 @@ import { useCreateDesignation } from '@/features/move-request/hooks/useCreateDes
 import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
 import { useMover } from '@/features/movers/hooks/useMover'
 import { ApiError } from '@/lib/api-error'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -225,7 +225,12 @@ describe('MoverDetailPage', () => {
 
     const user = userEvent.setup()
     render(<MoverDetailPage />)
-    await user.click(screen.getByRole('button', { name: '찜 해제' }))
+    const nameRow = screen.getByRole('heading', {
+      name: '김무빙 기사님',
+    }).parentElement!.parentElement!
+    await user.click(
+      within(nameRow).getByRole('button', { name: '찜 해제하기' }),
+    )
 
     expect(removeFavorite).toHaveBeenCalled()
   })

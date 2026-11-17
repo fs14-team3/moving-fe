@@ -12,6 +12,7 @@ import { cn } from '@/lib/cn'
 
 type ActiveRequestSummaryProps = {
   request: MoveRequestResponse
+  // 삭제할 수 없는 요청이면 넘기지 않고, 그러면 삭제하기 버튼을 숨긴다.
   onDelete?: () => void
 }
 
@@ -68,12 +69,14 @@ export default function ActiveRequestSummary({
           <InfoItem label="이사일" value={formatMoveDate(request.moveDate)} />
         </dl>
 
-        <Button
-          onClick={onDelete}
-          className="col-start-2 row-start-1 h-9 w-auto rounded-lg px-4 text-sm lg:h-10 lg:w-auto lg:px-5 lg:text-sm"
-        >
-          삭제하기
-        </Button>
+        {onDelete && (
+          <Button
+            onClick={onDelete}
+            className="col-start-2 row-start-1 h-9 w-auto rounded-lg px-4 text-sm lg:h-10 lg:w-auto lg:px-5 lg:text-sm"
+          >
+            삭제하기
+          </Button>
+        )}
       </div>
     </section>
   )

@@ -41,6 +41,9 @@ function toFailure(error: unknown) {
   if (isApiError(error) && error.code === 'PROOF_PHOTO_REVIEWED') {
     return { error: '리뷰가 작성되어 올릴 수 없어요', retryable: false }
   }
+  if (isApiError(error) && error.code === 'PROOF_PHOTO_DELETED') {
+    return { error: '삭제된 사진이에요', retryable: false }
+  }
   return { error: '올리지 못했어요', retryable: true }
 }
 

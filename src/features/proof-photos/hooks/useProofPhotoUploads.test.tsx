@@ -255,6 +255,35 @@ describe('useProofPhotoUploads', () => {
     )
   })
 
+  it('확정 응답을 받지 못한 사진이 삭제되면 새 업로드나 재시도를 하지 않는다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(confirmProofPhoto)
+      .mockRejectedValueOnce(
+        new ApiError('NETWORK_ERROR', 'Network Error', null),
+      )
+      .mockRejectedValueOnce(
+        new ApiError('PROOF_PHOTO_DELETED', 'Deleted', 409),
+      )
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    await advance(1000)
+
+    expect(result.current.failed[0]).toMatchObject({
+      uploadId: 'a',
+      error: '삭제된 사진이에요',
+      retryable: false,
+    })
+    act(() => result.current.retry(result.current.failed))
+    await advance(5000)
+
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+    expect(uploadToStorage).toHaveBeenCalledTimes(2)
+    expect(confirmProofPhoto).toHaveBeenCalledTimes(2)
+    expect(list()?.items).toEqual([])
+  })
+
   it('자동으로 다시 올려도 실패하면 실패를 보여주고 직접 다시 시도할 수 있다', async () => {
     vi.useFakeTimers()
     vi.mocked(uploadToStorage).mockRejectedValue(new Error('Network Error'))

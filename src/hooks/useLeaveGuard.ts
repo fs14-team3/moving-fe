@@ -27,7 +27,7 @@ function toInternalLink(event: MouseEvent) {
   return url.pathname + url.search + url.hash
 }
 
-export function useLeaveGuard(when: boolean) {
+export function useLeaveGuard(when: boolean, fallbackHref: string) {
   const router = useRouter()
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null)
   const isLeaving = useRef(false)
@@ -40,6 +40,7 @@ export function useLeaveGuard(when: boolean) {
     const { scrollRestoration } = history
     history.scrollRestoration = 'manual'
     history.pushState(history.state, '', href)
+    const canGoBack = history.length > 2
 
     const ask = (go: () => void) =>
       setPendingLeave(() => () => {
@@ -61,7 +62,10 @@ export function useLeaveGuard(when: boolean) {
     const catchBack = () => {
       if (isLeaving.current || location.href !== href) return
       history.pushState(history.state, '', href)
-      ask(() => history.go(-2))
+      ask(() => {
+        if (canGoBack) history.go(-2)
+        else router.replace(fallbackHref)
+      })
     }
 
     addEventListener('beforeunload', warn)
@@ -81,7 +85,7 @@ export function useLeaveGuard(when: boolean) {
       )
       history.back()
     }
-  }, [isActive, router])
+  }, [fallbackHref, isActive, router])
 
   return {
     isOpen: pendingLeave !== null,

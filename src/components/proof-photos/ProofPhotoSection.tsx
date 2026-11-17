@@ -65,6 +65,7 @@ export default function ProofPhotoSection({
   const canRetry = !isUploading && hasRetryable
   const leaveGuard = useLeaveGuard(
     selected.length > 0 || isUploading || hasRetryable,
+    '/mover/quotes',
   )
 
   function select(event: ChangeEvent<HTMLInputElement>) {

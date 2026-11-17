@@ -437,14 +437,14 @@ describe('ProofPhotoSection', () => {
     const { container, rerender } = render(
       <ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />,
     )
-    expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false, '/mover/quotes')
 
     const user = userEvent.setup()
     await user.upload(fileInput(container), photoFiles(1))
-    expect(useLeaveGuard).toHaveBeenLastCalledWith(true)
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(true, '/mover/quotes')
 
     await user.click(screen.getByRole('button', { name: '취소' }))
-    expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false, '/mover/quotes')
 
     vi.mocked(useProofPhotoUploads).mockReturnValue({
       ...uploads,
@@ -452,16 +452,22 @@ describe('ProofPhotoSection', () => {
       failed: [failedUpload()],
     })
     rerender(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
-    expect(useLeaveGuard).toHaveBeenLastCalledWith(true)
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(true, '/mover/quotes')
 
-    const unreadable = { ...failedUpload(), retryable: false }
+    const rejected = { ...failedUpload(), retryable: false }
     vi.mocked(useProofPhotoUploads).mockReturnValue({
       ...uploads,
-      uploads: [unreadable],
-      failed: [unreadable],
+      uploads: [rejected],
+      failed: [rejected],
     })
     rerender(<ProofPhotoSection quoteId="quote-1" emptyMessage="없음" />)
-    expect(useLeaveGuard).toHaveBeenLastCalledWith(false)
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false, '/mover/quotes')
+    expect(
+      screen.queryByRole('button', { name: '다시 시도' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: '모두 다시 시도' }),
+    ).not.toBeInTheDocument()
   })
 
   it('나가려고 하면 확인 창을 띄우고 고른 대로 처리한다', async () => {

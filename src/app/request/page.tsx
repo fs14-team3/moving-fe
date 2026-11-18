@@ -11,7 +11,7 @@ export default function MoveRequestPage() {
     useActiveMoveRequest()
 
   return (
-    <main>
+    <div>
       {isPending ? (
         <div
           role="status"
@@ -48,6 +48,6 @@ export default function MoveRequestPage() {
           <MoveRequestForm />
         </div>
       )}
-    </main>
+    </div>
   )
 }

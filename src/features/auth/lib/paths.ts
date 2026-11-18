@@ -14,6 +14,12 @@ export function getLoginPath(role: Role, redirect: string) {
   return `${LOGIN_PATH[role]}?${new URLSearchParams({ redirect })}`
 }
 
+const CHAT_LOGIN_PATH = '/chat-login'
+
+function getChatLoginPath(redirect: string) {
+  return `${CHAT_LOGIN_PATH}?${new URLSearchParams({ redirect })}`
+}
+
 export const SIGNUP_PATH: Record<Role, string> = {
   CUSTOMER: '/signup',
   MOVER: '/mover/signup',
@@ -74,6 +80,12 @@ export function getRedirectPath(access: RouteAccess, user: Me | null) {
     const redirect = access === 'GUEST' ? getRedirectParam() : null
     return getPathAfterLogin(user, redirect)
   }
+
   if (access === 'PUBLIC' || access === 'GUEST') return null
+
+  if ('roles' in access) {
+    return getChatLoginPath(getCurrentPath())
+  }
+
   return getLoginPath(access.role, getCurrentPath())
 }

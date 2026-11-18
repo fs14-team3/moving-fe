@@ -11,10 +11,12 @@ export const NAV_ITEMS: Record<Role | 'GUEST', NavItem[]> = {
     { label: '견적 요청', href: '/request' },
     { label: '기사님 찾기', href: '/movers' },
     { label: '내 견적 관리', href: '/my-quotes' },
+    { label: '채팅', href: '/chats' },
   ],
   MOVER: [
     { label: '받은 요청', href: '/mover/requests' },
     { label: '내 견적 관리', href: '/mover/quotes' },
+    { label: '채팅', href: '/chats' },
   ],
 }
 

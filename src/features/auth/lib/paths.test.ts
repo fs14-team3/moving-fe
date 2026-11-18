@@ -103,3 +103,21 @@ describe('getLoginPath', () => {
     ).toBe(path)
   })
 })
+
+describe('chat route access', () => {
+  it.each<Role>(['CUSTOMER', 'MOVER'])(
+    '%s 유저는 채팅 페이지에 접근할 수 있다',
+    (role) => {
+      expect(canAccess(getRouteAccess('/chats'), createUser(role))).toBe(true)
+      expect(canAccess(getRouteAccess('/chats/room-1'), createUser(role))).toBe(
+        true,
+      )
+    },
+  )
+
+  it('프로필이 없는 유저는 채팅 페이지에 접근할 수 없다', () => {
+    expect(
+      canAccess(getRouteAccess('/chats'), createUser('CUSTOMER', false)),
+    ).toBe(false)
+  })
+})

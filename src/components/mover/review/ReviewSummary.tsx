@@ -79,9 +79,13 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
           type="button"
           aria-label="AI 요약 안내"
           onClick={() => setIsOpen(true)}
-          className="flex cursor-pointer items-center gap-1 text-sm font-medium text-gray-500"
+          className="group flex cursor-pointer items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black-200"
         >
-          AI <Info aria-hidden="true" className="size-4 text-gray-400" />
+          AI{' '}
+          <Info
+            aria-hidden="true"
+            className="size-4 text-gray-400 transition-colors group-hover:text-black-200"
+          />
         </button>
       </header>
 

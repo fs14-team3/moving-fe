@@ -3,9 +3,6 @@ import type { components, operations } from '@/lib/api-schema'
 
 type Schemas = components['schemas']
 
-export type ChatRoom = Schemas['ChatRoomListItem']
-export type ChatMessage = Schemas['ChatMessage']
-
 type ChatListQuery = NonNullable<operations['listChats']['parameters']['query']>
 
 type ChatMessageQuery = NonNullable<

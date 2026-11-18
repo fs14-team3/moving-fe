@@ -4,6 +4,7 @@ import MoveEstimateCard from '@/components/move-request/MoveEstimateCard'
 import type { MoveEstimate } from '@/features/move-estimate/types'
 
 const ESTIMATE: MoveEstimate = {
+  distanceKm: 12.3,
   minPrice: 710_000,
   maxPrice: 950_000,
   surcharges: [],

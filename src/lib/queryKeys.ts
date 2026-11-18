@@ -61,6 +61,13 @@ export const queryKeys = {
       [...queryKeys.moveRequests.detail(requestId), 'quotes', query] as const,
   },
 
+  moveEstimates: {
+    all: ['moveEstimates'] as const,
+    // GET /estimates. 입력이 다 채워지지 않으면 null
+    detail: (query: Query<'getMoveEstimate'> | null) =>
+      [...queryKeys.moveEstimates.all, 'detail', query] as const,
+  },
+
   // 기사님이 받은 요청
   receivedRequests: {
     all: ['receivedRequests'] as const,

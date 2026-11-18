@@ -8,7 +8,8 @@ const NAME_MIN_LENGTH = 2
 const NAME_MAX_LENGTH = 20
 const PASSWORD_MIN_LENGTH = 8
 const PASSWORD_MAX_LENGTH = 16
-const PHONE_MAX_LENGTH = 11
+const PHONE_PART_LENGTHS = [3, 4, 4]
+const PHONE_MAX_DIGITS = 11
 
 export const PASSWORD_RULE_MESSAGE =
   '공백 없이 영문, 숫자, 특수문자를 포함해 8~16자로 입력해 주세요.'
@@ -36,7 +37,57 @@ export function getPhoneError(phone: string) {
 }
 
 export function toPhoneDigits(value: string) {
-  return value.replace(/\D/g, '').slice(0, PHONE_MAX_LENGTH)
+  return value.replace(/\D/g, '')
+}
+
+export function formatPhone(value: string): string {
+  const [first = '', middle = '', ...rest] = value
+    .split('-')
+    .map(toPhoneDigits)
+    .filter(Boolean)
+  const parts = [first, middle, rest.join('')]
+  let overflow = ''
+  const formatted = PHONE_PART_LENGTHS.map((length, index) => {
+    const digits = overflow + parts[index]
+    overflow = digits.slice(length)
+    return digits.slice(0, length)
+  })
+    .join('-')
+    .replace(/-+$/, '')
+  return overflow && value.includes('-')
+    ? formatPhone(toPhoneDigits(value))
+    : formatted
+}
+
+function blockExtraPhoneDigits(event: InputEvent) {
+  const input = event.currentTarget as HTMLInputElement
+  const inserted = event.data ?? event.dataTransfer?.getData('text') ?? ''
+  const next =
+    input.value.slice(0, input.selectionStart ?? 0) +
+    inserted +
+    input.value.slice(input.selectionEnd ?? 0)
+  if (toPhoneDigits(next).length > PHONE_MAX_DIGITS) event.preventDefault()
+}
+
+function keepPhoneCaret(event: Event) {
+  const input = event.currentTarget as HTMLInputElement
+  const beforeCaret = input.value.slice(0, input.selectionStart ?? undefined)
+  const caret = formatPhone(beforeCaret).length
+  const skipsHyphen =
+    (event as InputEvent).inputType === 'deleteContentForward' &&
+    formatPhone(input.value)[caret] === '-'
+  const position = skipsHyphen ? caret + 1 : caret
+  requestAnimationFrame(() => input.setSelectionRange(position, position))
+}
+
+export function bindPhoneInput(input: HTMLInputElement | null) {
+  if (!input) return
+  input.addEventListener('beforeinput', blockExtraPhoneDigits)
+  input.addEventListener('input', keepPhoneCaret)
+  return () => {
+    input.removeEventListener('beforeinput', blockExtraPhoneDigits)
+    input.removeEventListener('input', keepPhoneCaret)
+  }
 }
 
 export function getPasswordError(password: string) {

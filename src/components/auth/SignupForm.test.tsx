@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SignupForm from '@/components/auth/SignupForm'
@@ -54,12 +54,37 @@ describe('SignupForm', () => {
     signupState.isSuccess = false
   })
 
-  it('전화번호는 숫자만 11자리까지 받는다', async () => {
+  it('전화번호는 숫자만 11자리까지 받아 하이픈을 넣어 보여 준다', async () => {
     const { user, fields } = renderSignupForm()
 
     await user.type(fields.phone, '010-1234-56789')
 
-    expect(fields.phone).toHaveValue('01012345678')
+    expect(fields.phone).toHaveValue('010-1234-5678')
+  })
+
+  it('전화번호 가운데 자리를 지우면 그 자리만 줄고 커서 위치를 유지한다', async () => {
+    const { user, fields } = renderSignupForm()
+    await user.type(fields.phone, '01012345678')
+    await new Promise(requestAnimationFrame)
+
+    await user.type(fields.phone, '{Backspace}', {
+      initialSelectionStart: 6,
+      initialSelectionEnd: 6,
+    })
+
+    expect(fields.phone).toHaveValue('010-134-5678')
+    await waitFor(() =>
+      expect(fields.phone).toHaveProperty('selectionStart', 5),
+    )
+  })
+
+  it('괄호나 공백이 섞인 전화번호를 붙여 넣어도 숫자를 모두 받는다', async () => {
+    const { user, fields } = renderSignupForm()
+
+    await user.click(fields.phone)
+    await user.paste('(010) 1234-5678')
+
+    expect(fields.phone).toHaveValue('010-1234-5678')
   })
 
   it('입력란을 벗어난 뒤에만 오류를 보여 준다', async () => {

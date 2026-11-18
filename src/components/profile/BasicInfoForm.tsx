@@ -7,6 +7,8 @@ import ProfileTextField from '@/components/profile/ProfileTextField'
 import { MOVER_MYPAGE_PATH } from '@/constants/navigation'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import {
+  bindPhoneInput,
+  formatPhone,
   getEmailError,
   getNameError,
   getNewPasswordError,
@@ -45,7 +47,7 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
   const values: Record<FieldName, string> = {
     name: savedName,
     email: savedEmail,
-    phone: savedPhone,
+    phone: formatPhone(savedPhone),
     currentPassword: '',
     newPassword: '',
     newPasswordConfirm: '',
@@ -60,13 +62,14 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
 
   const name = values.name.trim()
   const email = values.email.trim()
+  const phone = toPhoneDigits(values.phone)
   const isChangingPassword = Boolean(
     values.currentPassword || values.newPassword || values.newPasswordConfirm,
   )
   const body: BasicInfoUpdate = {}
   if (name !== savedName) body.name = name
   if (email !== savedEmail) body.email = email
-  if (values.phone !== savedPhone) body.phone = values.phone
+  if (phone !== savedPhone) body.phone = phone
   const isChangingBasicInfo = Object.keys(body).length > 0
 
   const errors: FieldErrors = {}
@@ -166,7 +169,8 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
           inputMode="numeric"
           autoComplete="tel-national"
           placeholder="숫자만 입력해 주세요"
-          {...fieldProps('phone', toPhoneDigits)}
+          {...fieldProps('phone', formatPhone)}
+          ref={bindPhoneInput}
         />
       </div>
       <div className="*:last:border-b-0">

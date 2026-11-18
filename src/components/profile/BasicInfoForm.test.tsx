@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import BasicInfoForm from '@/components/profile/BasicInfoForm'
@@ -93,14 +93,14 @@ describe('BasicInfoForm', () => {
 
     expect(fields.name).toHaveValue('김기사')
     expect(fields.email).toHaveValue('mover@example.com')
-    expect(fields.phone).toHaveValue('01012345678')
+    expect(fields.phone).toHaveValue('010-1234-5678')
     expect(fields.currentPassword).toHaveValue('')
     expect(fields.newPassword).toHaveValue('')
     expect(fields.newPasswordConfirm).toHaveValue('')
     expect(submit).toBeDisabled()
   })
 
-  it('회원가입과 같은 기준으로 검사하고 전화번호는 숫자만 남긴다', async () => {
+  it('회원가입과 같은 기준으로 검사하고 전화번호는 하이픈을 넣어 보여 준다', async () => {
     const { user, fields, submit } = renderBasicInfoForm()
 
     await user.clear(fields.email)
@@ -112,8 +112,57 @@ describe('BasicInfoForm', () => {
     expect(fields.email).toHaveAccessibleDescription(
       '올바른 이메일 형식이 아닙니다.',
     )
-    expect(fields.phone).toHaveValue('01098765432')
+    expect(fields.phone).toHaveValue('010-9876-5432')
     expect(submit).toBeDisabled()
+  })
+
+  it('전화번호 하이픈 뒤에서 지우면 커서가 하이픈 앞으로 이동한다', async () => {
+    const { user, fields } = renderBasicInfoForm()
+
+    await user.type(fields.phone, '{Backspace}', {
+      initialSelectionStart: 9,
+      initialSelectionEnd: 9,
+    })
+
+    expect(fields.phone).toHaveValue('010-1234-5678')
+    await waitFor(() =>
+      expect(fields.phone).toHaveProperty('selectionStart', 8),
+    )
+  })
+
+  it('전화번호 하이픈 앞에서 앞으로 지우면 하이픈을 건너 다음 숫자를 지운다', async () => {
+    const { user, fields } = renderBasicInfoForm()
+
+    await user.type(fields.phone, '{Delete}', {
+      initialSelectionStart: 3,
+      initialSelectionEnd: 3,
+    })
+    await waitFor(() =>
+      expect(fields.phone).toHaveProperty('selectionStart', 4),
+    )
+    await user.keyboard('{Delete}')
+
+    expect(fields.phone).toHaveValue('010-234-5678')
+  })
+
+  it('전화번호 11자리가 모두 차면 숫자를 더 넣을 수 없다', async () => {
+    const { user, fields } = renderBasicInfoForm()
+
+    await user.type(fields.phone, '9', {
+      initialSelectionStart: 6,
+      initialSelectionEnd: 6,
+    })
+
+    expect(fields.phone).toHaveValue('010-1234-5678')
+  })
+
+  it('괄호나 공백이 섞인 전화번호를 붙여 넣어도 숫자를 모두 받는다', async () => {
+    const { user, fields } = renderBasicInfoForm()
+
+    await user.clear(fields.phone)
+    await user.paste('(010) 9876-5432')
+
+    expect(fields.phone).toHaveValue('010-9876-5432')
   })
 
   it('바뀐 항목만 앞뒤 공백을 빼고 보낸다', async () => {
@@ -155,7 +204,7 @@ describe('BasicInfoForm', () => {
     rerender()
 
     expect(fields.name).toHaveValue('김코드')
-    expect(fields.phone).toHaveValue('01098765432')
+    expect(fields.phone).toHaveValue('010-9876-5432')
 
     await user.click(submit)
 

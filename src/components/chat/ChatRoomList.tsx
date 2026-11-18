@@ -1,13 +1,11 @@
 import ChatRoomItem from '@/components/chat/ChatRoomItem'
 import type { ChatRoom } from '@/features/chat/types'
-import type { Role } from '@/features/auth/types'
 
 type ChatRoomListProps = {
   rooms: ChatRoom[]
-  userRole: Role
 }
 
-export default function ChatRoomList({ rooms, userRole }: ChatRoomListProps) {
+export default function ChatRoomList({ rooms }: ChatRoomListProps) {
   const sortedRooms = [...rooms].sort((a, b) => {
     if (!a.lastMessageAt) return 1
     if (!b.lastMessageAt) return -1
@@ -31,7 +29,7 @@ export default function ChatRoomList({ rooms, userRole }: ChatRoomListProps) {
   return (
     <div>
       {sortedRooms.map((room) => (
-        <ChatRoomItem key={room.chatRoomId} room={room} userRole={userRole} />
+        <ChatRoomItem key={room.id} room={room} />
       ))}
     </div>
   )

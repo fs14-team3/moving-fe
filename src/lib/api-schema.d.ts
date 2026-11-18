@@ -516,7 +516,9 @@ export interface paths {
     /**
      * 견적 요청 반려 (기사님)
      * @description 로그인 세션으로 인증된 기사님만 요청할 수 있습니다. 비로그인은 401, 고객은 403을 반환합니다.
-     *     지역에 관계없이 받은 요청을 반려합니다(§8.3). 반려 사유 입력은 요구하지 않습니다.
+     *     지역에 관계없이 받은 요청을 반려합니다(§8.3).
+     *     반려 사유는 선택 입력이며, 생략하거나 빈 문자열로 전달하면 사유 없이 반려합니다.
+     *     이미 반려한 요청은 최초 반려 기록과 사유를 유지합니다.
      */
     post: operations['rejectMoveRequest']
     delete?: never
@@ -562,6 +564,27 @@ export interface paths {
      *     고객명은 User.name을 사용하며, 이름이 없으면 null을 반환합니다.
      */
     get: operations['listMySentQuotes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/movers/me/quotes/{quoteId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 보낸 견적 상세 조회 (기사님)
+     * @description 로그인한 기사님이 본인이 보낸 견적 하나를 조회합니다.
+     *     다른 기사님이 보낸 견적이거나 없는 견적이면 404를 반환합니다.
+     */
+    get: operations['getMySentQuote']
     put?: never
     post?: never
     delete?: never
@@ -628,72 +651,6 @@ export interface paths {
      *     요청 상태와 견적 상태는 함께 갱신합니다. 기사님과 일반 유저에게 확정 알림을 보냅니다.
      */
     post: operations['confirmQuote']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/quotes/{quoteId}/proof-photos': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * 작업 사진 목록
-     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canEdit`이 `true`일 때만 사진 올리기와 삭제 버튼을 보여 줍니다.
-     */
-    get: operations['listProofPhotos']
-    put?: never
-    /**
-     * 작업 사진 업로드 확정
-     * @description `POST /quotes/{quoteId}/proof-photos/uploads`로 받은 업로드 정보로 사진과 썸네일을 S3에 모두 올린 뒤, 사진 한 장마다 `uploadId`를 보내 확정합니다. 확정된 사진만 목록에 나타납니다. 같은 `uploadId`를 다시 보내면 이미 저장된 사진을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 그 사이 리뷰가 작성되거나 100장이 차도 이미 저장된 사진은 그대로 반환합니다. 삭제된 사진의 `uploadId`는 `PROOF_PHOTO_DELETED`로 거절하며 다시 업로드하지 않습니다.
-     */
-    post: operations['confirmProofPhoto']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/quotes/{quoteId}/proof-photos/{photoId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /**
-     * 작업 사진 삭제
-     * @description 기사님이 본인 견적의 작업 사진을 삭제합니다. 일반 유저가 리뷰를 작성한 뒤에는 올리기와 마찬가지로 삭제할 수 없습니다. 사진을 먼저 목록에서 빼고, 이어서 사진과 썸네일, 확정할 때 쓴 업로드 파일을 S3에서 지웁니다. 삭제된 `uploadId`는 기록으로 남겨 다시 확정해도 사진이 되살아나지 않습니다. S3에서 파일을 지우지 못하면 사진은 목록에서 빠진 채 `INTERNAL_ERROR`(500)를 반환합니다. 같은 요청을 다시 보내면 파일 삭제를 다시 시도하며, 이미 삭제한 사진을 다시 삭제해도 204를 반환합니다.
-     */
-    delete: operations['deleteProofPhoto']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/quotes/{quoteId}/proof-photos/uploads': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * 작업 사진 업로드 정보 발급
-     * @description 기사님이 본인의 확정된 견적에 올릴 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 일반 유저가 리뷰를 작성하기 전까지 받을 수 있으며, 이미 확정된 사진과 합쳐 100장을 넘을 수 없습니다.
-     *
-     *     사진마다 `image`(긴 변 약 2000px)와 `thumbnail`(긴 변 약 300px)을 브라우저에서 WebP나 JPEG로 다시 인코딩해 각각 올립니다. 다시 인코딩해야 위치 정보 등 EXIF 메타데이터가 지워지므로 원본 파일을 그대로 올리지 않습니다. `contentType`에는 인코딩한 형식을 보내며 사진과 썸네일 모두 이 형식이어야 합니다. `.jpg` 파일도 `image/jpeg`입니다. Safari처럼 canvas가 WebP로 인코딩하지 못하는 브라우저에서는 `image/jpeg`를 씁니다. `url`로 `multipart/form-data` POST를 보내며, `fields`를 그대로 담고 파일은 마지막 `file` 필드에 넣습니다. S3가 `Content-Type`이 `contentType`과 같은지, 크기(사진 5MB, 썸네일 512KB 이하), 발급 후 10분 이내인지 확인합니다. 두 파일을 모두 올린 뒤 `POST /quotes/{quoteId}/proof-photos`로 확정합니다.
-     */
-    post: operations['createProofPhotoUploads']
     delete?: never
     options?: never
     head?: never
@@ -825,6 +782,74 @@ export interface paths {
     patch: operations['readNotification']
     trace?: never
   }
+  '/chats/{chatRoomId}/messages': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 채팅 메시지 목록 조회
+     * @description 채팅방 참여자만 메시지를 조회할 수 있습니다.
+     *     메시지는 생성 시각과 ID 기준 내림차순으로 조회합니다.
+     *     cursor 기반 페이지네이션을 사용합니다.
+     *     견적이 NOT_SELECTED 상태여도 기존 메시지는 조회할 수 있습니다.
+     */
+    get: operations['listChatMessages']
+    put?: never
+    /**
+     * 채팅 메시지 전송
+     * @description 채팅방 참여자만 메시지를 전송할 수 있습니다.
+     *     견적이 NOT_SELECTED 상태인 채팅방에는 새 메시지를 전송할 수 없습니다.
+     */
+    post: operations['sendChatMessage']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/chats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 채팅방 목록 조회
+     * @description 로그인한 사용자의 채팅방 목록을 최근 메시지 순으로 조회합니다.
+     */
+    get: operations['listChats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/chats/{chatRoomId}/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * 채팅방 읽음 처리
+     * @description 채팅방 참여자의 마지막 읽은 시각을 현재 시각으로 갱신합니다.
+     */
+    patch: operations['markChatRoomAsRead']
+    trace?: never
+  }
   '/estimates': {
     parameters: {
       query?: never
@@ -905,7 +930,6 @@ export interface components {
       | 'PROFILE_REQUIRED'
       | 'NOT_IN_SERVICE_AREA'
       | 'REVIEW_NOT_ALLOWED'
-      | 'PROOF_PHOTO_NOT_ALLOWED'
       | 'NOT_FOUND'
       | 'PROFILE_ALREADY_EXISTS'
       | 'ACTIVE_REQUEST_EXISTS'
@@ -915,8 +939,6 @@ export interface components {
       | 'REQUEST_NOT_PENDING'
       | 'REQUEST_HAS_QUOTES'
       | 'QUOTE_LIMIT_REACHED'
-      | 'PROOF_PHOTO_LIMIT_REACHED'
-      | 'PROOF_PHOTO_NOT_UPLOADED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -946,56 +968,6 @@ export interface components {
     UploadResponse: {
       /** Format: uri */
       url: string
-    }
-    ProofPhoto: {
-      /** Format: uuid */
-      id: string
-      /** Format: uri */
-      url: string
-      /** Format: uri */
-      thumbnailUrl: string
-      /** Format: date-time */
-      createdAt: string
-    }
-    ProofPhotoUploadCreate: {
-      /** @example 10 */
-      count: number
-      /**
-       * @example image/webp
-       * @enum {string}
-       */
-      contentType: 'image/jpeg' | 'image/webp'
-    }
-    ProofPhotoUploadList: {
-      items: components['schemas']['ProofPhotoUpload'][]
-    }
-    ProofPhotoUpload: {
-      /** Format: uuid */
-      uploadId: string
-      image: components['schemas']['PresignedPost']
-      thumbnail: components['schemas']['PresignedPost']
-    }
-    /** @description S3 presigned POST. `url`로 `fields`와 마지막 `file` 필드를 담은 `multipart/form-data`를 보냅니다. */
-    PresignedPost: {
-      /** Format: uri */
-      url: string
-      fields: {
-        [key: string]: string
-      }
-    }
-    ProofPhotoConfirm: {
-      /** Format: uuid */
-      uploadId: string
-    }
-    ProofPhotoList: {
-      items: components['schemas']['ProofPhoto'][]
-      /** @example 100 */
-      maxCount: number
-      /**
-       * @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지)
-       * @example true
-       */
-      canEdit: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -1268,6 +1240,8 @@ export interface components {
        * @example 350000
        */
       price: number
+      /** @description 기사님이 견적 제출 시 입력한 코멘트. 미입력 시 null. */
+      comment: string | null
       status: components['schemas']['QuoteStatus']
       /** @description 지정 견적 라벨 표시용 */
       isDesignated: boolean
@@ -1284,6 +1258,8 @@ export interface components {
     QuoteCreate: {
       /** @description 견적가 (원) */
       price: number
+      /** @description 견적 코멘트. 선택 입력이며 빈 문자열은 null로 저장됩니다. */
+      comment?: string | null
     }
     /** @description 기사님에게 보이는 견적 요청 */
     RequestForMover: {
@@ -1309,6 +1285,7 @@ export interface components {
       /** Format: uuid */
       id: string
       price: number
+      comment: string | null
       status: components['schemas']['QuoteStatus']
       isDesignated: boolean
       /** Format: date-time */
@@ -1322,6 +1299,8 @@ export interface components {
       moveRequest: components['schemas']['RequestForMover']
       /** Format: date-time */
       rejectedAt: string
+      /** @description 반려 사유. 입력하지 않은 경우 null을 반환합니다. */
+      reason: string | null
     }
     RejectedRequestListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['RejectedRequest'][]
@@ -1408,6 +1387,91 @@ export interface components {
     NotificationListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['Notification'][]
     }
+    ChatMessage: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      chatRoomId: string
+      /** Format: uuid */
+      senderId: string
+      content: string
+      /** Format: date-time */
+      createdAt: string
+      /** @description 메시지 작성자 이름 */
+      senderName: string | null
+    }
+    ChatMessageListResponse: components['schemas']['CursorMeta'] & {
+      items: components['schemas']['ChatMessage'][]
+    }
+    SendChatMessageRequest: {
+      /** @description 공백만 입력한 메시지는 허용하지 않습니다. */
+      content: string
+    }
+    ChatReadResponse: {
+      /** @enum {boolean} */
+      updated: true
+      /** Format: date-time */
+      lastReadAt: string
+    }
+    ChatOtherParticipant: {
+      /** Format: uuid */
+      id: string
+      role: components['schemas']['Role']
+      /** @description 상대방 이름 또는 기사님 닉네임 */
+      name: string
+      imageUrl: string | null
+    }
+    ChatMoveRequestCustomer: {
+      imageUrl: string | null
+      user: {
+        /** Format: uuid */
+        id: string
+        name: string
+      }
+    }
+    ChatMoveRequestSummary: {
+      /** Format: uuid */
+      id: string
+      moveType: components['schemas']['ServiceType']
+      /** Format: date */
+      moveDate: string
+      fromRegion: components['schemas']['Region']
+      toRegion: components['schemas']['Region']
+      customer: components['schemas']['ChatMoveRequestCustomer']
+    }
+    ChatLastMessage: {
+      /** Format: uuid */
+      id: string
+      content: string
+      /** Format: uuid */
+      senderId: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    ChatRoomListItem: {
+      /** Format: uuid */
+      id: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      lastMessageAt: string | null
+      otherParticipant: components['schemas']['ChatOtherParticipant']
+      quote: {
+        /** Format: uuid */
+        id: string
+        /** @description 견적 금액 */
+        price: number
+        status: components['schemas']['QuoteStatus']
+        isDesignated: boolean
+        moveRequest: components['schemas']['ChatMoveRequestSummary']
+      }
+      lastMessage: components['schemas']['ChatLastMessage'] | null
+      /** @description 읽지 않은 메시지 수 */
+      unreadCount: number
+    }
+    ChatListResponse: components['schemas']['CursorMeta'] & {
+      items: components['schemas']['ChatRoomListItem'][]
+    }
   }
   responses: {
     /** @description `VALIDATION_ERROR`. `details`에 유효하지 않은 필드별 정보가 담깁니다. */
@@ -1486,7 +1550,6 @@ export interface components {
     MoverIdPath: string
     RequestIdPath: string
     QuoteIdPath: string
-    PhotoIdPath: string
     /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
     Cursor: string
     Limit: number
@@ -2515,7 +2578,14 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @description 선택적 반려 사유. 빈 문자열과 공백만 입력한 경우 null로 저장됩니다. */
+          reason?: string | null
+        }
+      }
+    }
     responses: {
       /** @description 반려 완료. 해당 요청은 받은 요청 목록에서 사라집니다. */
       201: {
@@ -2593,6 +2663,32 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+    }
+  }
+  getMySentQuote: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 보낸 견적 상세 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SentQuote']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
     }
   }
   listMyRejectedRequests: {
@@ -2674,194 +2770,6 @@ export interface operations {
       404: components['responses']['NotFound']
       /** @description `REQUEST_NOT_PENDING` (이미 확정되었거나 만료됨) */
       409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-    }
-  }
-  listProofPhotos: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        quoteId: components['parameters']['QuoteIdPath']
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description 작업 사진 목록 */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProofPhotoList']
-        }
-      }
-      400: components['responses']['ValidationError']
-      401: components['responses']['Unauthorized']
-      404: components['responses']['NotFound']
-    }
-  }
-  confirmProofPhoto: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        quoteId: components['parameters']['QuoteIdPath']
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProofPhotoConfirm']
-      }
-    }
-    responses: {
-      /** @description 확정 완료 */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProofPhoto']
-        }
-      }
-      400: components['responses']['ValidationError']
-      401: components['responses']['Unauthorized']
-      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
-      403: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      404: components['responses']['NotFound']
-      /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림), `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정), `PROOF_PHOTO_DELETED` (삭제된 사진의 `uploadId`. 재업로드 및 재시도 금지) 또는 `PROOF_PHOTO_REVIEWED` (업로드 정보를 받은 뒤 리뷰가 작성됨) */
-      409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-    }
-  }
-  deleteProofPhoto: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        quoteId: components['parameters']['QuoteIdPath']
-        photoId: components['parameters']['PhotoIdPath']
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description 삭제 완료. 응답 본문 없음. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      400: components['responses']['ValidationError']
-      401: components['responses']['Unauthorized']
-      403: components['responses']['Forbidden']
-      /** @description `NOT_FOUND`. 본인 견적의 사진이 아님 */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      /** @description `PROOF_PHOTO_REVIEWED`. 리뷰가 작성된 견적의 사진은 삭제할 수 없습니다. */
-      409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
-      503: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-    }
-  }
-  createProofPhotoUploads: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        quoteId: components['parameters']['QuoteIdPath']
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProofPhotoUploadCreate']
-      }
-    }
-    responses: {
-      /** @description 업로드 정보 */
-      201: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ProofPhotoUploadList']
-        }
-      }
-      400: components['responses']['ValidationError']
-      401: components['responses']['Unauthorized']
-      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
-      403: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      404: components['responses']['NotFound']
-      /** @description `PROOF_PHOTO_LIMIT_REACHED` (확정된 사진과 합쳐 100장을 넘음) 또는 `PROOF_PHOTO_REVIEWED` (리뷰가 작성된 견적) */
-      409: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['ErrorResponse']
-        }
-      }
-      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
-      503: {
         headers: {
           [name: string]: unknown
         }
@@ -3056,6 +2964,140 @@ export interface operations {
       }
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
+    }
+  }
+  listChatMessages: {
+    parameters: {
+      query?: {
+        /** @description 이전 응답의 nextCursor 값 */
+        cursor?: string
+        /** @description 한 페이지에 조회할 메시지 수 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        chatRoomId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 채팅 메시지 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatMessageListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description 채팅방 참여자가 아닌 경우 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  sendChatMessage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        chatRoomId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SendChatMessageRequest']
+      }
+    }
+    responses: {
+      /** @description 메시지 전송 완료 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatMessage']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description 채팅방 참여자가 아니거나 메시지 전송이 제한된 견적 상태인 경우 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  listChats: {
+    parameters: {
+      query?: {
+        /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
+        cursor?: components['parameters']['Cursor']
+        /** @description 한 페이지에 조회할 채팅방 수 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 채팅방 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+    }
+  }
+  markChatRoomAsRead: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        chatRoomId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 읽음 처리 완료 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatReadResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      /** @description 채팅방 참여자가 아닌 경우 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   getMoveEstimate: {

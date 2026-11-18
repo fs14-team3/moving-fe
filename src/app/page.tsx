@@ -1,6 +1,54 @@
 import LandingImage from '@/components/landing/LandingImage'
 import Image from 'next/image'
 
+const MOVE_TYPES = [
+  {
+    src: '/assets/images/moving-box.png',
+    label: '소형 이사',
+    description: '원룸, 투룸, 20평대 미만',
+  },
+  {
+    src: '/assets/images/truck.webp',
+    label: '가정 이사',
+    description: '쓰리룸, 20평대 미만',
+  },
+  {
+    src: '/assets/images/office-building.png',
+    label: '기업, 사무실 이사',
+    description: '사무실, 상업 공간',
+  },
+]
+
+function MoveTypeCard({
+  src,
+  label,
+  description,
+}: {
+  src: string
+  label: string
+  description: string
+}) {
+  return (
+    <div className="group flex size-31 shrink-0 flex-col items-center justify-center gap-[10px] rounded-2xl bg-background-200 transition-transform hover:scale-118 hover:rounded-3xl hover:border hover:border-primary-300 hover:bg-primary-100 md:size-50 md:hover:border-[2px]">
+      <Image
+        src={src}
+        width={68}
+        height={68}
+        alt=""
+        className={`size-17 object-contain md:size-25 ${src.endsWith('truck.webp') ? 'object-bottom' : ''}`}
+      />
+      <div>
+        <p className="text-center text-[9px] leading-3 leading-5 font-bold group-hover:text-primary-500 md:text-base md:leading-5">
+          {label}
+        </p>
+        <p className="mt-[2px] text-center text-[6px] leading-3 font-normal text-gray-500 md:mt-[3px] md:text-xs md:leading-4">
+          {description}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   return (
     <div>
@@ -31,10 +79,16 @@ export default function Home() {
             <br />
             이사 유형부터 선택해요
           </h2>
-          <LandingImage
-            name="img2"
-            className="block h-auto w-full md:mx-auto md:max-w-[677px] lg:mx-0 lg:w-[693px]"
-          />
+          <div className="flex w-full min-w-0 items-center justify-center gap-5 overflow-hidden md:gap-8 lg:w-auto lg:overflow-visible">
+            {MOVE_TYPES.map((type) => (
+              <MoveTypeCard
+                key={type.label}
+                src={type.src}
+                label={type.label}
+                description={type.description}
+              />
+            ))}
+          </div>
         </div>
       </section>
 

@@ -99,7 +99,7 @@ export default function Dropdown({
         type="button"
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex cursor-pointer items-center justify-between rounded-lg border font-medium ${variantStyles[variant].button} ${isOpen ? variantStyles[variant].openButton : 'border-line-200 bg-white text-black-400 lg:border-gray-300'}`}
+        className={`flex cursor-pointer items-center justify-between rounded-lg border font-medium ${variantStyles[variant].button} ${isOpen ? variantStyles[variant].openButton : 'border-line-200 bg-white text-black-400 transition-colors hover:bg-background-300 lg:border-gray-300'}`}
       >
         <p>{selectedOption?.label || placeholder}</p>
         <ChevronDown

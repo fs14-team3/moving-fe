@@ -95,7 +95,7 @@ export default function Modal({
               type="button"
               aria-label="닫기"
               onClick={onClose}
-              className="flex size-6 items-center justify-center text-gray-400 md:size-9"
+              className="flex size-6 items-center justify-center text-gray-400 transition-colors hover:text-black-200 md:size-9"
             >
               <X strokeWidth={1.5} className="size-6" />
             </button>

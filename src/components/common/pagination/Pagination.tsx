@@ -32,7 +32,7 @@ export default function Pagination({
         disabled={disabled || currentPage <= 1}
         onClick={() => onPageChange(currentPage - 1)}
         aria-label="이전 페이지"
-        className="size-[34px] cursor-pointer rounded-lg bg-gray-50 font-semibold disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12"
+        className="size-[34px] cursor-pointer rounded-lg bg-gray-50 font-semibold transition-colors enabled:hover:bg-background-300 disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12"
       >
         &lt;
       </button>
@@ -57,7 +57,7 @@ export default function Pagination({
         disabled={disabled || currentPage >= totalPage}
         onClick={() => onPageChange(currentPage + 1)}
         aria-label="다음 페이지"
-        className="size-[34px] cursor-pointer rounded-lg bg-gray-50 font-semibold disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12"
+        className="size-[34px] cursor-pointer rounded-lg bg-gray-50 font-semibold transition-colors enabled:hover:bg-background-300 disabled:cursor-not-allowed disabled:text-gray-300 lg:size-12"
       >
         &gt;
       </button>

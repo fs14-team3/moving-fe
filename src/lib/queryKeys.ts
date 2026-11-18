@@ -31,6 +31,9 @@ export const queryKeys = {
     // 찜하기처럼 상세만 바뀔 때 리뷰까지 다시 불러오지 않도록 detail 아래에 두지 않는다.
     reviews: (moverId: string, query: Query<'listMoverReviews'> = {}) =>
       [...queryKeys.movers.all, 'reviews', moverId, query] as const,
+    // GET /movers/{moverId}/review-summary
+    reviewSummary: (moverId: string) =>
+      [...queryKeys.movers.all, 'reviewSummary', moverId] as const,
     // GET /movers/me (기사님 마이페이지)
     me: () => [...queryKeys.movers.all, 'me'] as const,
   },
@@ -56,6 +59,13 @@ export const queryKeys = {
     // 견적을 확정하면 요청 상세와 받은 견적이 함께 바뀌어서 detail 아래에 둔다.
     quotes: (requestId: string, query: Query<'listQuotesForRequest'> = {}) =>
       [...queryKeys.moveRequests.detail(requestId), 'quotes', query] as const,
+  },
+
+  moveEstimates: {
+    all: ['moveEstimates'] as const,
+    // GET /estimates. 입력이 다 채워지지 않으면 null
+    detail: (query: Query<'getMoveEstimate'> | null) =>
+      [...queryKeys.moveEstimates.all, 'detail', query] as const,
   },
 
   // 기사님이 받은 요청
@@ -86,6 +96,12 @@ export const queryKeys = {
     // GET /quotes/{quoteId}
     detail: (quoteId: string) =>
       [...queryKeys.quotes.all, 'detail', quoteId] as const,
+  },
+
+  proofPhotos: {
+    all: ['proofPhotos'] as const,
+    list: (quoteId: string) =>
+      [...queryKeys.proofPhotos.all, 'list', quoteId] as const,
   },
 
   // 일반 유저의 리뷰. 기사님이 받은 리뷰는 movers.reviews를 쓴다.

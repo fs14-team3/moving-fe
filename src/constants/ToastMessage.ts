@@ -70,6 +70,14 @@ export const TOAST_MESSAGES = {
     passwordChangeFailed: '비밀번호 변경에 실패했습니다.',
   },
 
+  proofPhoto: {
+    tooMany: (remaining: number) =>
+      `작업 사진은 ${remaining}장 더 올릴 수 있습니다.`,
+    deleteSuccess: '작업 사진을 삭제했습니다.',
+    deleteFailed: '작업 사진 삭제에 실패했습니다.',
+    deleteReviewed: '리뷰가 작성되어 작업 사진을 삭제할 수 없습니다.',
+  },
+
   common: {
     linkCopied: '링크가 복사되었습니다.',
     linkCopyFailed: '링크 복사에 실패했습니다.',

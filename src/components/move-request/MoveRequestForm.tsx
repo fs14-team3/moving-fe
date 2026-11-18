@@ -1,13 +1,16 @@
 'use client'
 
 import type { ServiceType } from '@/constants/services'
+import { useMoveEstimate } from '@/features/move-estimate/hooks/useMoveEstimate'
 import { useCreateMoveRequest } from '@/features/move-request/hooks/useCreateMoveRequest'
+import { cn } from '@/lib/cn'
 import { useRouter } from 'next/navigation'
 import { type SubmitEvent, useState } from 'react'
 import Button from '../common/button/Button'
 import type { SelectedAddress } from './AddressSearchModal'
 import MoveAddressStep from './MoveAddressStep'
 import MoveDateStep from './MoveDateStep'
+import MoveEstimateCard from './MoveEstimateCard'
 import MoveRequestStep from './MoveRequestStep'
 import MoveTypeStep from './MoveTypeStep'
 
@@ -33,6 +36,17 @@ export default function MoveRequestForm() {
 
   const isFormComplete = Boolean(
     moveType && moveDate && departureAddress && arrivalAddress,
+  )
+
+  const { estimate, isLoading: isEstimating } = useMoveEstimate(
+    moveType && moveDate && departureAddress && arrivalAddress
+      ? {
+          moveType,
+          moveDate: formatMoveDate(moveDate),
+          from: departureAddress.address,
+          to: arrivalAddress.address,
+        }
+      : null,
   )
 
   const canMoveNext =
@@ -135,43 +149,52 @@ export default function MoveRequestForm() {
         />
       </MoveRequestStep>
 
-      <section className="mt-auto flex gap-4 md:hidden">
-        <Button
-          variant="outlined"
-          type="button"
-          disabled={currentStep === 1}
-          onClick={() => setCurrentStep((prev) => prev - 1)}
-          className="cursor-pointer disabled:cursor-not-allowed"
+      <div className="mt-auto flex flex-col gap-6">
+        {/* 모바일에서는 마지막 단계에서만 보여 준다. 카드가 없으면(null) 간격도 없앤다. */}
+        <div
+          className={cn('empty:hidden', currentStep !== 3 && 'max-md:hidden')}
         >
-          이전
-        </Button>
+          <MoveEstimateCard estimate={estimate} isLoading={isEstimating} />
+        </div>
+
+        <section className="flex gap-4 md:hidden">
+          <Button
+            variant="outlined"
+            type="button"
+            disabled={currentStep === 1}
+            onClick={() => setCurrentStep((prev) => prev - 1)}
+            className="cursor-pointer disabled:cursor-not-allowed"
+          >
+            이전
+          </Button>
+
+          <Button
+            variant="solid"
+            type={currentStep === 3 ? 'submit' : 'button'}
+            disabled={!canMoveNext || isPending}
+            onClick={
+              currentStep < 3
+                ? () => setCurrentStep((prev) => prev + 1)
+                : undefined
+            }
+            className="cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isPending
+              ? '요청 중...'
+              : currentStep === 3
+                ? '견적 요청하기'
+                : '다음'}
+          </Button>
+        </section>
 
         <Button
-          variant="solid"
-          type={currentStep === 3 ? 'submit' : 'button'}
-          disabled={!canMoveNext || isPending}
-          onClick={
-            currentStep < 3
-              ? () => setCurrentStep((prev) => prev + 1)
-              : undefined
-          }
-          className="cursor-pointer disabled:cursor-not-allowed"
+          type="submit"
+          disabled={!isFormComplete || isPending}
+          className="hidden self-end md:flex md:h-14 md:w-50 lg:h-14 lg:w-50"
         >
-          {isPending
-            ? '요청 중...'
-            : currentStep === 3
-              ? '견적 요청하기'
-              : '다음'}
+          {isPending ? '요청 중...' : '견적 요청하기'}
         </Button>
-      </section>
-
-      <Button
-        type="submit"
-        disabled={!isFormComplete || isPending}
-        className="mt-auto hidden self-end md:flex md:h-14 md:w-50 lg:h-14 lg:w-50"
-      >
-        {isPending ? '요청 중...' : '견적 요청하기'}
-      </Button>
+      </div>
     </form>
   )
 }

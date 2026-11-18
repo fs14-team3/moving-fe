@@ -72,8 +72,8 @@ export default function Home() {
       </section>
 
       <section className="py-[61px] md:px-8 lg:px-0">
-        <div className="mx-auto flex flex-col justify-center gap-9 md:max-w-[677px] md:gap-10 lg:max-w-[1086px] lg:flex-row lg:items-center lg:justify-between lg:gap-0">
-          <h2 className="ml-8 text-xl leading-8 font-bold md:ml-0 md:text-3xl md:leading-10">
+        <div className="mx-auto flex w-full flex-col justify-center gap-9 md:max-w-[677px] md:gap-10 lg:max-w-[1086px] lg:flex-row lg:items-center lg:justify-between lg:gap-0">
+          <h2 className="mx-auto w-full max-w-[375px] pl-8 text-xl leading-8 font-bold md:max-w-none md:pl-0 md:text-3xl md:leading-10 lg:w-auto">
             번거로운 선정 과정,
             <br />
             이사 유형부터 선택해요
@@ -94,7 +94,7 @@ export default function Home() {
       <section className="h-124 md:h-208 md:px-8 lg:h-212">
         <div className="relative isolate mx-auto w-full pt-[30px] md:max-w-[679px] md:pt-12 lg:flex lg:max-w-[1402px] lg:flex-row-reverse lg:px-15">
           <div className='absolute inset-x-0 top-0 -z-10 h-51 bg-[url("/assets/images/mover_detail_banner.png")] bg-cover bg-center bg-no-repeat md:h-83 md:w-170 md:rounded-4xl lg:h-100 lg:w-auto' />
-          <h2 className="pr-8 text-right text-xl leading-8 font-bold text-white md:pr-13 md:text-3xl md:leading-10 lg:absolute lg:top-30 lg:left-162 lg:text-left">
+          <h2 className="mx-auto w-full max-w-[375px] pr-8 text-right text-xl leading-8 font-bold text-white md:max-w-none md:pr-13 md:text-3xl md:leading-10 lg:absolute lg:top-30 lg:left-162 lg:w-auto lg:text-left">
             원하는 이사 서비스를 요청하고
             <br />
             견적을 받아보세요
@@ -120,7 +120,7 @@ export default function Home() {
 
       <section className="relative isolate h-269 w-full overflow-hidden pt-14 md:h-252 lg:flex lg:items-start lg:justify-center lg:gap-10 lg:pt-30">
         <div className="absolute inset-x-0 bottom-0 -z-10 h-220 bg-primary-100 md:h-177 lg:h-161" />
-        <div className="mx-auto flex flex-col md:max-w-[677px] md:gap-15 lg:mx-0">
+        <div className="mx-auto flex w-full max-w-[375px] flex-col gap-1 md:max-w-[677px] md:gap-15 lg:mx-0">
           <h2 className="pl-8 text-xl leading-8 font-bold md:pl-0 md:text-3xl md:leading-10">
             여러 업체의 견적을
             <br />

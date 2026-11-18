@@ -31,7 +31,7 @@ export default function MyQuotesLayout({ children }: { children: ReactNode }) {
                   'border-b-2 py-4 text-sm leading-6 font-semibold transition-colors lg:py-6 lg:text-xl lg:leading-8',
                   isActive
                     ? 'border-black-400 text-black-400'
-                    : 'border-transparent text-gray-400',
+                    : 'border-transparent text-gray-400 hover:text-black-200',
                 )}
               >
                 {label}

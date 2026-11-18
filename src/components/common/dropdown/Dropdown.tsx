@@ -34,11 +34,12 @@ const variantStyles = {
   },
   sort: {
     button:
-      'w-[95px] h-8 rounded-lg px-[10px] text-xs lg:w-[114px] lg:h-10 lg:rounded-xl lg:text-sm lg:font-semibold',
+      'min-w-[95px] h-8 whitespace-nowrap rounded-lg px-[10px] text-xs lg:min-w-[114px] lg:h-10 lg:rounded-xl lg:text-sm lg:font-semibold',
     openButton: 'border-transparent bg-white text-gray-400',
-    icon: 'size-[15px] lg:size-5',
-    menu: 'top-[38px] w-[95px] overflow-hidden rounded-lg border border-line-100 lg:w-[114px] lg:rounded-xl lg:top-12',
-    menuButton: 'w-full h-8 text-xs px-[10px] lg:h-10 lg:text-sm',
+    icon: 'size-[15px] shrink-0 lg:size-5',
+    menu: 'top-[38px] w-full overflow-hidden rounded-lg border border-line-100 lg:rounded-xl lg:top-12',
+    menuButton:
+      'w-full h-8 whitespace-nowrap text-xs px-[10px] lg:h-10 lg:text-sm',
   },
 }
 

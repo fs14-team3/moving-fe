@@ -634,6 +634,72 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/quotes/{quoteId}/proof-photos': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 작업 사진 목록
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canEdit`이 `true`일 때만 사진 올리기와 삭제 버튼을 보여 줍니다.
+     */
+    get: operations['listProofPhotos']
+    put?: never
+    /**
+     * 작업 사진 업로드 확정
+     * @description `POST /quotes/{quoteId}/proof-photos/uploads`로 받은 업로드 정보로 사진과 썸네일을 S3에 모두 올린 뒤, 사진 한 장마다 `uploadId`를 보내 확정합니다. 확정된 사진만 목록에 나타납니다. 같은 `uploadId`를 다시 보내면 이미 저장된 사진을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 그 사이 리뷰가 작성되거나 100장이 차도 이미 저장된 사진은 그대로 반환합니다. 삭제된 사진의 `uploadId`는 `PROOF_PHOTO_DELETED`로 거절하며 다시 업로드하지 않습니다.
+     */
+    post: operations['confirmProofPhoto']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/proof-photos/{photoId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * 작업 사진 삭제
+     * @description 기사님이 본인 견적의 작업 사진을 삭제합니다. 일반 유저가 리뷰를 작성한 뒤에는 올리기와 마찬가지로 삭제할 수 없습니다. 사진을 먼저 목록에서 빼고, 이어서 사진과 썸네일, 확정할 때 쓴 업로드 파일을 S3에서 지웁니다. 삭제된 `uploadId`는 기록으로 남겨 다시 확정해도 사진이 되살아나지 않습니다. S3에서 파일을 지우지 못하면 사진은 목록에서 빠진 채 `INTERNAL_ERROR`(500)를 반환합니다. 같은 요청을 다시 보내면 파일 삭제를 다시 시도하며, 이미 삭제한 사진을 다시 삭제해도 204를 반환합니다.
+     */
+    delete: operations['deleteProofPhoto']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/proof-photos/uploads': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 작업 사진 업로드 정보 발급
+     * @description 기사님이 본인의 확정된 견적에 올릴 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 일반 유저가 리뷰를 작성하기 전까지 받을 수 있으며, 이미 확정된 사진과 합쳐 100장을 넘을 수 없습니다.
+     *
+     *     사진마다 `image`(긴 변 약 2000px)와 `thumbnail`(긴 변 약 300px)을 브라우저에서 WebP나 JPEG로 다시 인코딩해 각각 올립니다. 다시 인코딩해야 위치 정보 등 EXIF 메타데이터가 지워지므로 원본 파일을 그대로 올리지 않습니다. `contentType`에는 인코딩한 형식을 보내며 사진과 썸네일 모두 이 형식이어야 합니다. `.jpg` 파일도 `image/jpeg`입니다. Safari처럼 canvas가 WebP로 인코딩하지 못하는 브라우저에서는 `image/jpeg`를 씁니다. `url`로 `multipart/form-data` POST를 보내며, `fields`를 그대로 담고 파일은 마지막 `file` 필드에 넣습니다. S3가 `Content-Type`이 `contentType`과 같은지, 크기(사진 5MB, 썸네일 512KB 이하), 발급 후 10분 이내인지 확인합니다. 두 파일을 모두 올린 뒤 `POST /quotes/{quoteId}/proof-photos`로 확정합니다.
+     */
+    post: operations['createProofPhotoUploads']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reviews': {
     parameters: {
       query?: never
@@ -759,6 +825,29 @@ export interface paths {
     patch: operations['readNotification']
     trace?: never
   }
+  '/estimates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 이사 예상 비용
+     * @description 견적 요청 전에 이사 유형 · 날짜 · 출발지 · 도착지로 대략적인 예상 비용을 계산합니다.
+     *     거리는 카카오 로컬 API로 주소를 좌표로 바꾼 뒤 직선거리에 1.3을 곱해 구합니다.
+     *     유형별 기본료에 거리 요금을 더하고, 주말 · 공휴일이면 추가 비용을 붙입니다(겹치면 높은 비율 하나만 적용).
+     *     계산값의 ±15%를 만 원 단위로 반올림해 범위로 반환합니다.
+     */
+    get: operations['getMoveEstimate']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -770,6 +859,16 @@ export interface components {
      * @enum {string}
      */
     ServiceType: 'SMALL' | 'HOME' | 'OFFICE'
+    MoveEstimate: {
+      /** @description 예상 이동 거리 (km, 소수점 첫째 자리) */
+      distanceKm: number
+      /** @description 예상 비용 최솟값 (원, 만 원 단위) */
+      minPrice: number
+      /** @description 예상 비용 최댓값 (원, 만 원 단위) */
+      maxPrice: number
+      /** @description 적용된 추가 비용 사유. WEEKEND 주말, HOLIDAY 공휴일 */
+      surcharges: ('WEEKEND' | 'HOLIDAY')[]
+    }
     /** @description 시/도 줄임 명칭: 서울, 경기, 인천, 강원, 충북, 충남, 세종, 대전, 전북, 전남, 광주, 경북, 경남, 대구, 울산, 부산, 제주 */
     Region: string
     /** @enum {string} */
@@ -806,6 +905,7 @@ export interface components {
       | 'PROFILE_REQUIRED'
       | 'NOT_IN_SERVICE_AREA'
       | 'REVIEW_NOT_ALLOWED'
+      | 'PROOF_PHOTO_NOT_ALLOWED'
       | 'NOT_FOUND'
       | 'PROFILE_ALREADY_EXISTS'
       | 'ACTIVE_REQUEST_EXISTS'
@@ -815,6 +915,8 @@ export interface components {
       | 'REQUEST_NOT_PENDING'
       | 'REQUEST_HAS_QUOTES'
       | 'QUOTE_LIMIT_REACHED'
+      | 'PROOF_PHOTO_LIMIT_REACHED'
+      | 'PROOF_PHOTO_NOT_UPLOADED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -844,6 +946,56 @@ export interface components {
     UploadResponse: {
       /** Format: uri */
       url: string
+    }
+    ProofPhoto: {
+      /** Format: uuid */
+      id: string
+      /** Format: uri */
+      url: string
+      /** Format: uri */
+      thumbnailUrl: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    ProofPhotoUploadCreate: {
+      /** @example 10 */
+      count: number
+      /**
+       * @example image/webp
+       * @enum {string}
+       */
+      contentType: 'image/jpeg' | 'image/webp'
+    }
+    ProofPhotoUploadList: {
+      items: components['schemas']['ProofPhotoUpload'][]
+    }
+    ProofPhotoUpload: {
+      /** Format: uuid */
+      uploadId: string
+      image: components['schemas']['PresignedPost']
+      thumbnail: components['schemas']['PresignedPost']
+    }
+    /** @description S3 presigned POST. `url`로 `fields`와 마지막 `file` 필드를 담은 `multipart/form-data`를 보냅니다. */
+    PresignedPost: {
+      /** Format: uri */
+      url: string
+      fields: {
+        [key: string]: string
+      }
+    }
+    ProofPhotoConfirm: {
+      /** Format: uuid */
+      uploadId: string
+    }
+    ProofPhotoList: {
+      items: components['schemas']['ProofPhoto'][]
+      /** @example 100 */
+      maxCount: number
+      /**
+       * @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지)
+       * @example true
+       */
+      canEdit: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -1334,6 +1486,7 @@ export interface components {
     MoverIdPath: string
     RequestIdPath: string
     QuoteIdPath: string
+    PhotoIdPath: string
     /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
     Cursor: string
     Limit: number
@@ -2530,6 +2683,194 @@ export interface operations {
       }
     }
   }
+  listProofPhotos: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 작업 사진 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+    }
+  }
+  confirmProofPhoto: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProofPhotoConfirm']
+      }
+    }
+    responses: {
+      /** @description 확정 완료 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhoto']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림), `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정), `PROOF_PHOTO_DELETED` (삭제된 사진의 `uploadId`. 재업로드 및 재시도 금지) 또는 `PROOF_PHOTO_REVIEWED` (업로드 정보를 받은 뒤 리뷰가 작성됨) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  deleteProofPhoto: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+        photoId: components['parameters']['PhotoIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 삭제 완료. 응답 본문 없음. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인 견적의 사진이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `PROOF_PHOTO_REVIEWED`. 리뷰가 작성된 견적의 사진은 삭제할 수 없습니다. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createProofPhotoUploads: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProofPhotoUploadCreate']
+      }
+    }
+    responses: {
+      /** @description 업로드 정보 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoUploadList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (확정된 사진과 합쳐 100장을 넘음) 또는 `PROOF_PHOTO_REVIEWED` (리뷰가 작성된 견적) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
   createReview: {
     parameters: {
       query?: never
@@ -2715,6 +3056,55 @@ export interface operations {
       }
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
+    }
+  }
+  getMoveEstimate: {
+    parameters: {
+      query: {
+        moveType: components['schemas']['ServiceType']
+        /** @description 이사 날짜. 한국 시간 기준 오늘 또는 이후 */
+        moveDate: string
+        /** @description 출발지 주소. 끝의 괄호 참고 항목은 빼고 검색합니다. */
+        from: string
+        /** @description 도착지 주소. 끝의 괄호 참고 항목은 빼고 검색합니다. */
+        to: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 예상 비용 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoveEstimate']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `ADDRESS_NOT_FOUND`. 출발지나 도착지 주소로 좌표를 찾지 못한 경우 */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `SERVICE_UNAVAILABLE`. 서버에 카카오 REST API 키(`KAKAO_CLIENT_ID`)가 없거나 카카오 API 호출에 실패한 경우 */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
 }

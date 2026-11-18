@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
+import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
 import {
   ConfirmedLabel,
   QuoteDetailHeader,
@@ -12,6 +13,8 @@ import {
 import { useQuoteNotFound } from '@/features/my-quotes/hooks/useQuoteNotFound'
 import { toCustomerName } from '@/features/received-requests/format'
 import { useSentQuote } from '@/features/sent-quotes/hooks/useSentQuote'
+import { isMoveCompleted } from '@/features/sent-quotes/lib/status'
+import { cn } from '@/lib/cn'
 
 export default function SentQuoteDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -38,6 +41,8 @@ export default function SentQuoteDetailPage() {
 
   if (!quote) return null
 
+  const isConfirmed = quote.status === 'CONFIRMED'
+
   return (
     <div className="bg-gray-50">
       <QuoteDetailHeader />
@@ -53,12 +58,25 @@ export default function SentQuoteDetailPage() {
               <p className="text-lg leading-6 font-semibold md:text-2xl md:leading-8">
                 {toCustomerName(quote.moveRequest)}
               </p>
-              {quote.status === 'CONFIRMED' && <ConfirmedLabel />}
+              {isConfirmed && <ConfirmedLabel />}
             </div>
           </header>
 
           <QuotePrice price={quote.price} />
-          <QuoteInfo moveRequest={quote.moveRequest} />
+          <QuoteInfo
+            moveRequest={quote.moveRequest}
+            className={cn(isConfirmed && 'border-b border-line-100')}
+          />
+          {isConfirmed && (
+            <ProofPhotoSection
+              quoteId={quote.id}
+              emptyMessage={
+                isMoveCompleted(quote.moveRequest)
+                  ? '고객님이 리뷰를 작성해 작업 사진을 올릴 수 없어요.'
+                  : '이사일 다음 날부터 작업 사진을 올릴 수 있어요.'
+              }
+            />
+          )}
         </article>
       </div>
     </div>

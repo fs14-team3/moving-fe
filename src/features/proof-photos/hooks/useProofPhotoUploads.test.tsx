@@ -1,0 +1,454 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, renderHook, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  confirmProofPhoto,
+  createProofPhotoUploads,
+  uploadToStorage,
+  type ProofPhotoList,
+} from '@/features/proof-photos/api'
+import { useProofPhotoUploads } from '@/features/proof-photos/hooks/useProofPhotoUploads'
+import { resizeProofPhoto } from '@/features/proof-photos/lib/resizeProofPhoto'
+import { ApiError } from '@/lib/api-error'
+import { queryKeys } from '@/lib/queryKeys'
+
+vi.mock('@/features/proof-photos/api', () => ({
+  createProofPhotoUploads: vi.fn(),
+  uploadToStorage: vi.fn(),
+  confirmProofPhoto: vi.fn(),
+}))
+
+vi.mock('@/features/proof-photos/lib/resizeProofPhoto', () => ({
+  pickPhotoType: vi.fn(async () => 'image/webp'),
+  resizeProofPhoto: vi.fn(),
+}))
+
+URL.createObjectURL = vi.fn(() => 'blob:preview')
+URL.revokeObjectURL = vi.fn()
+
+const post = (uploadId: string) => ({
+  uploadId,
+  image: { url: 'https://bucket', fields: { key: `${uploadId}` } },
+  thumbnail: { url: 'https://bucket', fields: { key: `${uploadId}-t` } },
+})
+
+const photo = (id: string) => ({
+  id,
+  url: `https://img/${id}`,
+  thumbnailUrl: `https://img/${id}-thumbnail`,
+  createdAt: '2026-11-16T00:00:00.000Z',
+})
+
+const files = (count: number) =>
+  Array.from({ length: count }, (_, i) => new File(['x'], `photo-${i}.jpg`))
+
+function renderUploads() {
+  const queryClient = new QueryClient()
+  queryClient.setQueryData<ProofPhotoList>(
+    queryKeys.proofPhotos.list('quote-1'),
+    { items: [], maxCount: 100, canEdit: true },
+  )
+  const view = renderHook(() => useProofPhotoUploads('quote-1'), {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  })
+  const list = () =>
+    queryClient.getQueryData<ProofPhotoList>(
+      queryKeys.proofPhotos.list('quote-1'),
+    )
+  return { ...view, list, queryClient }
+}
+
+const anySignal = expect.any(AbortSignal)
+
+async function advance(ms: number) {
+  await act(() => vi.advanceTimersByTimeAsync(ms))
+}
+
+describe('useProofPhotoUploads', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    let issued = 0
+    vi.mocked(createProofPhotoUploads)
+      .mockReset()
+      .mockImplementation(async () => [
+        post(String.fromCharCode(97 + issued++)),
+      ])
+    vi.mocked(resizeProofPhoto)
+      .mockReset()
+      .mockResolvedValue({
+        image: new Blob(['image']),
+        thumbnail: new Blob(['t']),
+      })
+    vi.mocked(uploadToStorage).mockReset().mockResolvedValue()
+    vi.mocked(confirmProofPhoto)
+      .mockReset()
+      .mockImplementation(async (_, uploadId) => photo(`photo-${uploadId}`))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('사진마다 올리기 직전에 업로드 정보를 받아 올리고 확정한 뒤 목록에 추가한다', async () => {
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(2)))
+
+    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(createProofPhotoUploads).toHaveBeenCalledWith(
+      'quote-1',
+      { count: 1, contentType: 'image/webp' },
+      anySignal,
+    )
+    expect(resizeProofPhoto).toHaveBeenCalledTimes(2)
+    expect(uploadToStorage).toHaveBeenCalledTimes(4)
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'a', anySignal)
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b', anySignal)
+    expect(
+      list()
+        ?.items.map(({ id }) => id)
+        .sort(),
+    ).toEqual(['photo-a', 'photo-b'])
+  })
+
+  it('올린 사진을 모아 두었다가 다 올리고 잠시 뒤 비우고, 새로 올리면 처음부터 모은다', async () => {
+    vi.useFakeTimers()
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(2)))
+    await advance(0)
+
+    expect(result.current.isUploading).toBe(false)
+    expect([...result.current.uploadedIds].sort()).toEqual([
+      'photo-a',
+      'photo-b',
+    ])
+
+    await advance(3999)
+    expect(result.current.uploadedIds).toHaveLength(2)
+    await advance(1)
+    expect(result.current.uploadedIds).toHaveLength(0)
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    expect(result.current.uploadedIds).toEqual(['photo-c'])
+  })
+
+  it('동시에 올리는 사진만 업로드 정보를 받고 나머지는 차례가 오면 받는다', async () => {
+    let openGate = () => {}
+    const gate = new Promise<void>((resolve) => {
+      openGate = resolve
+    })
+    vi.mocked(uploadToStorage).mockReturnValue(gate)
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(4)))
+
+    await waitFor(() => expect(uploadToStorage).toHaveBeenCalledTimes(6))
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+
+    act(() => openGate())
+
+    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(4)
+    expect(list()?.items).toHaveLength(4)
+  })
+
+  it('확정 전에 시작된 목록 조회가 늦게 끝나도 올린 사진을 덮어쓰지 않고 끝나면 목록을 다시 불러온다', async () => {
+    const { result, list, queryClient } = renderUploads()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+    let finishStaleFetch: (list: ProofPhotoList) => void = () => {}
+    void queryClient
+      .fetchQuery({
+        queryKey: queryKeys.proofPhotos.list('quote-1'),
+        queryFn: () =>
+          new Promise<ProofPhotoList>((resolve) => {
+            finishStaleFetch = resolve
+          }),
+      })
+      .catch(() => {})
+
+    act(() => result.current.start(files(1)))
+    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    finishStaleFetch({ items: [], maxCount: 100, canEdit: true })
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(list()?.items.map(({ id }) => id)).toEqual(['photo-a'])
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({
+        queryKey: queryKeys.proofPhotos.list('quote-1'),
+      }),
+    )
+  })
+
+  it('저장소 업로드에 실패하면 잠시 뒤 새 업로드 정보로 자동으로 다시 올린다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(uploadToStorage).mockRejectedValueOnce(new Error('403'))
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+
+    expect(result.current.uploads[0].status).toBe('retrying')
+    expect(result.current.isUploading).toBe(true)
+
+    await advance(1000)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'b', anySignal)
+    expect(list()?.items).toHaveLength(1)
+  })
+
+  it('확정 응답을 받지 못하면 같은 업로드 ID로 확정만 자동으로 다시 요청한다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(confirmProofPhoto).mockRejectedValueOnce(
+      new ApiError('NETWORK_ERROR', 'Network Error', null),
+    )
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+
+    expect(result.current.uploads[0]).toMatchObject({
+      status: 'retrying',
+      uploadId: 'a',
+    })
+
+    await advance(1000)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+    expect(uploadToStorage).toHaveBeenCalledTimes(2)
+    expect(confirmProofPhoto).toHaveBeenCalledTimes(2)
+    expect(confirmProofPhoto).toHaveBeenLastCalledWith(
+      'quote-1',
+      'a',
+      anySignal,
+    )
+  })
+
+  it('S3에 사진이 없다는 응답이면 사진을 자동으로 다시 올린다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(confirmProofPhoto).mockRejectedValueOnce(
+      new ApiError('PROOF_PHOTO_NOT_UPLOADED', 'Not uploaded', 409),
+    )
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+
+    expect(result.current.uploads[0].uploadId).toBeUndefined()
+
+    await advance(1000)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(confirmProofPhoto).toHaveBeenLastCalledWith(
+      'quote-1',
+      'b',
+      anySignal,
+    )
+  })
+
+  it('확정 응답을 받지 못한 사진이 삭제되면 새 업로드나 재시도를 하지 않는다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(confirmProofPhoto)
+      .mockRejectedValueOnce(
+        new ApiError('NETWORK_ERROR', 'Network Error', null),
+      )
+      .mockRejectedValueOnce(
+        new ApiError('PROOF_PHOTO_DELETED', 'Deleted', 409),
+      )
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    await advance(1000)
+
+    expect(result.current.failed[0]).toMatchObject({
+      uploadId: 'a',
+      error: '삭제된 사진이에요',
+      retryable: false,
+    })
+    act(() => result.current.retry(result.current.failed))
+    await advance(5000)
+
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+    expect(uploadToStorage).toHaveBeenCalledTimes(2)
+    expect(confirmProofPhoto).toHaveBeenCalledTimes(2)
+    expect(list()?.items).toEqual([])
+  })
+
+  it('자동으로 다시 올려도 실패하면 실패를 보여주고 직접 다시 시도할 수 있다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(uploadToStorage).mockRejectedValue(new Error('Network Error'))
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(0)
+    await advance(1000)
+    await advance(3000)
+
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+    expect(result.current.isUploading).toBe(false)
+    expect(result.current.failed).toHaveLength(1)
+    expect(result.current.failed[0]).toMatchObject({
+      error: '올리지 못했어요',
+      retryable: true,
+    })
+
+    vi.mocked(uploadToStorage).mockResolvedValue()
+    act(() => result.current.retry(result.current.failed))
+    await advance(0)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(confirmProofPhoto).toHaveBeenCalledWith('quote-1', 'd', anySignal)
+  })
+
+  it.each([403, 404])(
+    '확정 요청이 %i이면 다시 시도하지 않는다',
+    async (status) => {
+      vi.useFakeTimers()
+      vi.mocked(confirmProofPhoto).mockRejectedValue(
+        new ApiError('REQUEST_REJECTED', 'Rejected', status),
+      )
+      const { result } = renderUploads()
+
+      act(() => result.current.start(files(1)))
+      await advance(0)
+      await advance(5000)
+
+      expect(confirmProofPhoto).toHaveBeenCalledOnce()
+      expect(result.current.failed[0]).toMatchObject({
+        error: '올리지 못했어요',
+        retryable: false,
+        uploadId: 'a',
+      })
+
+      act(() => result.current.retry(result.current.failed))
+      await advance(5000)
+
+      expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+      expect(confirmProofPhoto).toHaveBeenCalledOnce()
+    },
+  )
+
+  it.each([403, 404])(
+    '업로드 정보 요청이 %i이면 다시 시도하지 않는다',
+    async (status) => {
+      vi.useFakeTimers()
+      vi.mocked(createProofPhotoUploads).mockRejectedValue(
+        new ApiError('REQUEST_REJECTED', 'Rejected', status),
+      )
+      const { result } = renderUploads()
+
+      act(() => result.current.start(files(1)))
+      await advance(5000)
+
+      expect(result.current.failed[0]).toMatchObject({ retryable: false })
+
+      act(() => result.current.retry(result.current.failed))
+      await advance(5000)
+
+      expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+      expect(uploadToStorage).not.toHaveBeenCalled()
+      expect(confirmProofPhoto).not.toHaveBeenCalled()
+    },
+  )
+
+  it('사진이 없다는 응답이 반복되어도 직접 다시 올릴 수 있다', async () => {
+    vi.useFakeTimers()
+    vi.mocked(confirmProofPhoto).mockRejectedValue(
+      new ApiError('PROOF_PHOTO_NOT_UPLOADED', 'Not uploaded', 409),
+    )
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await advance(4000)
+
+    expect(result.current.failed[0]).toMatchObject({ retryable: true })
+    expect(result.current.failed[0].uploadId).toBeUndefined()
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+
+    vi.mocked(confirmProofPhoto).mockImplementation(async (_, uploadId) =>
+      photo(`photo-${uploadId}`),
+    )
+    act(() => result.current.retry(result.current.failed))
+    await advance(0)
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(4)
+    expect(list()?.items.map(({ id }) => id)).toEqual(['photo-d'])
+  })
+
+  it('열 수 없는 사진은 원본을 올리지 않고 다시 시도할 수 없게 실패한다', async () => {
+    vi.mocked(resizeProofPhoto).mockRejectedValueOnce(new Error('decode'))
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+
+    await waitFor(() => expect(result.current.failed).toHaveLength(1))
+    expect(result.current.failed[0]).toMatchObject({
+      error: '사진을 열 수 없어요',
+      retryable: false,
+    })
+    expect(createProofPhotoUploads).not.toHaveBeenCalled()
+    expect(uploadToStorage).not.toHaveBeenCalled()
+    expect(confirmProofPhoto).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['PROOF_PHOTO_LIMIT_REACHED', '최대 장수를 넘었어요'],
+    ['PROOF_PHOTO_REVIEWED', '리뷰가 작성되어 올릴 수 없어요'],
+  ])('%s면 다시 시도할 수 없게 실패한다', async (code, message) => {
+    vi.mocked(createProofPhotoUploads).mockRejectedValue(
+      new ApiError(code, 'Conflict', 409),
+    )
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(2)))
+
+    await waitFor(() => expect(result.current.failed).toHaveLength(2))
+    expect(result.current.failed[0]).toMatchObject({
+      error: message,
+      retryable: false,
+    })
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(result.current.isUploading).toBe(false)
+  })
+
+  it('화면을 떠나면 올리던 요청을 취소하고 더 시도하지 않는다', async () => {
+    vi.mocked(uploadToStorage).mockReturnValue(new Promise(() => {}))
+    const { result, unmount } = renderUploads()
+
+    act(() => result.current.start(files(4)))
+    await waitFor(() => expect(uploadToStorage).toHaveBeenCalledTimes(6))
+    const signal = vi.mocked(uploadToStorage).mock.calls[0][3]
+
+    unmount()
+
+    expect(signal?.aborted).toBe(true)
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+  })
+
+  it('실패한 사진을 지우면 목록에서 빠진다', async () => {
+    vi.mocked(createProofPhotoUploads).mockRejectedValue(
+      new ApiError('PROOF_PHOTO_LIMIT_REACHED', 'Limit', 409),
+    )
+    const { result } = renderUploads()
+
+    act(() => result.current.start(files(1)))
+    await waitFor(() => expect(result.current.failed).toHaveLength(1))
+    expect(result.current.failed[0].previewUrl).toBe('blob:preview')
+
+    act(() => result.current.remove(result.current.failed[0].id))
+
+    expect(result.current.uploads).toHaveLength(0)
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview')
+  })
+})

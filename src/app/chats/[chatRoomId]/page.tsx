@@ -1,6 +1,6 @@
 'use client'
 
-import { Link } from 'lucide-react'
+import Link from 'next/link'
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import ChatHeader from '@/components/chat/ChatHeader'

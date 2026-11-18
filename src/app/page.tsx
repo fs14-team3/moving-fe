@@ -92,14 +92,30 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="md:px-8">
-        <div className="relative mx-auto w-full md:max-w-[679px] lg:max-w-[1402px]">
-          <LandingImage name="img3" className="block h-auto w-full" />
-          <h2 className="absolute top-10 right-8 text-right text-xl leading-8 font-bold text-white md:top-[49px] md:right-[54px] md:text-3xl md:leading-10 lg:top-[19.3%] lg:right-[19.1%] lg:text-[clamp(24px,2.14vw,30px)] lg:leading-[1.35]">
+      <section className="h-124 md:h-208 md:px-8 lg:h-212">
+        <div className="relative isolate mx-auto w-full pt-[30px] md:max-w-[679px] md:pt-12 lg:flex lg:max-w-[1402px] lg:flex-row-reverse lg:px-15">
+          <div className='absolute inset-x-0 top-0 -z-10 h-51 bg-[url("/assets/images/mover_detail_banner.png")] bg-cover bg-center bg-no-repeat md:h-83 md:w-170 md:rounded-4xl lg:h-100 lg:w-auto' />
+          <h2 className="pr-8 text-right text-xl leading-8 font-bold text-white md:pr-13 md:text-3xl md:leading-10 lg:absolute lg:top-30 lg:left-162 lg:text-left">
             원하는 이사 서비스를 요청하고
             <br />
             견적을 받아보세요
           </h2>
+          <div className="mt-[30px] flex justify-center gap-3 md:gap-4 lg:justify-between">
+            <Image
+              src="/assets/landing/quote-screen.png"
+              width={2082}
+              height={2730}
+              alt=""
+              className="mt-2 h-80 w-auto rounded-2xl shadow-xl md:mt-4 md:h-153 lg:absolute lg:top-10 lg:left-20 lg:h-172"
+            />
+            <Image
+              src="/assets/images/character-box.webp"
+              width={550}
+              height={801}
+              alt=""
+              className="h-[100px] w-auto md:h-40 lg:absolute lg:top-50 lg:right-10 lg:h-60"
+            />
+          </div>
         </div>
       </section>
 

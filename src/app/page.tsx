@@ -51,9 +51,9 @@ function MoveTypeCard({
 export default function Home() {
   return (
     <div>
-      <section className='flex h-78 flex-col items-center justify-center gap-5 bg-[url("/assets/landing/img1_bg.png")] bg-cover bg-center bg-no-repeat md:h-101 md:gap-7'>
+      <section className='flex h-78 flex-col items-center justify-center gap-5 bg-[url("/assets/landing/hero-bg.png")] bg-cover bg-center bg-no-repeat md:h-101 md:gap-7'>
         <Image
-          src="/assets/landing/img1.png"
+          src="/assets/landing/hero-truck.png"
           width={400}
           height={249}
           alt=""

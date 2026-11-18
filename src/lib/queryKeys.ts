@@ -31,6 +31,9 @@ export const queryKeys = {
     // 찜하기처럼 상세만 바뀔 때 리뷰까지 다시 불러오지 않도록 detail 아래에 두지 않는다.
     reviews: (moverId: string, query: Query<'listMoverReviews'> = {}) =>
       [...queryKeys.movers.all, 'reviews', moverId, query] as const,
+    // GET /movers/{moverId}/review-summary
+    reviewSummary: (moverId: string) =>
+      [...queryKeys.movers.all, 'reviewSummary', moverId] as const,
     // GET /movers/me (기사님 마이페이지)
     me: () => [...queryKeys.movers.all, 'me'] as const,
   },
@@ -93,6 +96,12 @@ export const queryKeys = {
     // GET /quotes/{quoteId}
     detail: (quoteId: string) =>
       [...queryKeys.quotes.all, 'detail', quoteId] as const,
+  },
+
+  proofPhotos: {
+    all: ['proofPhotos'] as const,
+    list: (quoteId: string) =>
+      [...queryKeys.proofPhotos.all, 'list', quoteId] as const,
   },
 
   // 일반 유저의 리뷰. 기사님이 받은 리뷰는 movers.reviews를 쓴다.

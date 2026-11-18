@@ -30,6 +30,12 @@ vi.mock('@/components/share/KakaoScript', () => ({
   default: () => null,
 }))
 
+vi.mock('@/components/proof-photos/ProofPhotoSection', () => ({
+  default: ({ emptyMessage }: { emptyMessage: string }) => (
+    <section aria-label="작업 사진">{emptyMessage}</section>
+  ),
+}))
+
 const toast = vi.hoisted(() => ({
   error: vi.fn(),
 }))
@@ -290,6 +296,28 @@ describe('QuoteDetailPage', () => {
 
     expect(
       screen.queryByRole('button', { name: '견적 확정하기' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('확정된 견적은 기사님이 올린 작업 사진을 보여준다', () => {
+    vi.mocked(useQuoteDetail).mockReturnValue(
+      createQuoteResult({
+        quote: { ...MOCK_QUOTE_DETAIL, status: 'CONFIRMED' },
+      }),
+    )
+
+    render(<QuoteDetail />)
+
+    expect(screen.getByRole('region', { name: '작업 사진' })).toHaveTextContent(
+      '기사님이 올린 작업 사진이 아직 없어요.',
+    )
+  })
+
+  it('확정되지 않은 견적은 작업 사진을 보여 주지 않는다', () => {
+    render(<QuoteDetail />)
+
+    expect(
+      screen.queryByRole('region', { name: '작업 사진' }),
     ).not.toBeInTheDocument()
   })
 })

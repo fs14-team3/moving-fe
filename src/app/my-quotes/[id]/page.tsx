@@ -6,6 +6,7 @@ import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
 import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
+import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
 import {
   ConfirmedLabel,
   QuoteDetailHeader,
@@ -80,6 +81,7 @@ export default function QuoteDetail() {
   // 화면 표시 데이터
   const isQuotePending =
     quote.status === 'SUBMITTED' && quote.moveRequest.status === 'PENDING'
+  const isConfirmed = quote.status === 'CONFIRMED'
   const { mover } = quote
   const imageUrl = mover.imageUrl ?? '/assets/images/profile.png'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
@@ -171,7 +173,7 @@ export default function QuoteDetail() {
                   moveType={quote.moveRequest.moveType}
                   isDesignated={quote.isDesignated}
                 />
-                {quote.status === 'CONFIRMED' && <ConfirmedLabel />}
+                {isConfirmed && <ConfirmedLabel />}
                 {isQuotePending && (
                   <p className="shrink-0 text-base leading-6 font-semibold text-gray-400">
                     견적대기
@@ -257,8 +259,18 @@ export default function QuoteDetail() {
             <QuotePrice price={quote.price} />
             <QuoteInfo
               moveRequest={quote.moveRequest}
-              className="border-b border-line-100 lg:border-none"
+              className={cn(
+                'border-b border-line-100',
+                !isConfirmed && 'lg:border-none',
+              )}
             />
+            {isConfirmed && (
+              <ProofPhotoSection
+                quoteId={quote.id}
+                emptyMessage="기사님이 올린 작업 사진이 아직 없어요."
+                className="border-b border-line-100 lg:border-none"
+              />
+            )}
           </article>
 
           <aside>

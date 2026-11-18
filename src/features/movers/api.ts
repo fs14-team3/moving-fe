@@ -6,6 +6,7 @@ import type {
   MoverListResponse,
   MoverReviewListParams,
   MoverReviewListResponse,
+  MoverReviewSummary,
 } from './types'
 
 export async function getMovers(params?: MoverListParams) {
@@ -35,6 +36,14 @@ export async function getMoverReviews(
   const { data } = await api.get<MoverReviewListResponse>(
     `/movers/${moverId}/reviews`,
     { params },
+  )
+
+  return data
+}
+
+export async function getMoverReviewSummary(moverId: MoverId) {
+  const { data } = await api.get<MoverReviewSummary>(
+    `/movers/${moverId}/review-summary`,
   )
 
   return data

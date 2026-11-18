@@ -31,6 +31,9 @@ export const queryKeys = {
     // 찜하기처럼 상세만 바뀔 때 리뷰까지 다시 불러오지 않도록 detail 아래에 두지 않는다.
     reviews: (moverId: string, query: Query<'listMoverReviews'> = {}) =>
       [...queryKeys.movers.all, 'reviews', moverId, query] as const,
+    // GET /movers/{moverId}/review-summary
+    reviewSummary: (moverId: string) =>
+      [...queryKeys.movers.all, 'reviewSummary', moverId] as const,
     // GET /movers/me (기사님 마이페이지)
     me: () => [...queryKeys.movers.all, 'me'] as const,
   },

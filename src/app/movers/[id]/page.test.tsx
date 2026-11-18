@@ -64,6 +64,10 @@ vi.mock('@/components/share/KakaoScript', () => ({
   default: () => null,
 }))
 
+vi.mock('@/components/mover/review/ReviewSummary', () => ({
+  default: () => <section>리뷰 요약 영역</section>,
+}))
+
 vi.mock('@/components/mover/review/ReviewSection', () => ({
   default: () => <section>리뷰 영역</section>,
 }))
@@ -142,6 +146,7 @@ describe('MoverDetailPage', () => {
     expect(
       screen.getByRole('heading', { name: '김무빙 기사님' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('리뷰 요약 영역')).toBeInTheDocument()
     expect(screen.getByText('리뷰 영역')).toBeInTheDocument()
   })
 

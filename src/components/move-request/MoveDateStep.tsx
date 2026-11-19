@@ -3,6 +3,7 @@
 import { ChevronProps, DayPicker, getDefaultClassNames } from '@daypicker/react'
 import { ko } from '@daypicker/react/locale'
 import '@daypicker/react/style.css'
+import KoreanLunarCalendar from 'korean-lunar-calendar'
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import Button from '../common/button/Button'
@@ -15,6 +16,7 @@ type MoveDateStepProps = {
 export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
   const defaultClassNames = getDefaultClassNames()
   const calendarRef = useRef<HTMLDivElement>(null)
+  const lunarCalendar = new KoreanLunarCalendar()
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -45,6 +47,19 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
         day: 'numeric',
       }).format(value)
     : '이사 예정일 선택하기'
+
+  // 손 없는 날 계산
+  const handlessDays = new Set([9, 10, 19, 20, 29, 30])
+  function isHandlessDay(date: Date) {
+    const converted = lunarCalendar.setSolarDate(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate(),
+    )
+    if (!converted) return false
+
+    return handlessDays.has(lunarCalendar.getLunarCalendar().day)
+  }
 
   return (
     <div ref={calendarRef} className="w-full md:relative md:w-100 md:shrink-0">
@@ -103,12 +118,20 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
             selected: 'rounded-xl bg-primary-400 font-semibold text-white',
             disabled: 'text-gray-300',
           }}
+          modifiers={{ handlessDay: isHandlessDay }}
+          modifiersClassNames={{
+            handlessDay:
+              'relative after:absolute after:bottom-1 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary-400 data-selected:after:bg-white',
+          }}
         />
+        <p className="text-center text-xs leading-6 font-normal text-black-200">
+          <span className="text-lg text-primary-400">•</span> 손 없는 날
+        </p>
         <Button
           type="button"
           disabled={!value}
           onClick={() => setIsOpen(false)}
-          className="mt-6 hidden md:flex md:h-[54px] md:w-[279px] lg:h-[54px] lg:w-[279px]"
+          className="mt-4 hidden md:flex md:h-[54px] md:w-[279px] lg:h-[54px] lg:w-[279px]"
         >
           선택 완료
         </Button>

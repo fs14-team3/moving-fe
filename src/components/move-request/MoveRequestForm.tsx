@@ -190,7 +190,7 @@ export default function MoveRequestForm() {
         <Button
           type="submit"
           disabled={!isFormComplete || isPending}
-          className="hidden self-end md:flex md:h-14 md:w-50 lg:h-14 lg:w-50"
+          className="hidden cursor-pointer self-end disabled:cursor-not-allowed md:flex md:h-14 md:w-50 lg:h-14 lg:w-50"
         >
           {isPending ? '요청 중...' : '견적 요청하기'}
         </Button>

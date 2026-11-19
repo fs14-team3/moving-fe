@@ -68,7 +68,7 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
-        className={`hidden h-[50px] w-full items-center rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 ${isOpen ? 'border border-primary-400' : ''} md:flex`}
+        className={`hidden h-[50px] w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 ${isOpen ? 'border border-primary-400' : ''} md:flex`}
       >
         <Calendar className="size-6 text-primary-400" />
 
@@ -82,7 +82,7 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
       </button>
 
       <div
-        className={`mx-auto w-full rounded-xl bg-gray-50 py-8 md:absolute md:top-full md:left-0 md:z-20 md:mt-4 md:min-h-[442px] md:flex-col md:items-center md:border md:border-gray-200 ${isOpen ? 'md:flex' : 'md:hidden'} `}
+        className={`mx-auto w-full rounded-xl bg-gray-50 py-8 md:mt-4 md:min-h-[442px] md:flex-col md:items-center md:border md:border-gray-200 ${isOpen ? 'md:flex' : 'md:hidden'} `}
       >
         <DayPicker
           locale={ko}

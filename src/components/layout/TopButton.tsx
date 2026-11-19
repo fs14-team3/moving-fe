@@ -14,7 +14,7 @@ export default function TopButton() {
   }
 
   useEffect(() => {
-    function handleShowButton() {
+    function handleScroll() {
       if (window.scrollY > 400) {
         setShowButton(true)
       } else {
@@ -22,9 +22,9 @@ export default function TopButton() {
       }
     }
 
-    window.addEventListener('scroll', handleShowButton)
+    window.addEventListener('scroll', handleScroll)
     return () => {
-      window.removeEventListener('scroll', handleShowButton)
+      window.removeEventListener('scroll', handleScroll)
     }
   }, [])
 

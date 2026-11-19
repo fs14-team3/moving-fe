@@ -43,7 +43,7 @@ export default function MoveTypeStep({ value, onChange }: MoveTypeStepProps) {
             type="button"
             aria-pressed={isSelected}
             onClick={() => onChange(optionValue)}
-            className={`relative flex cursor-pointer items-center justify-between rounded-2xl bg-gray-100 p-4 md:h-[222px] md:w-full md:flex-col md:items-start md:gap-3 md:px-4 md:py-5 ${isSelected ? 'border border-primary-400 bg-primary-100' : ''}`}
+            className={`relative flex cursor-pointer items-center justify-between rounded-2xl border bg-gray-100 p-4 md:h-[222px] md:w-full md:flex-col md:items-start md:gap-3 md:px-4 md:py-5 ${isSelected ? 'border-primary-400 bg-primary-100' : 'border-transparent'}`}
           >
             <div className="md:flex md:gap-2">
               <div className="absolute top-4 md:static">
@@ -68,7 +68,7 @@ export default function MoveTypeStep({ value, onChange }: MoveTypeStepProps) {
               >
                 <strong className="text-base font-semibold">{label}</strong>
                 <p
-                  className={`text-sm font-normal text-gray-500 ${isSelected ? 'text-primary-400' : ''}`}
+                  className={`text-sm font-normal whitespace-nowrap text-gray-500 ${isSelected ? 'text-primary-400' : ''}`}
                 >
                   {description}
                 </p>
@@ -76,12 +76,7 @@ export default function MoveTypeStep({ value, onChange }: MoveTypeStepProps) {
             </div>
 
             <div className="mt-auto flex h-30 items-end justify-end md:w-full">
-              <Image
-                src={imageSrc}
-                width={optionValue === 'HOME' ? 110 : 120}
-                height={optionValue === 'HOME' ? 110 : 120}
-                alt=""
-              />
+              <Image src={imageSrc} width={110} height={110} alt="" />
             </div>
           </button>
         )

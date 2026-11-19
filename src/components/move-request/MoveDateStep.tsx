@@ -114,8 +114,9 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
             weekday: `${defaultClassNames.weekday} h-12 text-base font-medium leading-6 text-gray-400`,
             today: '',
             day: `${defaultClassNames.day} h-12 w-auto! text-base font-medium`,
-            day_button: `${defaultClassNames.day_button} flex! h-full! w-full! items-center justify-center p-0`,
-            selected: 'rounded-xl bg-primary-400 font-semibold text-white',
+            day_button: `${defaultClassNames.day_button} flex! h-full! w-full! items-center justify-center p-0 hover:rounded-xl! hover:bg-primary-100! in-data-selected:hover:bg-transparent!`,
+            selected:
+              'rounded-xl bg-primary-400 font-semibold text-white hover:bg-primary-400 in-data-selected:hover:bg-transparent',
             disabled: 'text-gray-300',
           }}
           modifiers={{ handlessDay: isHandlessDay }}

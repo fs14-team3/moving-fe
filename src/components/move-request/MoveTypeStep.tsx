@@ -43,7 +43,7 @@ export default function MoveTypeStep({ value, onChange }: MoveTypeStepProps) {
             type="button"
             aria-pressed={isSelected}
             onClick={() => onChange(optionValue)}
-            className={`relative flex cursor-pointer items-center justify-between rounded-2xl border bg-gray-100 p-4 md:h-[222px] md:w-full md:flex-col md:items-start md:gap-3 md:px-4 md:py-5 ${isSelected ? 'border-primary-400 bg-primary-100' : 'border-transparent'}`}
+            className={`relative flex cursor-pointer items-center justify-between rounded-2xl border bg-gray-100 p-4 md:h-[222px] md:w-full md:flex-col md:items-start md:gap-3 md:px-4 md:py-5 ${isSelected ? 'border-primary-400 bg-primary-100' : 'border-transparent hover:border-primary-400 hover:bg-primary-100'}`}
           >
             <div className="md:flex md:gap-2">
               <div className="absolute top-4 md:static">

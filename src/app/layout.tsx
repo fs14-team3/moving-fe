@@ -1,5 +1,6 @@
 import AuthGuard from '@/components/auth/AuthGuard'
 import Header from '@/components/layout/Header'
+import TopButton from '@/components/layout/TopButton'
 import Toaster from '@/components/toast/Toaster'
 import QueryProvider from '@/providers/QueryProvider'
 import type { Metadata } from 'next'
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
             <AuthGuard>{children}</AuthGuard>
           </main>
           <Toaster />
+          <TopButton />
         </QueryProvider>
       </body>
     </html>

@@ -120,6 +120,7 @@ export default function MoverDetailPage() {
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const nickname = mover.nickname?.trim() || '익명'
   const isFavorite = mover.isFavorite
+  const isDesignated = mover.isDesignated
   const favoriteCount = mover.favoriteCount
   const description =
     mover.description?.trim() || '등록된 상세 설명이 없습니다.'
@@ -400,14 +401,14 @@ export default function MoverDetailPage() {
                 <Button
                   onClick={handleDesignate}
                   disabled={
+                    isDesignated ||
                     isUserPending ||
                     isCreatingDesignation ||
-                    (canFetchActiveRequest && isActiveRequestPending) ||
-                    mover.isDesignated === true
+                    (canFetchActiveRequest && isActiveRequestPending)
                   }
                   className="w-auto min-w-0 flex-1 lg:w-full lg:flex-none"
                 >
-                  지정 견적 요청하기
+                  {isDesignated ? '지정 완료' : '지정 견적 요청하기'}
                 </Button>
                 <Button
                   icon={

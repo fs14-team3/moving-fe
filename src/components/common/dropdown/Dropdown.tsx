@@ -2,13 +2,11 @@
 
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import type { Option } from '@/lib/options'
 
 type DropdownProps = {
   placeholder: string
-  options: {
-    label: string
-    value: string
-  }[]
+  options: Option<string>[]
   variant: 'service' | 'region' | 'sort'
   value?: string
   onChange?: (value: string) => void

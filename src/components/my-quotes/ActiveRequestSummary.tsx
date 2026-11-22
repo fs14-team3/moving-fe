@@ -1,7 +1,7 @@
 import { MoveRight } from 'lucide-react'
 import Button from '@/components/common/button/Button'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import { CONTAINER } from '@/components/my-quotes/container'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import type { MoveRequestResponse } from '@/features/move-request/types'
 import { formatRequestDate } from '@/features/my-quotes/format'
 import {
@@ -9,6 +9,7 @@ import {
   toShortAddress,
 } from '@/features/received-requests/format'
 import { cn } from '@/lib/cn'
+import { getOptionLabel } from '@/lib/options'
 
 type ActiveRequestSummaryProps = {
   request: MoveRequestResponse
@@ -44,7 +45,7 @@ export default function ActiveRequestSummary({
       >
         <div className="lg:mr-auto">
           <h2 className="text-lg font-semibold text-black-400 lg:text-2xl">
-            {MOVE_TYPE[request.moveType].label}
+            {getOptionLabel(SERVICE_TYPE_OPTIONS, request.moveType)}
           </h2>
           <p className="mt-1 text-xs text-gray-500 lg:text-sm">
             견적 신청일: {formatRequestDate(request.createdAt)}

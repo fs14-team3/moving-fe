@@ -39,8 +39,9 @@ import {
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { cn } from '@/lib/cn'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
+import type { Option } from '@/lib/options'
 
-const SORT_OPTIONS: { label: string; value: ReceivedRequestSort }[] = [
+const SORT_OPTIONS: Option<ReceivedRequestSort>[] = [
   { label: '이사 빠른순', value: 'MOVE_DATE_ASC' },
   { label: '요청일 빠른순', value: 'CREATED_DESC' },
 ]

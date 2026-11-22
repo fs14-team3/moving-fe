@@ -8,7 +8,8 @@ import ReviewSection from '@/components/mover/review/ReviewSection'
 import ReviewSummary from '@/components/mover/review/ReviewSummary'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import KakaoScript from '@/components/share/KakaoScript'
-import { getServiceTypeLabel } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
+import { getOptionLabel } from '@/lib/options'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
@@ -350,7 +351,7 @@ export default function MoverDetailPage() {
                     key={serviceType}
                     className="rounded-[100px] border border-primary-400 px-3 py-[6px] leading-6 font-medium md:px-5 md:py-[10px] md:text-lg"
                   >
-                    {getServiceTypeLabel(serviceType)}
+                    {getOptionLabel(SERVICE_TYPE_OPTIONS, serviceType)}
                   </Badge>
                 ))}
               </div>

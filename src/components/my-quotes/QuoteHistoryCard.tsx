@@ -4,14 +4,14 @@ import { CircleCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import Dropdown from '@/components/common/dropdown/Dropdown'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import QuoteMoverInfo from '@/components/my-quotes/QuoteMoverInfo'
-import type { ServiceType } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import type { CustomerQuote, QuoteHistoryItem } from '@/features/my-quotes/api'
 import { formatShortRequestDate } from '@/features/my-quotes/format'
 import { formatMoveDate } from '@/features/received-requests/format'
 import { cn } from '@/lib/cn'
+import { getOptionLabel } from '@/lib/options'
 
 const FILTER_OPTIONS = [
   { label: '전체', value: 'ALL' },
@@ -133,7 +133,7 @@ export default function QuoteHistoryCard({
         <dl className="mt-4 flex flex-col gap-3 md:mt-6 md:gap-4">
           <InfoItem
             label="이사 유형"
-            value={MOVE_TYPE[request.moveType].label}
+            value={getOptionLabel(SERVICE_TYPE_OPTIONS, request.moveType)}
           />
           <InfoItem label="출발지" value={request.from.address} />
           <InfoItem label="도착지" value={request.to.address} />

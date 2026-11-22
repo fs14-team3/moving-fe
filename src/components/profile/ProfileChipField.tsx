@@ -2,13 +2,14 @@ import { useId } from 'react'
 import SelectChip from '@/components/common/SelectChip'
 import ProfileField from '@/components/profile/ProfileField'
 import { cn } from '@/lib/cn'
+import type { Option } from '@/lib/options'
 
 type ProfileChipFieldProps<T extends string> = {
   label: string
   required?: boolean
   description?: string
   error?: string
-  options: { value: T; label: string }[]
+  options: Option<T>[]
   value: T[]
   onChange: (value: T[]) => void
   multiple?: boolean

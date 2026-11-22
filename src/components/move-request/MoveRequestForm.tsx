@@ -10,6 +10,7 @@ import {
 } from '@/features/move-request/details'
 import { useMoveEstimate } from '@/features/move-estimate/hooks/useMoveEstimate'
 import { useCreateMoveRequest } from '@/features/move-request/hooks/useCreateMoveRequest'
+import type { CreateMoveRequestBody } from '@/features/move-request/types'
 import { useLeaveGuard } from '@/hooks/useLeaveGuard'
 import { cn } from '@/lib/cn'
 import { useRouter } from 'next/navigation'
@@ -25,6 +26,7 @@ import MoveHouseholdStep from './MoveHouseholdStep'
 import MoveItemsStep from './MoveItemsStep'
 import MoveMemoStep from './MoveMemoStep'
 import MoveRequestStep from './MoveRequestStep'
+import MoveReviewStep from './MoveReviewStep'
 import MoveTypeStep from './MoveTypeStep'
 
 const STEP_TITLES = [
@@ -35,10 +37,26 @@ const STEP_TITLES = [
   '출발지와 도착지 환경을 알려주세요',
   '옮길 짐을 알려주세요',
   '기사님께 전할 말이 있나요?',
+  '입력한 내용을 확인해주세요',
 ]
 
 const BASIC_STEP_COUNT = 3
 const LAST_STEP = STEP_TITLES.length
+
+const PAGE_HEADINGS = {
+  basic: {
+    title: '이사 유형, 예정일과 지역을 선택해주세요',
+    description: '견적을 요청하면 최대 5개의 견적을 받을 수 있어요 :)',
+  },
+  details: {
+    title: '이사 환경과 짐 정보를 알려주세요',
+    description: '자세히 알려 주실수록 정확한 견적을 받을 수 있어요',
+  },
+  review: {
+    title: '입력한 내용을 확인해주세요',
+    description: '요청한 뒤에는 내용을 수정할 수 없어요',
+  },
+}
 
 function toApiDate(date: Date) {
   const year = date.getFullYear()
@@ -63,27 +81,37 @@ export default function MoveRequestForm() {
   const router = useRouter()
   const { mutate, isPending } = useCreateMoveRequest()
 
-  const isBasicComplete = Boolean(
-    moveType && moveDate && departureAddress && arrivalAddress,
-  )
+  const basicInfo =
+    moveType && moveDate && departureAddress && arrivalAddress
+      ? {
+          moveType,
+          moveDate: toApiDate(moveDate),
+          from: departureAddress,
+          to: arrivalAddress,
+        }
+      : null
   const detailsBody = toMoveRequestDetails(details, moveType)
-  const isFormComplete = isBasicComplete && detailsBody !== null
-  const isDetailsPage = currentStep > BASIC_STEP_COUNT
+  const requestBody: Required<CreateMoveRequestBody> | null =
+    basicInfo && detailsBody ? { ...basicInfo, details: detailsBody } : null
+  const isBasicComplete = basicInfo !== null
+  const isFormComplete = requestBody !== null
   const isLastStep = currentStep === LAST_STEP
+  const page = isLastStep
+    ? 'review'
+    : currentStep > BASIC_STEP_COUNT
+      ? 'details'
+      : 'basic'
   const hasInput =
     Boolean(moveType || moveDate || departureAddress || arrivalAddress) ||
     details !== EMPTY_DETAILS_DRAFT
   const leaveGuard = useLeaveGuard(hasInput, '/')
 
   const { estimate, isLoading: isEstimating } = useMoveEstimate(
-    moveType && moveDate && departureAddress && arrivalAddress
-      ? {
-          moveType,
-          moveDate: toApiDate(moveDate),
-          from: departureAddress.address,
-          to: arrivalAddress.address,
-        }
-      : null,
+    basicInfo && {
+      ...basicInfo,
+      from: basicInfo.from.address,
+      to: basicInfo.to.address,
+    },
   )
 
   const isStepComplete = [
@@ -93,6 +121,7 @@ export default function MoveRequestForm() {
     isHouseholdComplete(details, moveType),
     isBuildingsComplete(details),
     details.boxRange !== null,
+    isFormComplete,
   ]
   const canMoveNext = isStepComplete[currentStep - 1]
 
@@ -108,32 +137,14 @@ export default function MoveRequestForm() {
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (
-      !moveType ||
-      !moveDate ||
-      !departureAddress ||
-      !arrivalAddress ||
-      !detailsBody ||
-      isPending
-    ) {
-      return
-    }
+    if (!requestBody || isPending) return
 
-    mutate(
-      {
-        moveType,
-        moveDate: toApiDate(moveDate),
-        from: departureAddress,
-        to: arrivalAddress,
-        details: detailsBody,
+    mutate(requestBody, {
+      onSuccess: () => {
+        leaveGuard.leave()
+        router.replace('/my-quotes')
       },
-      {
-        onSuccess: () => {
-          leaveGuard.leave()
-          router.replace('/my-quotes')
-        },
-      },
-    )
+    })
   }
 
   return (
@@ -160,15 +171,11 @@ export default function MoveRequestForm() {
             </h1>
 
             <h1 className="hidden text-2xl leading-8 font-bold md:block">
-              {isDetailsPage
-                ? '이사 환경과 짐 정보를 알려주세요'
-                : '이사 유형, 예정일과 지역을 선택해주세요'}
+              {PAGE_HEADINGS[page].title}
             </h1>
 
             <p className="text-sm leading-6 font-normal text-gray-400 md:mt-2 md:text-base">
-              {isDetailsPage
-                ? '자세히 알려 주실수록 정확한 견적을 받을 수 있어요'
-                : '견적을 요청하면 최대 5개의 견적을 받을 수 있어요 :)'}
+              {PAGE_HEADINGS[page].description}
             </p>
           </div>
         </header>
@@ -176,7 +183,7 @@ export default function MoveRequestForm() {
         <MoveRequestStep
           title="이사 유형"
           isActive={currentStep === 1}
-          isOnPage={!isDetailsPage}
+          isOnPage={page === 'basic'}
         >
           <MoveTypeStep value={moveType} onChange={setMoveType} />
         </MoveRequestStep>
@@ -184,7 +191,7 @@ export default function MoveRequestForm() {
         <MoveRequestStep
           title="이사 예정일"
           isActive={currentStep === 2}
-          isOnPage={!isDetailsPage}
+          isOnPage={page === 'basic'}
           direction="row"
         >
           <MoveDateStep value={moveDate} onChange={setMoveDate} />
@@ -193,7 +200,7 @@ export default function MoveRequestForm() {
         <MoveRequestStep
           title="이사 지역"
           isActive={currentStep === 3}
-          isOnPage={!isDetailsPage}
+          isOnPage={page === 'basic'}
           direction="row"
         >
           <MoveAddressStep
@@ -207,7 +214,7 @@ export default function MoveRequestForm() {
         <MoveRequestStep
           title="이사 방식과 집 규모"
           isActive={currentStep === 4}
-          isOnPage={isDetailsPage}
+          isOnPage={page === 'details'}
         >
           <MoveHouseholdStep
             moveType={moveType}
@@ -219,7 +226,7 @@ export default function MoveRequestForm() {
         <MoveRequestStep
           title="건물 환경"
           isActive={currentStep === 5}
-          isOnPage={isDetailsPage}
+          isOnPage={page === 'details'}
         >
           <MoveBuildingStep draft={details} onChange={updateDetails} />
         </MoveRequestStep>
@@ -227,21 +234,30 @@ export default function MoveRequestForm() {
         <MoveRequestStep
           title="짐 정보"
           isActive={currentStep === 6}
-          isOnPage={isDetailsPage}
+          isOnPage={page === 'details'}
         >
           <MoveItemsStep draft={details} onChange={updateDetails} />
         </MoveRequestStep>
 
         <MoveRequestStep
           title="요청사항"
-          isActive={isLastStep}
-          isOnPage={isDetailsPage}
+          isActive={currentStep === 7}
+          isOnPage={page === 'details'}
         >
           <MoveMemoStep
             value={details.memo}
             onChange={(memo) => updateDetails({ memo })}
           />
         </MoveRequestStep>
+
+        {isLastStep && requestBody && (
+          <MoveReviewStep
+            request={requestBody}
+            isPending={isPending}
+            onEditBasic={() => goToStep(1)}
+            onEditDetails={() => goToStep(BASIC_STEP_COUNT + 1)}
+          />
+        )}
 
         <div className="mt-auto flex flex-col gap-6">
           {/* 모바일에서는 지역 선택 단계와 마지막 단계에서만 보여 준다. 카드가 없으면(null) 간격도 없앤다. */}
@@ -260,7 +276,7 @@ export default function MoveRequestForm() {
             <Button
               variant="outlined"
               type="button"
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || isPending}
               onClick={() => goToStep(currentStep - 1)}
               className="cursor-pointer disabled:cursor-not-allowed"
             >
@@ -292,23 +308,39 @@ export default function MoveRequestForm() {
           </section>
 
           <div className="hidden justify-end gap-4 md:flex">
-            {isDetailsPage ? (
+            {page !== 'basic' ? (
               <>
                 <Button
                   variant="outlined"
                   type="button"
-                  onClick={() => goToStep(BASIC_STEP_COUNT)}
-                  className="cursor-pointer md:h-14 md:w-50 lg:h-14 lg:w-50"
+                  disabled={isPending}
+                  onClick={() =>
+                    goToStep(isLastStep ? LAST_STEP - 1 : BASIC_STEP_COUNT)
+                  }
+                  className="cursor-pointer disabled:cursor-not-allowed md:h-14 md:w-50 lg:h-14 lg:w-50"
                 >
                   이전
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={!isFormComplete || isPending}
-                  className="cursor-pointer disabled:cursor-not-allowed md:h-14 md:w-50 lg:h-14 lg:w-50"
-                >
-                  {isPending ? '요청 중...' : '견적 요청하기'}
-                </Button>
+                {isLastStep ? (
+                  <Button
+                    key="submit"
+                    type="submit"
+                    disabled={!isFormComplete || isPending}
+                    className="cursor-pointer disabled:cursor-not-allowed md:h-14 md:w-50 lg:h-14 lg:w-50"
+                  >
+                    {isPending ? '요청 중...' : '견적 요청하기'}
+                  </Button>
+                ) : (
+                  <Button
+                    key="next"
+                    type="button"
+                    disabled={!isFormComplete}
+                    onClick={() => goToStep(LAST_STEP)}
+                    className="cursor-pointer disabled:cursor-not-allowed md:h-14 md:w-50 lg:h-14 lg:w-50"
+                  >
+                    다음
+                  </Button>
+                )}
               </>
             ) : (
               <Button

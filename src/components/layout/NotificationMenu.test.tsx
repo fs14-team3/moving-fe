@@ -139,7 +139,7 @@ describe('NotificationMenu', () => {
     await open()
 
     expect(
-      await within(getPanel()).findByText('모든 알림을 확인하였습니다'),
+      await within(getPanel()).findByText('알림이 없습니다'),
     ).toBeInTheDocument()
   })
 
@@ -175,6 +175,23 @@ describe('NotificationMenu', () => {
     ).toBeInTheDocument()
   })
 
+  it('이미 읽은 알림을 다시 처리해도 새 알림 표시를 유지한다', async () => {
+    mockGetUnreadCount
+      .mockResolvedValueOnce(1)
+      .mockImplementation(() => new Promise(() => {}))
+    mockPage([createNotification({ id: '1' })])
+    mockRead.mockResolvedValue({ updated: false })
+    const { getTrigger, open } = renderMenu()
+    await screen.findByRole('button', { name: '알림, 새 알림 있음' })
+
+    await open()
+    await within(getPanel()).findByText('읽지 않은 알림')
+    await open()
+
+    await waitFor(() => expect(mockGetUnreadCount).toHaveBeenCalledTimes(2))
+    expect(getTrigger()).toHaveAccessibleName('알림, 새 알림 있음')
+  })
+
   it('패널에 보여 준 알림만 읽음 처리하고, 불러오지 않은 다음 페이지는 남겨 둔다', async () => {
     // 목록 끝까지 스크롤하지 않은 상황: 다음 페이지를 부르지 않는다.
     vi.stubGlobal(
@@ -208,42 +225,71 @@ describe('NotificationMenu', () => {
     vi.unstubAllGlobals()
   })
 
-  it('확인한 알림은 다시 열었을 때 목록에서 빠진다', async () => {
+  it('읽지 않은 알림에만 읽지 않음 표시를 한다', async () => {
+    mockPage([
+      createNotification({ id: '1', message: '새 알림' }),
+      createNotification({
+        id: '2',
+        message: '읽은 알림',
+        readAt: new Date().toISOString(),
+      }),
+    ])
+    const { open } = renderMenu()
+
+    await open()
+
+    const [unread, read] = await within(getPanel()).findAllByRole('listitem')
+    expect(unread).toHaveTextContent('새 알림')
+    expect(within(unread).getByText('읽지 않은 알림')).toBeInTheDocument()
+    expect(read).toHaveTextContent('읽은 알림')
+    expect(within(read).queryByText('읽지 않은 알림')).toBeNull()
+  })
+
+  it('확인한 알림은 다시 열었을 때 읽은 알림으로 보여 준다', async () => {
     mockGetUnreadCount.mockResolvedValueOnce(1).mockResolvedValue(0)
+    const notification = createNotification({ id: '1' })
     mockGetNotifications
       .mockResolvedValueOnce({
-        items: [createNotification({ id: '1' })],
+        items: [notification],
         hasNext: false,
         nextCursor: null,
       })
-      .mockResolvedValue({ items: [], hasNext: false, nextCursor: null })
+      .mockResolvedValue({
+        items: [{ ...notification, readAt: new Date().toISOString() }],
+        hasNext: false,
+        nextCursor: null,
+      })
     mockRead.mockResolvedValue({ updated: true })
     const { getTrigger, open } = renderMenu()
 
     await open()
-    await within(getPanel()).findByText(
-      '김코드 기사님의 소형이사 견적이 도착했어요',
-    )
+    expect(
+      await within(getPanel()).findByText('읽지 않은 알림'),
+    ).toBeInTheDocument()
     await open()
     await waitFor(() => expect(getTrigger()).toHaveAccessibleName('알림'))
 
     await open()
 
     expect(
-      await within(getPanel()).findByText('모든 알림을 확인하였습니다'),
-    ).toBeInTheDocument()
-    expect(
-      within(getPanel()).queryByText(
+      await within(getPanel()).findByText(
         '김코드 기사님의 소형이사 견적이 도착했어요',
       ),
-    ).toBeNull()
+    ).toBeInTheDocument()
+    expect(within(getPanel()).queryByText('읽지 않은 알림')).toBeNull()
   })
 
   it('읽지 않은 알림을 보여 주지 않았으면 닫아도 읽음 처리하지 않는다', async () => {
-    mockPage([])
+    mockPage([
+      createNotification({
+        id: '1',
+        message: '읽은 알림',
+        readAt: new Date().toISOString(),
+      }),
+    ])
     const { user, open } = renderMenu()
     await open()
-    await within(getPanel()).findByText('모든 알림을 확인하였습니다')
+    await within(getPanel()).findByText('읽은 알림')
 
     await user.keyboard('{Escape}')
 
@@ -267,9 +313,7 @@ describe('NotificationMenu', () => {
     const { user, open } = renderMenu()
     await open()
 
-    await user.click(
-      await within(getPanel()).findByText('모든 알림을 확인하였습니다'),
-    )
+    await user.click(await within(getPanel()).findByText('알림이 없습니다'))
     expect(getPanel()).toBeInTheDocument()
 
     await user.click(screen.getByText('바깥 영역'))
@@ -349,7 +393,7 @@ describe('NotificationMenu', () => {
     await user.click(within(alert).getByRole('button', { name: '다시 시도' }))
 
     expect(
-      await within(getPanel()).findByText('모든 알림을 확인하였습니다'),
+      await within(getPanel()).findByText('알림이 없습니다'),
     ).toBeInTheDocument()
   })
 })

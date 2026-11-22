@@ -17,7 +17,6 @@ type UnreadCountResponse =
 type ReadResponse =
   operations['readNotification']['responses']['200']['content']['application/json']
 
-// #52부터는 읽지 않은 알림만 최신순으로 내려준다.
 export async function getNotifications(query: NotificationQuery = {}) {
   const { data } = await api.get<Schemas['NotificationListResponse']>(
     '/notifications',

@@ -37,7 +37,7 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
 }
 
-const ITEM = 'block px-4 py-4 md:px-6'
+const ITEM = 'flex gap-2 px-4 py-4 md:px-6'
 
 function NotificationMessage({
   notification,
@@ -98,7 +98,6 @@ export default function NotificationMenu({ role }: { role: Role }) {
     [notifications],
   )
 
-  // 열어 둔 동안 읽음 처리하면 다음 페이지(읽지 않은 알림만)가 어긋나서, 닫을 때 한 번에 읽음 처리한다.
   const close = useCallback(() => {
     setIsOpen(false)
     if (shownUnreadIds.length > 0) readNotifications(shownUnreadIds)
@@ -170,7 +169,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
     }
 
     if (notifications.length === 0) {
-      return <PanelStatus>모든 알림을 확인하였습니다</PanelStatus>
+      return <PanelStatus>알림이 없습니다</PanelStatus>
     }
 
     return (
@@ -182,15 +181,25 @@ export default function NotificationMenu({ role }: { role: Role }) {
           const href = getNotificationHref(notification, role)
           const content = (
             <>
-              <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-                <NotificationMessage notification={notification} role={role} />
-              </p>
-              <time
-                dateTime={notification.createdAt}
-                className="mt-1 block text-xs text-gray-300 md:text-sm"
-              >
-                {formatTimeAgo(notification.createdAt)}
-              </time>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+                  <NotificationMessage
+                    notification={notification}
+                    role={role}
+                  />
+                </p>
+                <time
+                  dateTime={notification.createdAt}
+                  className="mt-1 block text-xs text-gray-300 md:text-sm"
+                >
+                  {formatTimeAgo(notification.createdAt)}
+                </time>
+              </div>
+              {!notification.readAt && (
+                <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
+                  <span className="sr-only">읽지 않은 알림</span>
+                </span>
+              )}
             </>
           )
 

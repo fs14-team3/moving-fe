@@ -25,6 +25,7 @@ export const MOCK_MOVE_REQUEST: MoveRequestResponse = {
     zonecode: '48094',
     region: '부산',
   },
+  details: null,
   status: 'PENDING',
   quoteCount: 0,
   designatedMoverIds: [],

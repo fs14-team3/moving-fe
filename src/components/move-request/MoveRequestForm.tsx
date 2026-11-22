@@ -20,6 +20,14 @@ const STEP_TITLES = [
   '이사 지역을 선택해주세요',
 ]
 
+function toApiDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
 export default function MoveRequestForm() {
   const [currentStep, setCurrentStep] = useState(1)
 
@@ -42,7 +50,7 @@ export default function MoveRequestForm() {
     moveType && moveDate && departureAddress && arrivalAddress
       ? {
           moveType,
-          moveDate: formatMoveDate(moveDate),
+          moveDate: toApiDate(moveDate),
           from: departureAddress.address,
           to: arrivalAddress.address,
         }
@@ -55,14 +63,6 @@ export default function MoveRequestForm() {
       : currentStep === 2
         ? Boolean(moveDate)
         : isFormComplete
-
-  function formatMoveDate(date: Date) {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-
-    return `${year}-${month}-${day}`
-  }
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -80,7 +80,7 @@ export default function MoveRequestForm() {
     mutate(
       {
         moveType,
-        moveDate: formatMoveDate(moveDate),
+        moveDate: toApiDate(moveDate),
         from: departureAddress,
         to: arrivalAddress,
       },

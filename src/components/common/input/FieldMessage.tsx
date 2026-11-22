@@ -1,17 +1,33 @@
+export type CharCount =
+  { count: number; min: number } | { count: number; max: number }
+
 type FieldMessageProps = {
-  errorId: string
+  id: string
   error?: string
+  charCount?: CharCount
 }
 
-export default function FieldMessage({ errorId, error }: FieldMessageProps) {
-  if (!error) return null
+function formatCharCount(charCount: CharCount) {
+  return 'min' in charCount
+    ? `${charCount.count} / 최소 ${charCount.min}자`
+    : `${charCount.count} / ${charCount.max}자`
+}
+
+export default function FieldMessage({
+  id,
+  error,
+  charCount,
+}: FieldMessageProps) {
+  if (!error && !charCount) return null
 
   return (
-    <p
-      id={errorId}
-      className="mt-1 pl-2 text-xs font-medium text-red-500 lg:mt-2 lg:text-base"
-    >
-      {error}
-    </p>
+    <div id={id} className="mt-1 flex gap-2 px-2 text-xs lg:mt-2 lg:text-base">
+      {error && <p className="font-medium text-red-500">{error}</p>}
+      {charCount && (
+        <p className="ml-auto shrink-0 text-black-100">
+          {formatCharCount(charCount)}
+        </p>
+      )}
+    </div>
   )
 }

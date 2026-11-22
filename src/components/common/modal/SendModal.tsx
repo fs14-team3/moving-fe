@@ -11,6 +11,7 @@ import Modal, {
 } from './Modal'
 import TextArea from '@/components/common/input/TextArea'
 import MoveDetailsList from '@/components/move-request/MoveDetailsList'
+import { getMoveDetailRows } from '@/features/move-request/format'
 import type { MoveRequestDetails } from '@/features/move-request/types'
 
 const COMMENT_MIN_LENGTH = 10
@@ -67,7 +68,13 @@ function SendForm({
   return (
     <>
       <RequestSummary {...request} />
-      {details && <MoveDetailsList details={details} />}
+      {details && (
+        <MoveDetailsList
+          label="요청 상세 정보"
+          rows={getMoveDetailRows(details)}
+          className="mt-6 md:mt-8"
+        />
+      )}
       <form onSubmit={handleSubmit}>
         <ModalField label="견적가를 입력해 주세요" htmlFor={priceId}>
           <Input

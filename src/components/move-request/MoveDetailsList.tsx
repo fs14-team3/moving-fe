@@ -1,18 +1,26 @@
-import { getMoveDetailRows } from '@/features/move-request/format'
-import type { MoveRequestDetails } from '@/features/move-request/types'
+import { cn } from '@/lib/cn'
+
+type MoveDetailsListProps = {
+  label: string
+  rows: { label: string; value: string }[]
+  className?: string
+}
 
 export default function MoveDetailsList({
-  details,
-}: {
-  details: MoveRequestDetails
-}) {
+  label,
+  rows,
+  className,
+}: MoveDetailsListProps) {
   return (
     <section
-      aria-label="요청 상세 정보"
-      className="mt-6 rounded-2xl bg-background-200 p-4 md:mt-8 md:px-6 md:py-5"
+      aria-label={label}
+      className={cn(
+        'rounded-2xl bg-background-200 p-4 md:px-6 md:py-5',
+        className,
+      )}
     >
       <dl className="flex flex-col gap-2">
-        {getMoveDetailRows(details).map(({ label, value }) => (
+        {rows.map(({ label, value }) => (
           <div
             key={label}
             className="flex gap-4 text-sm leading-6 md:text-base"

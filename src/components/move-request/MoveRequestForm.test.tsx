@@ -1,15 +1,26 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import MoveRequestForm from '@/components/move-request/MoveRequestForm'
 import { getMoveEstimate } from '@/features/move-estimate/api'
 import { MOCK_MOVE_REQUEST_DETAILS } from '@/features/move-request/fixtures/moveRequests'
+import { useLeaveGuard } from '@/hooks/useLeaveGuard'
 
 const createMoveRequest = vi.hoisted(() => ({ mutate: vi.fn() }))
+const router = vi.hoisted(() => ({ replace: vi.fn() }))
+const leaveGuard = vi.hoisted(() => ({
+  isOpen: false,
+  stay: vi.fn(),
+  leave: vi.fn(),
+}))
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => router,
+}))
+
+vi.mock('@/hooks/useLeaveGuard', () => ({
+  useLeaveGuard: vi.fn(),
 }))
 
 vi.mock('@/features/move-estimate/api', () => ({
@@ -106,6 +117,62 @@ async function fillForm(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: '도착지 선택' }))
 }
 
+async function choose(
+  user: ReturnType<typeof userEvent.setup>,
+  container: HTMLElement,
+  group: string,
+  option: string,
+) {
+  await user.click(
+    within(within(container).getByRole('group', { name: group })).getByRole(
+      'button',
+      { name: option },
+    ),
+  )
+}
+
+async function goToDetails(user: ReturnType<typeof userEvent.setup>) {
+  await fillForm(user)
+  const [, desktopNext] = screen.getAllByRole('button', { name: '다음' })
+  await user.click(desktopNext)
+}
+
+async function fillDetailsExceptBoxes(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  await user.click(screen.getByRole('button', { name: /^반포장이사/ }))
+  await choose(user, document.body, '평수', '20평대')
+  await choose(user, document.body, '거주 인원', '2인')
+
+  const from = screen.getByRole('region', { name: '출발지' })
+  await choose(user, from, '건물 형태', '빌라·연립')
+  await choose(user, from, '층수', '3층')
+  await choose(user, from, '엘리베이터', '없음')
+  await choose(user, from, '건물 앞 주차', '가능')
+
+  const to = screen.getByRole('region', { name: '도착지' })
+  await choose(user, to, '건물 형태', '아파트')
+  await choose(user, to, '층수', '5층 이상')
+  await choose(user, to, '엘리베이터', '있음')
+  await choose(user, to, '건물 앞 주차', '불가능')
+
+  await user.click(screen.getByRole('button', { name: '침대(퀸) 더하기' }))
+  await user.click(screen.getByRole('button', { name: '침대(퀸) 더하기' }))
+  await user.click(screen.getByRole('button', { name: '가전' }))
+  await user.click(
+    screen.getByRole('button', { name: '에어컨(스탠드) 더하기' }),
+  )
+  await user.type(
+    screen.getByLabelText(/기사님께 전할 말/),
+    MOCK_MOVE_REQUEST_DETAILS.memo ?? '',
+  )
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(useLeaveGuard).mockReturnValue({ ...leaveGuard })
+})
+
 describe('MoveRequestForm 예상 비용', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -176,62 +243,16 @@ describe('MoveRequestForm 예상 비용', () => {
 
 describe('MoveRequestForm 상세 정보', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     vi.mocked(getMoveEstimate).mockResolvedValue(ESTIMATE)
   })
-
-  async function choose(
-    user: ReturnType<typeof userEvent.setup>,
-    container: HTMLElement,
-    group: string,
-    option: string,
-  ) {
-    await user.click(
-      within(within(container).getByRole('group', { name: group })).getByRole(
-        'button',
-        { name: option },
-      ),
-    )
-  }
-
-  async function goToDetails(user: ReturnType<typeof userEvent.setup>) {
-    await fillForm(user)
-    const [, desktopNext] = screen.getAllByRole('button', { name: '다음' })
-    await user.click(desktopNext)
-  }
 
   it('기본 정보 다음에 상세 정보를 모두 고르면 짐 목록, 요청사항과 함께 요청한다', async () => {
     const user = renderForm()
     await goToDetails(user)
     const submit = screen.getByRole('button', { name: '견적 요청하기' })
 
-    await user.click(screen.getByRole('button', { name: /^반포장이사/ }))
-    await choose(user, document.body, '평수', '20평대')
-    await choose(user, document.body, '거주 인원', '2인')
-
-    const from = screen.getByRole('region', { name: '출발지' })
-    await choose(user, from, '건물 형태', '빌라·연립')
-    await choose(user, from, '층수', '3층')
-    await choose(user, from, '엘리베이터', '없음')
-    await choose(user, from, '건물 앞 주차', '가능')
-
-    const to = screen.getByRole('region', { name: '도착지' })
-    await choose(user, to, '건물 형태', '아파트')
-    await choose(user, to, '층수', '5층 이상')
-    await choose(user, to, '엘리베이터', '있음')
-    await choose(user, to, '건물 앞 주차', '불가능')
-
-    await user.click(screen.getByRole('button', { name: '침대(퀸) 더하기' }))
-    await user.click(screen.getByRole('button', { name: '침대(퀸) 더하기' }))
-    await user.click(screen.getByRole('button', { name: '가전' }))
-    await user.click(
-      screen.getByRole('button', { name: '에어컨(스탠드) 더하기' }),
-    )
-    await user.type(
-      screen.getByLabelText(/기사님께 전할 말/),
-      MOCK_MOVE_REQUEST_DETAILS.memo ?? '',
-    )
+    await fillDetailsExceptBoxes(user)
 
     expect(submit).toBeDisabled()
 
@@ -264,5 +285,66 @@ describe('MoveRequestForm 상세 정보', () => {
     expect(
       screen.queryByRole('group', { name: '거주 인원' }),
     ).not.toBeInTheDocument()
+  })
+})
+
+describe('MoveRequestForm 나가기 확인', () => {
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open')
+    }
+  })
+
+  beforeEach(() => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    vi.mocked(getMoveEstimate).mockResolvedValue(ESTIMATE)
+  })
+
+  it('입력을 시작하면 나가기 전에 묻는다', async () => {
+    const user = renderForm()
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(false, '/')
+
+    await user.click(screen.getByRole('button', { name: '가정이사 선택' }))
+
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(true, '/')
+  })
+
+  it('상세 정보만 입력해도 나가기 전에 묻는다', async () => {
+    const user = renderForm()
+
+    await user.click(screen.getByRole('button', { name: /^반포장이사/ }))
+
+    expect(useLeaveGuard).toHaveBeenLastCalledWith(true, '/')
+  })
+
+  it('나가려고 하면 확인 창을 띄우고 고른 대로 처리한다', async () => {
+    vi.mocked(useLeaveGuard).mockReturnValue({ ...leaveGuard, isOpen: true })
+    const user = renderForm()
+
+    const dialog = screen.getByRole('dialog', { name: '페이지를 나갈까요?' })
+    expect(dialog).toHaveTextContent('나가면 입력한 내용이 사라져요.')
+
+    await user.click(within(dialog).getByRole('button', { name: '취소' }))
+    expect(leaveGuard.stay).toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: '나가기' }))
+    expect(leaveGuard.leave).toHaveBeenCalled()
+  })
+
+  it('요청을 보내면 묻지 않고 내 견적 관리로 간다', async () => {
+    const user = renderForm()
+    await goToDetails(user)
+    await fillDetailsExceptBoxes(user)
+    await choose(user, document.body, '잔짐 박스', '21~30개')
+    await user.click(screen.getByRole('button', { name: '견적 요청하기' }))
+
+    const [, { onSuccess }] = createMoveRequest.mutate.mock.calls[0]
+    onSuccess()
+
+    expect(leaveGuard.leave).toHaveBeenCalled()
+    expect(router.replace).toHaveBeenCalledWith('/my-quotes')
   })
 })

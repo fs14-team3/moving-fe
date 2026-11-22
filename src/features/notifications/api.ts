@@ -17,6 +17,9 @@ type UnreadCountResponse =
 type ReadResponse =
   operations['readNotification']['responses']['200']['content']['application/json']
 
+type ReadAllResponse =
+  operations['readAllNotifications']['responses']['200']['content']['application/json']
+
 export async function getNotifications(query: NotificationQuery = {}) {
   const { data } = await api.get<Schemas['NotificationListResponse']>(
     '/notifications',
@@ -36,5 +39,10 @@ export async function readNotification(notificationId: string) {
   const { data } = await api.patch<ReadResponse>(
     `/notifications/${notificationId}/read`,
   )
+  return data
+}
+
+export async function readAllNotifications() {
+  const { data } = await api.patch<ReadAllResponse>('/notifications/read-all')
   return data
 }

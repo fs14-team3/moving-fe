@@ -1,26 +1,33 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { toast } from 'sonner'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import NotificationMenu from '@/components/layout/NotificationMenu'
+import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import type { Role } from '@/features/auth/types'
 import {
   getNotifications,
   getUnreadNotificationCount,
+  readAllNotifications,
   readNotification,
   type Notification,
 } from '@/features/notifications/api'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 
+vi.mock('sonner', () => ({ toast: { error: vi.fn() } }))
+
 vi.mock('@/features/notifications/api', () => ({
   getNotifications: vi.fn(),
   getUnreadNotificationCount: vi.fn(),
   readNotification: vi.fn(),
+  readAllNotifications: vi.fn(),
 }))
 
 const mockGetNotifications = vi.mocked(getNotifications)
 const mockGetUnreadCount = vi.mocked(getUnreadNotificationCount)
 const mockRead = vi.mocked(readNotification)
+const mockReadAll = vi.mocked(readAllNotifications)
 
 function createNotification(
   overrides: Partial<Notification> & Pick<Notification, 'id'>,
@@ -295,6 +302,75 @@ describe('NotificationMenu', () => {
 
     expect(queryPanel()).toBeNull()
     expect(mockRead).not.toHaveBeenCalled()
+  })
+
+  it('모두 읽음을 누르면 전체 읽음 처리하고 읽지 않음 표시를 지운다', async () => {
+    mockGetUnreadCount.mockResolvedValueOnce(2).mockResolvedValue(0)
+    const notification = createNotification({ id: '1' })
+    const refresh =
+      Promise.withResolvers<Awaited<ReturnType<typeof getNotifications>>>()
+    mockGetNotifications
+      .mockResolvedValueOnce({
+        items: [notification],
+        hasNext: false,
+        nextCursor: null,
+      })
+      .mockImplementationOnce(() => refresh.promise)
+    mockReadAll.mockResolvedValue({ updatedCount: 2 })
+    const { user, getTrigger, open } = renderMenu()
+    await screen.findByRole('button', { name: '알림, 새 알림 있음' })
+    await open()
+    await within(getPanel()).findByText('읽지 않은 알림')
+
+    const button = screen.getByRole('button', { name: '모두 읽음' })
+    await user.click(button)
+
+    expect(mockReadAll).toHaveBeenCalledOnce()
+    await screen.findByRole('button', { name: '알림' })
+    expect(button).toBeDisabled()
+    refresh.resolve({
+      items: [{ ...notification, readAt: new Date().toISOString() }],
+      hasNext: false,
+      nextCursor: null,
+    })
+    await waitFor(() =>
+      expect(within(getPanel()).queryByText('읽지 않은 알림')).toBeNull(),
+    )
+    expect(getTrigger()).toHaveAccessibleName('알림')
+    expect(button).toBeDisabled()
+  })
+
+  it('미읽음 개수가 0이어도 읽지 않은 알림이 있으면 모두 읽음을 시도할 수 있다', async () => {
+    mockPage([createNotification({ id: '1' })])
+    mockReadAll.mockRejectedValue(new Error('서버 오류'))
+    const { user, open } = renderMenu()
+    await open()
+    await within(getPanel()).findByText('읽지 않은 알림')
+
+    const button = screen.getByRole('button', { name: '모두 읽음' })
+    await user.click(button)
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        TOAST_MESSAGES.notification.readAllFailed,
+      ),
+    )
+    await waitFor(() => expect(button).toBeEnabled())
+  })
+
+  it('읽지 않은 알림이 없으면 모두 읽음을 누를 수 없다', async () => {
+    mockPage([
+      createNotification({
+        id: '1',
+        message: '읽은 알림',
+        readAt: new Date().toISOString(),
+      }),
+    ])
+    const { open } = renderMenu()
+    await open()
+    await within(getPanel()).findByText('읽은 알림')
+
+    expect(screen.getByRole('button', { name: '모두 읽음' })).toBeDisabled()
   })
 
   it('Esc를 누르면 닫고 알림 아이콘으로 포커스를 돌려준다', async () => {

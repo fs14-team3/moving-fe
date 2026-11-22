@@ -8,6 +8,7 @@ import type {
 import { getNotificationHref } from '@/features/notifications/link'
 import { toMessageParts } from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
@@ -81,6 +82,8 @@ export default function NotificationMenu({ role }: { role: Role }) {
   const titleId = useId()
   const { hasUnread } = useUnreadNotificationCount()
   const { mutate: readNotifications } = useReadNotifications()
+  const { mutate: readAllNotifications, isPending: isReadingAll } =
+    useReadAllNotifications()
   const {
     notifications,
     hasData,
@@ -289,23 +292,35 @@ export default function NotificationMenu({ role }: { role: Role }) {
             >
               알림
             </h2>
-            <button
-              type="button"
-              aria-label="알림 닫기"
-              onClick={() => {
-                close()
-                triggerRef.current?.focus()
-              }}
-              className="flex size-6 items-center justify-center"
-            >
-              <Image
-                src="/assets/icons/Xicon.png"
-                alt=""
-                width={72}
-                height={72}
-                className="size-6"
-              />
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => readAllNotifications()}
+                disabled={
+                  isReadingAll || (!hasUnread && shownUnreadIds.length === 0)
+                }
+                className="text-sm font-semibold text-black-100 disabled:text-gray-400"
+              >
+                모두 읽음
+              </button>
+              <button
+                type="button"
+                aria-label="알림 닫기"
+                onClick={() => {
+                  close()
+                  triggerRef.current?.focus()
+                }}
+                className="flex size-6 items-center justify-center"
+              >
+                <Image
+                  src="/assets/icons/Xicon.png"
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="size-6"
+                />
+              </button>
+            </div>
           </div>
           {renderContent()}
         </section>

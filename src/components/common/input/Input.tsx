@@ -2,6 +2,7 @@
 
 import { Eye, EyeOff } from 'lucide-react'
 import { useId, useState, type ComponentProps } from 'react'
+import FieldMessage from '@/components/common/input/FieldMessage'
 import { cn } from '@/lib/cn'
 
 type InputProps = ComponentProps<'input'> & {
@@ -66,14 +67,7 @@ export default function Input({
           </button>
         )}
       </div>
-      {error && (
-        <p
-          id={errorId}
-          className="mt-1 pl-2 text-xs font-medium text-red-500 lg:mt-2 lg:text-base"
-        >
-          {error}
-        </p>
-      )}
+      <FieldMessage errorId={errorId} error={error} />
     </div>
   )
 }

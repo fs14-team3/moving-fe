@@ -1,4 +1,5 @@
 import { useId, type ComponentProps } from 'react'
+import FieldMessage from '@/components/common/input/FieldMessage'
 import { cn } from '@/lib/cn'
 
 type TextAreaProps = ComponentProps<'textarea'> & {
@@ -42,14 +43,7 @@ export default function TextArea({
           className,
         )}
       />
-      {error && (
-        <p
-          id={errorId}
-          className="mt-1 pl-2 text-xs font-medium text-red-500 lg:mt-2 lg:text-base"
-        >
-          {error}
-        </p>
-      )}
+      <FieldMessage errorId={errorId} error={error} />
     </div>
   )
 }

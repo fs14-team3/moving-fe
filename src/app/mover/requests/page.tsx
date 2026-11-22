@@ -362,6 +362,7 @@ export default function ReceivedRequestsPage() {
             if (!sendQuote.isPending) setQuoteTarget(null)
           }}
           request={toRequestSummary(quoteTarget)}
+          details={quoteTarget.details}
           isSubmitting={sendQuote.isPending}
           // 코멘트는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
           onSubmit={({ price }) =>

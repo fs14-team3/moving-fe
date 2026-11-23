@@ -75,7 +75,10 @@ export function useLeaveGuard(when: boolean, fallbackHref: string) {
       removeEventListener('beforeunload', warn)
       removeEventListener('click', catchLink, true)
       removeEventListener('popstate', catchBack)
-      if (isLeaving.current || location.href !== href) return
+      if (isLeaving.current || location.href !== href) {
+        history.scrollRestoration = scrollRestoration
+        return
+      }
       addEventListener(
         'popstate',
         () => {

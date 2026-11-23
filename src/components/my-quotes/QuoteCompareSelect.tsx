@@ -48,22 +48,24 @@ export default function QuoteCompareSelect({ pendingQuotes }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-10"
+      className="flex flex-col gap-10 md:gap-12"
       onSubmit={(event) => {
         // TODO: 폼 제출 연결하기
         event.preventDefault()
       }}
     >
       <section className="flex flex-col gap-3">
-        <h3 className="flex items-center gap-1 leading-6 font-semibold">
+        <h3 className="flex items-center gap-1 leading-6 font-semibold md:text-lg">
           비교할 견적을 선택해주세요
-          <span className="text-xs font-normal text-gray-500">(최대 3개)</span>
+          <span className="text-xs font-normal text-gray-500 md:text-sm">
+            (최대 3개)
+          </span>
         </h3>
-        <div className="relative">
+        <div>
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`flex w-full items-center justify-between rounded-xl border border-line-100 px-5 py-2 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 ${isDropdownOpen ? 'border-primary-400 bg-primary-100 text-primary-400 hover:bg-primary-100' : 'border-line-100'}`}
+            className={`flex w-full items-center justify-between rounded-xl border border-line-100 px-5 py-2 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 md:text-base ${isDropdownOpen ? 'border-primary-400 bg-primary-100 text-primary-400 hover:bg-primary-100' : 'border-line-100'}`}
           >
             견적 선택
             <ChevronDown
@@ -71,7 +73,7 @@ export default function QuoteCompareSelect({ pendingQuotes }: Props) {
             />
           </button>
           {isDropdownOpen && (
-            <ul className="absolute top-13 flex h-54 w-full flex-col overflow-auto rounded-xl border border-line-100 bg-white shadow-sm">
+            <ul className="mt-2 flex h-54 w-full flex-col overflow-auto rounded-xl border border-line-100 bg-white shadow-sm">
               {pendingQuotes.map((pendingQuote) => {
                 const nickname = pendingQuote.mover.nickname?.trim() ?? '익명'
 
@@ -80,10 +82,10 @@ export default function QuoteCompareSelect({ pendingQuotes }: Props) {
                     <button
                       type="button"
                       onClick={() => handleQuoteSelect(pendingQuote.id)}
-                      className="flex w-full items-center justify-center gap-1 border-b border-line-100 px-5 py-4 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100"
+                      className="flex w-full items-center justify-center gap-1 border-b border-line-100 px-5 py-4 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 md:text-base"
                     >
                       {nickname} 기사님
-                      <span className="text-xs font-normal">
+                      <span className="text-xs font-normal md:text-sm">
                         ({pendingQuote.price.toLocaleString()}원)
                       </span>
                     </button>
@@ -106,7 +108,7 @@ export default function QuoteCompareSelect({ pendingQuotes }: Props) {
                   key={quoteId}
                   className="flex items-center gap-[5px] rounded-2xl border border-primary-400 bg-primary-100 px-[10px] py-[6px] font-medium text-primary-400"
                 >
-                  <p className="text-xs">{nickname} 기사님</p>
+                  <p className="text-xs md:text-sm">{nickname} 기사님</p>
                   <button
                     type="button"
                     onClick={() => handleQuoteSelect(quoteId)}
@@ -125,26 +127,30 @@ export default function QuoteCompareSelect({ pendingQuotes }: Props) {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h3 className="flex items-center gap-1 leading-6 font-semibold">
+        <h3 className="flex items-center gap-1 leading-6 font-semibold md:text-lg">
           키워드를 선택해주세요
-          <span className="text-xs font-normal text-gray-500">(최대 3개)</span>
+          <span className="text-xs font-normal text-gray-500 md:text-sm">
+            (최대 3개)
+          </span>
         </h3>
-        {KEYWORDS.map((keyword) => (
-          <SelectChip
-            key={keyword}
-            selected={selectedKeywords.includes(keyword)}
-            onClick={() => handleKeywordSelect(keyword)}
-            className="hover:cursor-pointer"
-          >
-            {keyword}
-          </SelectChip>
-        ))}
+        <div className="flex flex-wrap gap-2">
+          {KEYWORDS.map((keyword) => (
+            <SelectChip
+              key={keyword}
+              selected={selectedKeywords.includes(keyword)}
+              onClick={() => handleKeywordSelect(keyword)}
+              className="hover:cursor-pointer"
+            >
+              {keyword}
+            </SelectChip>
+          ))}
+        </div>
       </section>
 
       <Button
         type="submit"
         disabled={!isFormComplete}
-        className="w-full hover:cursor-pointer disabled:cursor-not-allowed"
+        className="w-full hover:cursor-pointer disabled:cursor-not-allowed md:h-15 lg:w-full lg:text-base"
       >
         견적 비교하기
       </Button>

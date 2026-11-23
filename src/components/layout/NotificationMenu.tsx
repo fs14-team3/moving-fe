@@ -5,14 +5,19 @@ import type {
   Notification,
   NotificationType,
 } from '@/features/notifications/api'
+import { getNotificationHref } from '@/features/notifications/link'
 import { toMessageParts } from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
+import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { useDismiss } from '@/hooks/useDismiss'
+import { cn } from '@/lib/cn'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
+import { useQueryClient } from '@tanstack/react-query'
 import { LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   useCallback,
   useEffect,
@@ -31,6 +36,8 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   MOVE_DAY: '내일은 이사 예정일이에요',
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
 }
+
+const ITEM = 'block px-4 py-4 md:px-6'
 
 function NotificationMessage({
   notification,
@@ -64,6 +71,7 @@ function PanelStatus({ children }: { children: ReactNode }) {
 }
 
 export default function NotificationMenu({ role }: { role: Role }) {
+  const queryClient = useQueryClient()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -170,19 +178,48 @@ export default function NotificationMenu({ role }: { role: Role }) {
         ref={listRef}
         className="max-h-90 divide-y divide-line-200 overflow-y-auto px-2 md:max-h-100 md:px-4"
       >
-        {notifications.map((notification) => (
-          <li key={notification.id} className="px-4 py-4 md:px-6">
-            <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-              <NotificationMessage notification={notification} role={role} />
-            </p>
-            <time
-              dateTime={notification.createdAt}
-              className="mt-1 block text-xs text-gray-300 md:text-sm"
-            >
-              {formatTimeAgo(notification.createdAt)}
-            </time>
-          </li>
-        ))}
+        {notifications.map((notification) => {
+          const href = getNotificationHref(notification, role)
+          const content = (
+            <>
+              <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+                <NotificationMessage notification={notification} role={role} />
+              </p>
+              <time
+                dateTime={notification.createdAt}
+                className="mt-1 block text-xs text-gray-300 md:text-sm"
+              >
+                {formatTimeAgo(notification.createdAt)}
+              </time>
+            </>
+          )
+
+          return (
+            <li key={notification.id}>
+              {href ? (
+                <Link
+                  href={href}
+                  onClick={() => {
+                    if (href === '/mover/requests') {
+                      void queryClient.invalidateQueries({
+                        queryKey: receivedRequestKeys.all,
+                      })
+                    }
+                    close()
+                  }}
+                  className={cn(
+                    ITEM,
+                    'rounded-lg transition-colors hover:bg-background-200',
+                  )}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className={ITEM}>{content}</div>
+              )}
+            </li>
+          )
+        })}
         {hasNextPage && (
           <li ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage ? (

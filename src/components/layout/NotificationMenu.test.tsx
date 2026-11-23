@@ -10,6 +10,7 @@ import {
   readNotification,
   type Notification,
 } from '@/features/notifications/api'
+import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 
 vi.mock('@/features/notifications/api', () => ({
   getNotifications: vi.fn(),
@@ -56,7 +57,7 @@ function renderMenu(role: Role = 'CUSTOMER') {
   )
   const getTrigger = () =>
     screen.getByRole('button', { name: /^알림(, 새 알림 있음)?$/ })
-  return { user, getTrigger, open: () => user.click(getTrigger()) }
+  return { user, queryClient, getTrigger, open: () => user.click(getTrigger()) }
 }
 
 function getPanel() {
@@ -284,6 +285,56 @@ describe('NotificationMenu', () => {
 
     expect(queryPanel()).toBeNull()
     expect(getTrigger()).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('이동할 페이지가 있는 알림은 링크로 보여 준다', async () => {
+    mockPage([
+      createNotification({ id: '1', message: '알림 문구', quoteId: 'quote-1' }),
+    ])
+    const { open } = renderMenu()
+    await open()
+
+    expect(
+      await within(getPanel()).findByRole('link', { name: /알림 문구/ }),
+    ).toHaveAttribute('href', '/my-quotes/quote-1')
+  })
+
+  it('이동할 페이지가 없는 알림은 링크로 보여 주지 않는다', async () => {
+    mockPage([
+      createNotification({ id: '1', type: 'MOVE_DAY', message: '알림 문구' }),
+    ])
+    const { open } = renderMenu()
+    await open()
+
+    expect(await within(getPanel()).findByText('알림 문구')).toBeInTheDocument()
+    expect(within(getPanel()).queryByRole('link')).toBeNull()
+  })
+
+  it('받은 요청 알림을 누르면 목록 캐시를 무효화하고 읽음 처리한다', async () => {
+    mockPage([
+      createNotification({
+        id: '1',
+        type: 'NEW_DESIGNATED_REQUEST',
+        message: '알림 문구',
+      }),
+    ])
+    const { user, open, queryClient } = renderMenu('MOVER')
+    const queryKey = receivedRequestKeys.list({ sort: 'MOVE_DATE_ASC' })
+    queryClient.setQueryData(queryKey, {
+      pages: [{ items: [], hasNext: false, nextCursor: null }],
+      pageParams: [undefined],
+    })
+    await open()
+
+    const link = await within(getPanel()).findByRole('link', {
+      name: /알림 문구/,
+    })
+    link.addEventListener('click', (event) => event.preventDefault())
+    await user.click(link)
+
+    expect(queryPanel()).toBeNull()
+    expect(mockRead).toHaveBeenCalledWith('1')
+    expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true)
   })
 
   it('불러오지 못하면 알리고, 다시 시도를 누르면 다시 불러온다', async () => {

@@ -3,6 +3,8 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/queryKeys'
 import ChatHeader from '@/components/chat/ChatHeader'
 import ChatMessageInput from '@/components/chat/ChatMessageInput'
 import ChatMessageList from '@/components/chat/ChatMessageList'
@@ -12,10 +14,11 @@ import { useChatMessages } from '@/features/chat/hooks/useChatMessages'
 import { useSendChatMessage } from '@/features/chat/hooks/useSendChatMessage'
 import { useMarkChatRoomAsRead } from '@/features/chat/hooks/useMarkChatRoomAsRead'
 import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket'
-import type { ChatMessage } from '@/features/chat/types'
+import type { ChatMessageListResponse } from '@/features/chat/types'
 
 export default function ChatDetailPage() {
   const params = useParams<{ chatRoomId: string }>()
+  const queryClient = useQueryClient()
   const chatRoomId = params.chatRoomId
 
   const { user, isPending: isUserPending } = useCurrentUser()
@@ -49,32 +52,31 @@ export default function ChatDetailPage() {
     chatRoomId,
     enabled: Boolean(user && room && !isUserPending && !isRoomsPending),
     onMessage: (message) => {
-      if (!user) return
+      queryClient.setQueryData<ChatMessageListResponse>(
+        queryKeys.chats.messages(chatRoomId),
+        (previous) => {
+          if (!previous) return previous
 
-      const senderRole =
-        message.senderId === user.id
-          ? user.role
-          : user.role === 'CUSTOMER'
-            ? 'MOVER'
-            : 'CUSTOMER'
+          if (previous.items.some((item) => item.id === message.id)) {
+            return previous
+          }
 
-      const newMessage: ChatMessage = {
-        id: message.id,
-        chatRoomId: message.chatRoomId,
-        senderId: message.senderId,
-        senderName: message.senderName,
-        senderRole,
-        content: message.content,
-        createdAt: message.createdAt,
-      }
-
-      setMessages((previous) => {
-        if (previous.some((item) => item.id === newMessage.id)) {
-          return previous
-        }
-
-        return [...previous, newMessage]
-      })
+          return {
+            ...previous,
+            items: [
+              ...previous.items,
+              {
+                id: message.id,
+                chatRoomId: message.chatRoomId,
+                senderId: message.senderId,
+                senderName: message.senderName,
+                content: message.content,
+                createdAt: message.createdAt,
+              },
+            ],
+          }
+        },
+      )
     },
   })
 

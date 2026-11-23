@@ -294,8 +294,11 @@ export interface paths {
     }
     /**
      * 기사님 리뷰 AI 요약
-     * @description 공개 API. 리뷰가 10건 미만이거나 요약을 만들 수 없으면 `null`입니다.
-     *     리뷰 수가 바뀌면 다시 생성하고, 생성에 실패했을 때 이전 저장본이 있으면 이를 반환합니다.
+     * @description 공개 API. 리뷰가 10건 미만이면 `null`을 반환합니다.
+     *     현재 리뷰 수가 요약 생성 당시와 같으면 저장된 요약을 반환합니다.
+     *     요약이 없거나 리뷰 수가 달라지면 요약 생성 작업을 큐에 등록합니다.
+     *     생성 완료를 기다리지 않고 기존 요약을 반환하며, 저장된 요약이 없으면 `null`을 반환합니다.
+     *     큐 등록에 실패한 경우에도 기존 요약 또는 `null`을 반환합니다.
      */
     get: operations['getMoverReviewSummary']
     put?: never
@@ -377,6 +380,7 @@ export interface paths {
      *     출발지와 도착지의 지역은 서버가 주소의 첫 단어(시/도)로 판별하며, 강원도, 전라북도, 제주도처럼 바뀌기 전 명칭과 줄임 명칭도 인식합니다.
      *     새 요청을 모든 서비스 지역의 기사님들에게 알립니다.
      *     입력 중 수정(§4.1.4)은 제출 전 프론트엔드 폼에서 처리합니다.
+     *     `details`로 이사 방식, 출발지·도착지 환경, 집 규모, 짐 목록, 잔짐 양, 요청사항을 함께 저장할 수 있으며, 기사님에게 보이는 요청에도 같은 정보가 포함됩니다.
      */
     post: operations['createMoveRequest']
     delete?: never
@@ -657,6 +661,74 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/quotes/{quoteId}/proof-photos': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 작업 사진 목록
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canEdit`이 `true`일 때만 사진 올리기와 삭제 버튼을 보여 줍니다.
+     *
+     *     사진 주소는 CloudFront 서명 URL이며 발급 후 최소 1시간, 최대 2시간 동안 유효합니다. 같은 시간대(정각 기준 1시간)에는 같은 주소를 반환하므로 다시 조회해도 이미지를 새로 받지 않습니다. 화면을 1시간 넘게 열어 둘 때는 목록을 다시 조회해 주소를 갱신합니다.
+     */
+    get: operations['listProofPhotos']
+    put?: never
+    /**
+     * 작업 사진 업로드 확정
+     * @description `POST /quotes/{quoteId}/proof-photos/uploads`로 받은 업로드 정보로 사진과 썸네일을 S3에 모두 올린 뒤, 사진 한 장마다 `uploadId`를 보내 확정합니다. 확정된 사진만 목록에 나타납니다. 같은 `uploadId`를 다시 보내면 이미 저장된 사진을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 그 사이 리뷰가 작성되거나 100장이 차도 이미 저장된 사진은 그대로 반환합니다. 삭제된 사진의 `uploadId`는 `PROOF_PHOTO_DELETED`로 거절하며 다시 업로드하지 않습니다.
+     */
+    post: operations['confirmProofPhoto']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/proof-photos/{photoId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * 작업 사진 삭제
+     * @description 기사님이 본인 견적의 작업 사진을 삭제합니다. 일반 유저가 리뷰를 작성한 뒤에는 올리기와 마찬가지로 삭제할 수 없습니다. 사진을 먼저 목록에서 빼고, 이어서 사진과 썸네일, 확정할 때 쓴 업로드 파일을 S3에서 지웁니다. 삭제된 `uploadId`는 기록으로 남겨 다시 확정해도 사진이 되살아나지 않습니다. S3에서 파일을 지우지 못하면 사진은 목록에서 빠진 채 `INTERNAL_ERROR`(500)를 반환합니다. 같은 요청을 다시 보내면 파일 삭제를 다시 시도하며, 이미 삭제한 사진을 다시 삭제해도 204를 반환합니다.
+     */
+    delete: operations['deleteProofPhoto']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/proof-photos/uploads': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 작업 사진 업로드 정보 발급
+     * @description 기사님이 본인의 확정된 견적에 올릴 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 일반 유저가 리뷰를 작성하기 전까지 받을 수 있으며, 이미 확정된 사진과 합쳐 100장을 넘을 수 없습니다.
+     *
+     *     사진마다 `image`(긴 변 약 2000px)와 `thumbnail`(긴 변 약 300px)을 브라우저에서 WebP나 JPEG로 다시 인코딩해 각각 올립니다. 다시 인코딩해야 위치 정보 등 EXIF 메타데이터가 지워지므로 원본 파일을 그대로 올리지 않습니다. `contentType`에는 인코딩한 형식을 보내며 사진과 썸네일 모두 이 형식이어야 합니다. `.jpg` 파일도 `image/jpeg`입니다. Safari처럼 canvas가 WebP로 인코딩하지 못하는 브라우저에서는 `image/jpeg`를 씁니다. `url`로 `multipart/form-data` POST를 보내며, `fields`를 그대로 담고 파일은 마지막 `file` 필드에 넣습니다. S3가 `Content-Type`이 `contentType`과 같은지, 크기(사진 5MB, 썸네일 512KB 이하), 발급 후 10분 이내인지 확인합니다. 두 파일을 모두 올린 뒤 `POST /quotes/{quoteId}/proof-photos`로 확정합니다.
+     */
+    post: operations['createProofPhotoUploads']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reviews': {
     parameters: {
       query?: never
@@ -930,6 +1002,7 @@ export interface components {
       | 'PROFILE_REQUIRED'
       | 'NOT_IN_SERVICE_AREA'
       | 'REVIEW_NOT_ALLOWED'
+      | 'PROOF_PHOTO_NOT_ALLOWED'
       | 'NOT_FOUND'
       | 'PROFILE_ALREADY_EXISTS'
       | 'ACTIVE_REQUEST_EXISTS'
@@ -939,6 +1012,8 @@ export interface components {
       | 'REQUEST_NOT_PENDING'
       | 'REQUEST_HAS_QUOTES'
       | 'QUOTE_LIMIT_REACHED'
+      | 'PROOF_PHOTO_LIMIT_REACHED'
+      | 'PROOF_PHOTO_NOT_UPLOADED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -968,6 +1043,62 @@ export interface components {
     UploadResponse: {
       /** Format: uri */
       url: string
+    }
+    ProofPhoto: {
+      /** Format: uuid */
+      id: string
+      /**
+       * Format: uri
+       * @description 사진 CloudFront 서명 URL. 발급 후 최소 1시간, 최대 2시간 동안 유효합니다.
+       */
+      url: string
+      /**
+       * Format: uri
+       * @description 썸네일 CloudFront 서명 URL. `url`과 같은 시각에 만료됩니다.
+       */
+      thumbnailUrl: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    ProofPhotoUploadCreate: {
+      /** @example 10 */
+      count: number
+      /**
+       * @example image/webp
+       * @enum {string}
+       */
+      contentType: 'image/jpeg' | 'image/webp'
+    }
+    ProofPhotoUploadList: {
+      items: components['schemas']['ProofPhotoUpload'][]
+    }
+    ProofPhotoUpload: {
+      /** Format: uuid */
+      uploadId: string
+      image: components['schemas']['PresignedPost']
+      thumbnail: components['schemas']['PresignedPost']
+    }
+    /** @description S3 presigned POST. `url`로 `fields`와 마지막 `file` 필드를 담은 `multipart/form-data`를 보냅니다. */
+    PresignedPost: {
+      /** Format: uri */
+      url: string
+      fields: {
+        [key: string]: string
+      }
+    }
+    ProofPhotoConfirm: {
+      /** Format: uuid */
+      uploadId: string
+    }
+    ProofPhotoList: {
+      items: components['schemas']['ProofPhoto'][]
+      /** @example 100 */
+      maxCount: number
+      /**
+       * @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지)
+       * @example true
+       */
+      canEdit: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -1187,6 +1318,107 @@ export interface components {
       zonecode?: string | null
       region: components['schemas']['Region']
     }
+    /**
+     * @description BASIC 일반이사, HALF_PACKING 반포장이사, FULL_PACKING 포장이사
+     * @enum {string}
+     */
+    ServiceLevel: 'BASIC' | 'HALF_PACKING' | 'FULL_PACKING'
+    /**
+     * @description APARTMENT 아파트, VILLA 빌라·연립, OFFICETEL 오피스텔, HOUSE 주택, COMMERCIAL 상가·사무실
+     * @enum {string}
+     */
+    BuildingType: 'APARTMENT' | 'VILLA' | 'OFFICETEL' | 'HOUSE' | 'COMMERCIAL'
+    /**
+     * @description UNDER_10 10평 미만, TENS 10평대, TWENTIES 20평대, THIRTIES 30평대, OVER_40 40평 이상
+     * @enum {string}
+     */
+    AreaRange: 'UNDER_10' | 'TENS' | 'TWENTIES' | 'THIRTIES' | 'OVER_40'
+    /**
+     * @description 잔짐 박스(이사박스 5호 기준) 개수. UP_TO_10 10개 이하, UP_TO_20 11~20개, UP_TO_30 21~30개, UP_TO_50 31~50개, OVER_50 51개 이상
+     * @enum {string}
+     */
+    BoxRange: 'UP_TO_10' | 'UP_TO_20' | 'UP_TO_30' | 'UP_TO_50' | 'OVER_50'
+    /**
+     * @description 짐 종류. 크기나 형태가 다르면 코드가 다릅니다. 예) BED_SINGLE, BED_QUEEN
+     * @enum {string}
+     */
+    MoveItem:
+      | 'BED_SINGLE'
+      | 'BED_SUPER_SINGLE'
+      | 'BED_DOUBLE'
+      | 'BED_QUEEN'
+      | 'BED_KING'
+      | 'WARDROBE_ONE_DOOR'
+      | 'WARDROBE_TWO_DOOR'
+      | 'WARDROBE_THREE_PLUS_DOOR'
+      | 'SOFA_SMALL'
+      | 'SOFA_MEDIUM'
+      | 'SOFA_LARGE'
+      | 'DINING_TABLE'
+      | 'DESK'
+      | 'CHAIR'
+      | 'BOOKSHELF'
+      | 'DRAWER'
+      | 'HANGER'
+      | 'VANITY'
+      | 'SHOE_CABINET'
+      | 'TV_STAND'
+      | 'FRIDGE_SMALL'
+      | 'FRIDGE_STANDARD'
+      | 'FRIDGE_SIDE_BY_SIDE'
+      | 'FRIDGE_FOUR_DOOR'
+      | 'KIMCHI_FRIDGE'
+      | 'WASHER_DRUM'
+      | 'WASHER_TOP_LOAD'
+      | 'DRYER'
+      | 'AIRCON_WALL'
+      | 'AIRCON_STAND'
+      | 'TV'
+      | 'COMPUTER'
+      | 'MICROWAVE'
+      | 'CLOTHES_CARE'
+      | 'WATER_PURIFIER'
+      | 'AIR_PURIFIER'
+      | 'MASSAGE_CHAIR'
+      | 'PIANO'
+      | 'BICYCLE'
+      | 'EXERCISE_EQUIPMENT'
+      | 'PLANT'
+      | 'SUITCASE'
+      | 'CAT_TOWER'
+      | 'MIRROR'
+    /** @description 출발지 또는 도착지 건물 환경 */
+    Building: {
+      buildingType: components['schemas']['BuildingType']
+      /**
+       * @description 층수. -1은 지하, 5는 5층 이상
+       * @enum {integer}
+       */
+      floor: -1 | 1 | 2 | 3 | 4 | 5
+      hasElevator: boolean
+      /** @description 건물 앞 차량 정차 가능 여부 */
+      canPark: boolean
+    }
+    MoveRequestItem: {
+      item: components['schemas']['MoveItem']
+      quantity: number
+    }
+    MoveRequestDetails: {
+      serviceLevel: components['schemas']['ServiceLevel']
+      from: components['schemas']['Building']
+      to: components['schemas']['Building']
+      areaRange: components['schemas']['AreaRange']
+      /**
+       * @description 거주 인원. 4는 4인 이상. 사무실이사(OFFICE)가 아니면 필수
+       * @enum {integer|null}
+       */
+      residentCount?: 1 | 2 | 3 | 4 | null
+      /** @description 옮길 짐 목록. 선택 입력이며 빈 배열이면 짐을 입력하지 않은 요청입니다. 같은 item은 한 번만 보낼 수 있습니다. */
+      items: components['schemas']['MoveRequestItem'][]
+      boxRange: components['schemas']['BoxRange']
+      /** @description 기사님께 전할 요청사항. 빈 문자열은 null로 저장됩니다. */
+      memo?: string | null
+    }
     MoveRequestCreate: {
       moveType: components['schemas']['ServiceType']
       /**
@@ -1196,6 +1428,8 @@ export interface components {
       moveDate: string
       from: components['schemas']['AddressInput']
       to: components['schemas']['AddressInput']
+      /** @description 이사 상세 정보. 생략하면 상세 정보 없이 요청을 만듭니다. */
+      details?: components['schemas']['MoveRequestDetails']
     }
     MoveRequest: {
       /** Format: uuid */
@@ -1205,6 +1439,8 @@ export interface components {
       moveDate: string
       from: components['schemas']['Address']
       to: components['schemas']['Address']
+      /** @description 상세 정보 없이 만든 요청은 null */
+      details: components['schemas']['MoveRequestDetails'] | null
       status: components['schemas']['MoveRequestStatus']
       quoteCount: number
       designatedMoverIds: string[]
@@ -1272,6 +1508,8 @@ export interface components {
       moveDate: string
       from: components['schemas']['Address']
       to: components['schemas']['Address']
+      /** @description 상세 정보 없이 만든 요청은 null */
+      details: components['schemas']['MoveRequestDetails'] | null
       status: components['schemas']['MoveRequestStatus']
       isDesignated: boolean
       /** Format: date-time */
@@ -1550,6 +1788,7 @@ export interface components {
     MoverIdPath: string
     RequestIdPath: string
     QuoteIdPath: string
+    PhotoIdPath: string
     /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
     Cursor: string
     Limit: number
@@ -2311,7 +2550,7 @@ export interface operations {
           'application/json': components['schemas']['MoveRequest']
         }
       }
-      /** @description `VALIDATION_ERROR`. 필수 정보가 없거나, 이사 날짜가 한국 시간 기준으로 지났거나, 주소에서 시/도를 판별할 수 없는 경우 */
+      /** @description `VALIDATION_ERROR`. 필수 정보가 없거나, 이사 날짜가 한국 시간 기준으로 지났거나, 주소에서 시/도를 판별할 수 없거나, 상세 정보 값이 올바르지 않은 경우. 사무실이사가 아닌데 거주 인원이 없거나 같은 짐을 중복해서 보낸 경우도 포함합니다. */
       400: {
         headers: {
           [name: string]: unknown
@@ -2770,6 +3009,203 @@ export interface operations {
       404: components['responses']['NotFound']
       /** @description `REQUEST_NOT_PENDING` (이미 확정되었거나 만료됨) */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  listProofPhotos: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 작업 사진 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      404: components['responses']['NotFound']
+      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  confirmProofPhoto: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProofPhotoConfirm']
+      }
+    }
+    responses: {
+      /** @description 확정 완료 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhoto']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (이미 100장을 올림), `PROOF_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 올린 뒤 확정), `PROOF_PHOTO_DELETED` (삭제된 사진의 `uploadId`. 재업로드 및 재시도 금지) 또는 `PROOF_PHOTO_REVIEWED` (업로드 정보를 받은 뒤 리뷰가 작성됨) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  deleteProofPhoto: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+        photoId: components['parameters']['PhotoIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 삭제 완료. 응답 본문 없음. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인 견적의 사진이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `PROOF_PHOTO_REVIEWED`. 리뷰가 작성된 견적의 사진은 삭제할 수 없습니다. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createProofPhotoUploads: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ProofPhotoUploadCreate']
+      }
+    }
+    responses: {
+      /** @description 업로드 정보 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoUploadList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `FORBIDDEN` 또는 `PROOF_PHOTO_NOT_ALLOWED` (확정되지 않았거나 이사일이 지나지 않은 견적) */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      404: components['responses']['NotFound']
+      /** @description `PROOF_PHOTO_LIMIT_REACHED` (확정된 사진과 합쳐 100장을 넘음) 또는 `PROOF_PHOTO_REVIEWED` (리뷰가 작성된 견적) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
         headers: {
           [name: string]: unknown
         }

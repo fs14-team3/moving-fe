@@ -26,11 +26,13 @@ function createSentQuote(
     status: overrides.status ?? 'SUBMITTED',
     isDesignated: true,
     createdAt: '2026-11-01T09:00:00.000Z',
+    comment: null,
     moveRequest: {
       id: `request-${id}`,
       customerName,
       moveType: 'SMALL',
       moveDate: overrides.moveDate ?? '2026-11-20',
+      details: null,
       from: { address: '서울특별시 중구 세종대로 110', region: '서울' },
       to: { address: '경기도 수원시 팔달구 효원로 1', region: '경기' },
       status: overrides.moveRequestStatus ?? 'PENDING',

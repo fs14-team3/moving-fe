@@ -32,13 +32,16 @@ export default function ChatDetailPage() {
   } = useChatMessages(chatRoomId, Boolean(room && user))
 
   const sendMessage = useSendChatMessage(chatRoomId)
-  const markAsRead = useMarkChatRoomAsRead(chatRoomId)
+  const { mutate: markAsRead } = useMarkChatRoomAsRead(chatRoomId)
+
+  const roomId = room?.id
+  const userId = user?.id
 
   useEffect(() => {
-    if (room && user) {
-      markAsRead.mutate()
+    if (roomId && userId) {
+      markAsRead()
     }
-  }, [room?.id, user?.id, markAsRead.mutate])
+  }, [roomId, userId, markAsRead])
 
   if (isUserPending || isRoomsPending) {
     return (

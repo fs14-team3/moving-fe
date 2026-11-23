@@ -3,6 +3,7 @@ import type { QuoteDetail } from '../api'
 export const MOCK_QUOTE_DETAIL: QuoteDetail = {
   id: 'quote-1',
   price: 180000,
+  comment: null,
   status: 'SUBMITTED',
   isDesignated: true,
   createdAt: '2026-11-05T09:00:00.000Z',
@@ -28,6 +29,7 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
     id: 'request-1',
     moveType: 'SMALL',
     moveDate: '2026-11-20',
+    details: null,
     from: {
       address: '서울특별시 중구 세종대로 110',
       zonecode: '04524',

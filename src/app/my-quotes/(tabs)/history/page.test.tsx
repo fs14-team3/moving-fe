@@ -27,6 +27,7 @@ function createQuote(
     status,
     isDesignated: true,
     createdAt: '2026-11-05T09:00:00.000Z',
+    comment: null,
     mover: {
       id: `mover-${id}`,
       nickname,

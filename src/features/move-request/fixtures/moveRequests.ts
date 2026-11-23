@@ -15,6 +15,7 @@ export const MOCK_MOVE_REQUEST: MoveRequestResponse = {
   id: 'request-1',
   moveType: 'SMALL',
   moveDate: '2026-11-20',
+  details: null,
   from: {
     address: '서울특별시 중구 세종대로 110',
     zonecode: '04524',

@@ -43,6 +43,7 @@ function createRequest(id: string, customerName: string): ReceivedRequest {
     customerName,
     moveType: 'HOME',
     moveDate: '2026-11-20',
+    details: null,
     from: { address: '서울특별시 중구 세종대로 110', region: '서울' },
     to: { address: '경기도 수원시 팔달구 효원로 1', region: '경기' },
     status: 'PENDING',

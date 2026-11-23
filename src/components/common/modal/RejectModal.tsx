@@ -31,7 +31,8 @@ function RejectForm({
   const reasonId = useId()
   const [reason, setReason] = useState('')
 
-  const canSubmit = countLetters(reason) >= REASON_MIN_LENGTH && !isSubmitting
+  const reasonLength = countLetters(reason)
+  const canSubmit = reasonLength >= REASON_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -49,6 +50,7 @@ function RejectForm({
             placeholder={`최소 ${REASON_MIN_LENGTH}자 이상 입력해주세요`}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            charCount={{ count: reasonLength, min: REASON_MIN_LENGTH }}
             wrapperClassName="w-full lg:w-full"
           />
         </ModalField>

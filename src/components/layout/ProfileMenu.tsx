@@ -42,7 +42,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-4"
+        className="-m-1.5 flex items-center gap-4 rounded-lg p-1.5 transition-colors hover:bg-background-300 aria-expanded:bg-background-300"
       >
         <Image
           src={profileImage}

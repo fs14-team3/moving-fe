@@ -79,12 +79,17 @@ export default function SearchInput({
             // 클릭해도 포커스가 입력칸에 남도록 해서 바로 다시 입력할 수 있게 한다.
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => changeValue('')}
-            className="flex size-6 shrink-0 items-center justify-center rounded-full bg-background-300 text-gray-400 lg:size-8"
+            className="flex size-6 shrink-0 items-center justify-center rounded-full bg-background-300 text-gray-400 transition-colors hover:text-black-200 lg:size-8"
           >
             <X className="size-3.5 lg:size-4" />
           </button>
-          <button type="submit" aria-label="검색">
-            <Search className={ICON} />
+          <button type="submit" aria-label="검색" className="group">
+            <Search
+              className={cn(
+                ICON,
+                'transition-colors group-hover:text-black-200',
+              )}
+            />
           </button>
         </>
       )}

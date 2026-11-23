@@ -1,7 +1,7 @@
 const DIGITS_PATTERN = /^\d+$/
 const CAREER_YEARS_MAX = 99
-const INTRO_MIN_LENGTH = 8
-const DESCRIPTION_MIN_LENGTH = 10
+export const INTRO_MIN_LENGTH = 8
+export const DESCRIPTION_MIN_LENGTH = 10
 const IMAGE_MAX_SIZE = 5 * 1024 * 1024
 
 export const IMAGE_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']

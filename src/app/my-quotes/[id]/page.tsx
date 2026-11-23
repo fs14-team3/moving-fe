@@ -3,6 +3,7 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
+import MoveProgressSection from '@/components/move-progress/MoveProgressSection'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
@@ -268,6 +269,13 @@ export default function QuoteDetail() {
                 !isConfirmed && 'lg:border-none',
               )}
             />
+            {isConfirmed && (
+              <MoveProgressSection
+                quoteId={quote.id}
+                moveDate={quote.moveRequest.moveDate}
+                className="border-b border-line-100"
+              />
+            )}
             {isConfirmed && (
               <ProofPhotoSection
                 quoteId={quote.id}

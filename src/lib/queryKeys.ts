@@ -104,6 +104,12 @@ export const queryKeys = {
       [...queryKeys.proofPhotos.all, 'list', quoteId] as const,
   },
 
+  moveProgress: {
+    all: ['moveProgress'] as const,
+    detail: (quoteId: string) =>
+      [...queryKeys.moveProgress.all, 'detail', quoteId] as const,
+  },
+
   // 일반 유저의 리뷰. 기사님이 받은 리뷰는 movers.reviews를 쓴다.
   reviews: {
     all: ['reviews'] as const,

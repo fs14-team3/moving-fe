@@ -32,6 +32,12 @@ vi.mock('@/components/proof-photos/ProofPhotoSection', () => ({
   ),
 }))
 
+vi.mock('@/components/move-progress/MoveProgressSection', () => ({
+  default: ({ moveDate }: { moveDate: string }) => (
+    <section aria-label="이사 진행 상황">{moveDate}</section>
+  ),
+}))
+
 function confirmedQuote(moveDate: string) {
   return {
     ...MOCK_SENT_QUOTE,
@@ -98,6 +104,26 @@ describe('SentQuoteDetailPage', () => {
 
     expect(
       screen.queryByRole('region', { name: '작업 사진' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('확정된 견적은 이사일 기준으로 이사 진행 상황을 보여준다', () => {
+    vi.mocked(useSentQuote).mockReturnValue(
+      createQuoteResult({ quote: confirmedQuote('2026-11-23') }),
+    )
+
+    render(<SentQuoteDetailPage />)
+
+    expect(
+      screen.getByRole('region', { name: '이사 진행 상황' }),
+    ).toHaveTextContent('2026-11-23')
+  })
+
+  it('확정되지 않은 견적은 이사 진행 상황을 보여 주지 않는다', () => {
+    render(<SentQuoteDetailPage />)
+
+    expect(
+      screen.queryByRole('region', { name: '이사 진행 상황' }),
     ).not.toBeInTheDocument()
   })
 

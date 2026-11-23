@@ -358,6 +358,35 @@ describe('MoverDetailPage', () => {
     )
   })
 
+  it('이미 지정한 기사님이면 지정 완료로 표시하고 요청 버튼을 비활성화한다', () => {
+    vi.mocked(useMover).mockReturnValue(
+      createMoverResult({
+        mover: { ...MOCK_MOVER_DETAILS[0], isDesignated: true },
+      }),
+    )
+    vi.mocked(useCurrentUser).mockReturnValue({
+      user: customer,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+    vi.mocked(useActiveMoveRequest).mockReturnValue({
+      activeMoveRequest: MOCK_MOVE_REQUEST,
+      isPending: false,
+      isError: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+    })
+
+    render(<MoverDetailPage />)
+
+    expect(screen.getByRole('button', { name: '지정 완료' })).toBeDisabled()
+    expect(
+      screen.queryByRole('button', { name: '지정 견적 요청하기' }),
+    ).toBeNull()
+  })
+
   it('진행 중인 견적을 다시 불러오다 실패해도 불러온 견적으로 지정 견적을 요청한다', async () => {
     const createDesignation = vi.fn()
 

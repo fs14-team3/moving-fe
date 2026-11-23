@@ -1,14 +1,21 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import { useId } from 'react'
+import { useId, useState } from 'react'
+import Button from '@/components/common/button/Button'
+import ConfirmModal from '@/components/common/modal/ConfirmModal'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import { MOVE_PROGRESS_STEPS } from '@/constants/moveProgress'
 import { formatMessageTime } from '@/features/chat/lib/messageFormat'
-import type { MoveProgress } from '@/features/move-progress/api'
+import type {
+  MoveProgress,
+  MoveProgressStep,
+} from '@/features/move-progress/api'
 import { useMoveProgress } from '@/features/move-progress/hooks/useMoveProgress'
+import { useRecordMoveProgress } from '@/features/move-progress/hooks/useRecordMoveProgress'
 import { todayInSeoul } from '@/features/sent-quotes/lib/status'
 import { cn } from '@/lib/cn'
+import { getOptionLabel } from '@/lib/options'
 
 function StepList({ steps }: { steps: MoveProgress['steps'] }) {
   const recordedAt = new Map(
@@ -85,8 +92,17 @@ function MoveProgressBody({
   className,
 }: MoveProgressBodyProps) {
   const headingId = useId()
+  const [confirming, setConfirming] = useState<MoveProgressStep | null>(null)
   const { progress, isPending, isLoadingError, refetch, isRefetching } =
     useMoveProgress(quoteId, isMoveDay)
+  const { mutate: record, isPending: isRecording } =
+    useRecordMoveProgress(quoteId)
+  const nextStep = progress?.canRecord ? progress.nextStep : null
+
+  function confirmRecord() {
+    if (confirming === null) return
+    record(confirming, { onSettled: () => setConfirming(null) })
+  }
 
   function renderBody() {
     if (isPending) {
@@ -103,7 +119,20 @@ function MoveProgressBody({
       )
     }
 
-    return <StepList steps={progress.steps} />
+    return (
+      <>
+        <StepList steps={progress.steps} />
+        {nextStep && (
+          <Button
+            disabled={isRecording}
+            onClick={() => setConfirming(nextStep)}
+            className="mt-6 w-full md:mx-auto md:mt-8 md:flex md:w-80 lg:h-[54px] lg:w-80 lg:text-base"
+          >
+            {getOptionLabel(MOVE_PROGRESS_STEPS, nextStep)} 기록하기
+          </Button>
+        )}
+      </>
+    )
   }
 
   return (
@@ -118,6 +147,20 @@ function MoveProgressBody({
         이사 진행 상황
       </h2>
       {renderBody()}
+
+      <ConfirmModal
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        onConfirm={confirmRecord}
+        title="진행 단계 기록"
+        confirmLabel="기록하기"
+        isPending={isRecording}
+      >
+        {confirming && getOptionLabel(MOVE_PROGRESS_STEPS, confirming)} 단계를
+        기록할까요?
+        <br />
+        기록한 단계는 되돌릴 수 없어요.
+      </ConfirmModal>
     </section>
   )
 }

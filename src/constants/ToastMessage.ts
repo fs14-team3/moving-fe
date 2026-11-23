@@ -82,6 +82,13 @@ export const TOAST_MESSAGES = {
     deleteReviewed: '리뷰가 작성되어 작업 사진을 삭제할 수 없습니다.',
   },
 
+  moveProgress: {
+    recordSuccess: (label: string) => `${label} 단계를 기록했습니다.`,
+    recordFailed: '진행 단계 기록에 실패했습니다.',
+    notAllowed: '이사 당일에만 진행 단계를 기록할 수 있습니다.',
+    outOfOrder: '진행 단계가 이미 바뀌었습니다. 최신 진행 상황을 불러옵니다.',
+  },
+
   common: {
     linkCopied: '링크가 복사되었습니다.',
     linkCopyFailed: '링크 복사에 실패했습니다.',

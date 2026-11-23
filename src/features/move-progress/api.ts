@@ -11,3 +11,13 @@ export async function getMoveProgress(quoteId: string) {
   const { data } = await api.get<MoveProgress>(`/quotes/${quoteId}/progress`)
   return data
 }
+
+export async function recordMoveProgress(
+  quoteId: string,
+  step: MoveProgressStep,
+) {
+  const { data } = await api.post<MoveProgress>(`/quotes/${quoteId}/progress`, {
+    step,
+  })
+  return data
+}

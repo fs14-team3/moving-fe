@@ -1,12 +1,25 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import MoveProgressSection from '@/components/move-progress/MoveProgressSection'
 import type { MoveProgress } from '@/features/move-progress/api'
 import { useMoveProgress } from '@/features/move-progress/hooks/useMoveProgress'
+import { useRecordMoveProgress } from '@/features/move-progress/hooks/useRecordMoveProgress'
 
 vi.mock('@/features/move-progress/hooks/useMoveProgress', () => ({
   useMoveProgress: vi.fn(),
+}))
+
+vi.mock('@/features/move-progress/hooks/useRecordMoveProgress', () => ({
+  useRecordMoveProgress: vi.fn(),
 }))
 
 const TODAY = '2026-11-23'
@@ -31,16 +44,35 @@ function mockProgress(state: Partial<ReturnType<typeof useMoveProgress>> = {}) {
   } as unknown as ReturnType<typeof useMoveProgress>)
 }
 
+const recording = { mutate: vi.fn(), isPending: false }
+
+function mockRecording(isPending = false) {
+  vi.mocked(useRecordMoveProgress).mockReturnValue({
+    ...recording,
+    isPending,
+  } as unknown as ReturnType<typeof useRecordMoveProgress>)
+}
+
 function stepItems() {
   return within(screen.getByRole('list')).getAllByRole('listitem')
 }
 
 describe('MoveProgressSection', () => {
+  beforeAll(() => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '')
+    }
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open')
+    }
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(`${TODAY}T03:00:00.000Z`))
     mockProgress()
+    mockRecording()
   })
 
   afterEach(() => {
@@ -122,5 +154,63 @@ describe('MoveProgressSection', () => {
     )
     await user.click(screen.getByRole('button', { name: '다시 시도' }))
     expect(refetch).toHaveBeenCalled()
+  })
+
+  it('기록할 수 없으면 다음 단계 버튼을 보여 주지 않는다', () => {
+    render(<MoveProgressSection quoteId="quote-1" moveDate={TODAY} />)
+
+    expect(
+      screen.queryByRole('button', { name: /기록하기$/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('기록할 수 있으면 다음 단계 버튼 하나만 보여준다', () => {
+    mockProgress({ progress: { ...PROGRESS, canRecord: true } })
+
+    render(<MoveProgressSection quoteId="quote-1" moveDate={TODAY} />)
+
+    expect(screen.getAllByRole('button', { name: /기록하기$/ })).toEqual([
+      screen.getByRole('button', { name: '운행 기록하기' }),
+    ])
+  })
+
+  it('다음 단계 버튼을 누르고 확인하면 그 단계를 기록한다', async () => {
+    mockProgress({ progress: { ...PROGRESS, canRecord: true } })
+    const user = userEvent.setup()
+
+    render(<MoveProgressSection quoteId="quote-1" moveDate={TODAY} />)
+    await user.click(screen.getByRole('button', { name: '운행 기록하기' }))
+
+    const dialog = screen.getByRole('dialog', { name: '진행 단계 기록' })
+    expect(dialog).toHaveTextContent('운행 단계를 기록할까요?')
+    expect(recording.mutate).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: '기록하기' }))
+    expect(useRecordMoveProgress).toHaveBeenCalledWith('quote-1')
+    expect(recording.mutate).toHaveBeenCalledWith('IN_TRANSIT', {
+      onSettled: expect.any(Function),
+    })
+  })
+
+  it('확인 창에서 취소하면 기록하지 않는다', async () => {
+    mockProgress({ progress: { ...PROGRESS, canRecord: true } })
+    const user = userEvent.setup()
+
+    render(<MoveProgressSection quoteId="quote-1" moveDate={TODAY} />)
+    await user.click(screen.getByRole('button', { name: '운행 기록하기' }))
+    await user.click(screen.getByRole('button', { name: '취소' }))
+
+    expect(recording.mutate).not.toHaveBeenCalled()
+    expect(
+      screen.queryByRole('dialog', { name: '진행 단계 기록' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('기록 요청 중에는 다음 단계 버튼을 누를 수 없다', () => {
+    mockProgress({ progress: { ...PROGRESS, canRecord: true } })
+    mockRecording(true)
+
+    render(<MoveProgressSection quoteId="quote-1" moveDate={TODAY} />)
+
+    expect(screen.getByRole('button', { name: '운행 기록하기' })).toBeDisabled()
   })
 })

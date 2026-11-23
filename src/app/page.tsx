@@ -28,7 +28,7 @@ function MoveTypeCard({
   description: string
 }) {
   return (
-    <div className="group flex size-31 shrink-0 flex-col items-center justify-center gap-[10px] rounded-2xl bg-background-200 transition-transform hover:scale-118 hover:rounded-3xl hover:border hover:border-primary-300 hover:bg-primary-100 md:size-50 md:hover:border-[2px]">
+    <div className="group flex size-28 shrink-0 flex-col items-center justify-center gap-[10px] rounded-2xl bg-background-200 transition-transform hover:scale-116 hover:rounded-3xl hover:border hover:border-primary-300 hover:bg-primary-100 md:size-50 md:hover:border-[2px]">
       <Image
         src={src}
         width={68}
@@ -37,7 +37,7 @@ function MoveTypeCard({
         className={`size-17 object-contain md:size-25 ${src.endsWith('truck.webp') ? 'object-bottom' : ''}`}
       />
       <div>
-        <p className="text-center text-[9px] leading-3 leading-5 font-bold group-hover:text-primary-500 md:text-base md:leading-5">
+        <p className="text-center text-[9px] leading-3 font-bold group-hover:text-primary-500 md:text-base md:leading-5">
           {label}
         </p>
         <p className="mt-[2px] text-center text-[6px] leading-3 font-normal text-gray-500 md:mt-[3px] md:text-xs md:leading-4">
@@ -60,7 +60,7 @@ export default function Home() {
           className="h-auto w-24 md:w-40"
         />
         <div className="text-center">
-          <h1 className="text-xl leading-8 font-bold text-white md:text-3xl md:leading-10 md:font-bold">
+          <h1 className="text-xl leading-8 font-bold text-white md:text-3xl md:leading-10">
             이사업체, 어떻게 고르세요?
           </h1>
           <p className="mt-2 text-base leading-6 font-normal text-gray-200 md:mt-4 md:text-lg">
@@ -78,7 +78,7 @@ export default function Home() {
             <br />
             이사 유형부터 선택해요
           </h2>
-          <div className="flex w-full min-w-0 items-center justify-center gap-5 md:gap-8 lg:w-auto">
+          <div className="flex w-full min-w-0 items-center justify-center gap-3 md:gap-8 lg:w-auto">
             {MOVE_TYPES.map((type) => (
               <MoveTypeCard
                 key={type.label}
@@ -156,7 +156,7 @@ export default function Home() {
           alt=""
           className="h-14 w-auto md:h-25"
         />
-        <p className="text-center text-base font-bold text-white md:text-3xl md:font-bold">
+        <p className="text-center text-base font-bold text-white md:text-3xl">
           복잡한 이사 준비,
           <br className="md:hidden" />
           무빙 하나면 끝!

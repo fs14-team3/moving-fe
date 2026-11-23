@@ -40,7 +40,7 @@ function SentQuoteCard({ quote }: { quote: SentQuote }) {
   return (
     <Link
       href={`/mover/quotes/${quote.id}`}
-      className="relative block rounded-2xl focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
+      className="relative block rounded-2xl transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
     >
       <MoveRequestCard
         request={quote.moveRequest}

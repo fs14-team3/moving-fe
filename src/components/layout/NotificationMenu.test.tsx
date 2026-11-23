@@ -7,9 +7,11 @@ import NotificationMenu from '@/components/layout/NotificationMenu'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import type { Role } from '@/features/auth/types'
 import {
+  getNewRequestSummary,
   getNotifications,
   getUnreadNotificationCount,
   readAllNotifications,
+  readNewRequests,
   readNotification,
   type Notification,
 } from '@/features/notifications/api'
@@ -22,14 +24,21 @@ vi.mock('@/features/notifications/api', () => ({
   getUnreadNotificationCount: vi.fn(),
   readNotification: vi.fn(),
   readAllNotifications: vi.fn(),
+  getNewRequestSummary: vi.fn(),
+  readNewRequests: vi.fn(),
 }))
 
 const mockGetNotifications = vi.mocked(getNotifications)
 const mockGetUnreadCount = vi.mocked(getUnreadNotificationCount)
 const mockRead = vi.mocked(readNotification)
 const mockReadAll = vi.mocked(readAllNotifications)
+const mockGetSummary = vi.mocked(getNewRequestSummary)
+const mockReadNewRequests = vi.mocked(readNewRequests)
 const initialVisibility = new Map<string, number>()
 const reportVisibility = new Map<string, (ratio: number) => void>()
+
+const twoHoursAgo = () =>
+  new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
 
 function createNotification(
   overrides: Partial<Notification> & Pick<Notification, 'id'>,
@@ -81,6 +90,8 @@ describe('NotificationMenu', () => {
   beforeEach(() => {
     mockGetUnreadCount.mockResolvedValue(0)
     mockRead.mockResolvedValue({ updated: true })
+    mockGetSummary.mockResolvedValue({ count: 0, latestAt: null })
+    mockReadNewRequests.mockResolvedValue({ updated: true })
     vi.stubGlobal(
       'IntersectionObserver',
       class {
@@ -509,5 +520,112 @@ describe('NotificationMenu', () => {
     expect(
       await within(getPanel()).findByText('알림이 없습니다'),
     ).toBeInTheDocument()
+  })
+
+  describe('새 견적 요청 요약', () => {
+    it('기사님에게 서비스 지역의 새 견적 요청 수를 맨 위에 보여 주고 받은 요청 목록으로 연결한다', async () => {
+      mockPage([
+        createNotification({
+          id: '1',
+          type: 'NEW_DESIGNATED_REQUEST',
+          message: '지정 알림',
+        }),
+      ])
+      mockGetSummary.mockResolvedValue({ count: 3, latestAt: twoHoursAgo() })
+      const { open } = renderMenu('MOVER')
+
+      await open()
+
+      const link = await within(getPanel()).findByRole('link', {
+        name: /새 견적 요청 3건/,
+      })
+      expect(link).toHaveAttribute('href', '/mover/requests')
+      expect(link).toHaveTextContent(
+        '서비스 지역에 새 견적 요청 3건이 도착했어요',
+      )
+      expect(within(link).getByText('2시간 전')).toBeInTheDocument()
+      expect(within(getPanel()).getAllByRole('listitem')[0]).toContainElement(
+        link,
+      )
+    })
+
+    it('요약이 늦게 도착해도 닫으면 표시된 알림과 최근 요청을 확인 처리한다', async () => {
+      const latestAt = twoHoursAgo()
+      const summary =
+        Promise.withResolvers<
+          Awaited<ReturnType<typeof getNewRequestSummary>>
+        >()
+      mockPage([createNotification({ id: '1' })])
+      mockGetSummary.mockReturnValue(summary.promise)
+      const { user, open } = renderMenu('MOVER')
+      await open()
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: '모두 읽음' })).toBeEnabled(),
+      )
+      summary.resolve({ count: 1, latestAt })
+      await within(getPanel()).findByRole('link', { name: /새 견적 요청 1건/ })
+
+      await user.click(screen.getByRole('button', { name: '알림 닫기' }))
+
+      expect(mockRead).toHaveBeenCalledWith('1')
+      expect(mockReadNewRequests).toHaveBeenCalledWith(latestAt)
+    })
+
+    it('새 견적 요청만 있으면 빈 목록 안내 대신 요약을 보여 준다', async () => {
+      mockPage([])
+      mockGetSummary.mockResolvedValue({ count: 1, latestAt: twoHoursAgo() })
+      const { open } = renderMenu('MOVER')
+
+      await open()
+
+      expect(
+        await within(getPanel()).findByRole('link', {
+          name: /새 견적 요청 1건/,
+        }),
+      ).toBeInTheDocument()
+      expect(within(getPanel()).queryByText('알림이 없습니다')).toBeNull()
+    })
+
+    it('새 견적 요청이 없으면 요약을 보여 주지 않고 닫아도 확인 처리하지 않는다', async () => {
+      mockPage([])
+      const { user, open } = renderMenu('MOVER')
+      await open()
+
+      expect(
+        await within(getPanel()).findByText('알림이 없습니다'),
+      ).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: '알림 닫기' }))
+
+      expect(mockReadNewRequests).not.toHaveBeenCalled()
+    })
+
+    it('알림 목록 조회 실패로 요약이 보이지 않으면 닫아도 확인 처리하지 않는다', async () => {
+      mockGetNotifications.mockRejectedValue(new Error('서버 오류'))
+      mockGetSummary.mockResolvedValue({ count: 1, latestAt: twoHoursAgo() })
+      const { user, open } = renderMenu('MOVER')
+
+      await open()
+      const panel = getPanel()
+      await within(panel).findByRole('alert')
+      expect(
+        within(panel).queryByRole('link', { name: /새 견적 요청 1건/ }),
+      ).toBeNull()
+
+      await user.click(within(panel).getByRole('button', { name: '알림 닫기' }))
+
+      expect(mockReadNewRequests).not.toHaveBeenCalled()
+    })
+
+    it('고객은 새 견적 요청 요약을 불러오지 않는다', async () => {
+      mockPage([])
+      const { open } = renderMenu('CUSTOMER')
+
+      await open()
+
+      expect(
+        await within(getPanel()).findByText('알림이 없습니다'),
+      ).toBeInTheDocument()
+      expect(mockGetSummary).not.toHaveBeenCalled()
+    })
   })
 })

@@ -8,10 +8,13 @@ import type {
 import { getNotificationHref } from '@/features/notifications/link'
 import {
   toMessageParts,
+  toNewRequestSummaryParts,
   type MessagePart,
 } from '@/features/notifications/message'
+import { useNewRequestSummary } from '@/features/notifications/hooks/useNewRequestSummary'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
+import { useReadNewRequests } from '@/features/notifications/hooks/useReadNewRequests'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
@@ -34,7 +37,6 @@ import {
 
 // payload로 문구를 만들 수 없고 서버 문구도 없을 때 보여줄 기본 문구
 const DEFAULT_MESSAGE: Record<NotificationType, string> = {
-  NEW_REQUEST: '새로운 견적 요청이 도착했어요',
   NEW_QUOTE: '새로운 견적이 도착했어요',
   QUOTE_CONFIRMED: '견적이 확정되었어요',
   MOVE_DAY: '내일은 이사 예정일이에요',
@@ -78,9 +80,9 @@ function NotificationRow({
   unread,
   children,
 }: {
-  notificationId: string
+  notificationId?: string
   href: string | null
-  onNavigate: (href: string, notificationId: string) => void
+  onNavigate: (href: string, notificationId?: string) => void
   createdAt: string
   unread: boolean
   children: ReactNode
@@ -158,6 +160,13 @@ export default function NotificationMenu({ role }: { role: Role }) {
     fetchNextPage,
     refetch,
   } = useNotifications({ enabled: isOpen })
+  const { summary, isPending: isSummaryPending } = useNewRequestSummary({
+    enabled: isOpen && role === 'MOVER',
+  })
+  const { mutate: readNewRequests } = useReadNewRequests()
+  const isLoading = isPending || isSummaryPending
+  const showListError = isError && !hasData
+  const displayedSummary = isLoading || showListError ? null : summary
   const shownUnreadIds = useMemo(
     () => notifications.filter(({ readAt }) => !readAt).map(({ id }) => id),
     [notifications],
@@ -167,7 +176,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
 
   useEffect(() => {
     const list = listRef.current
-    if (!isOpen || !list || shownUnreadIds.length === 0) return
+    if (!isOpen || isLoading || !list || shownUnreadIds.length === 0) return
 
     const seen = seenUnreadIds.current
     const minimumVisibleRatio = 0.5
@@ -186,7 +195,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
       observer.observe(row)
     })
     return () => observer.disconnect()
-  }, [isOpen, shownUnreadIds])
+  }, [isOpen, isLoading, shownUnreadIds])
 
   const close = useCallback(
     (clickedId?: string) => {
@@ -196,11 +205,12 @@ export default function NotificationMenu({ role }: { role: Role }) {
       seenUnreadIds.current = new Set()
       setIsOpen(false)
       if (idsToRead.length > 0) readNotifications(idsToRead)
+      if (displayedSummary) readNewRequests(displayedSummary.latestAt)
     },
-    [shownUnreadIds, readNotifications],
+    [shownUnreadIds, readNotifications, displayedSummary, readNewRequests],
   )
 
-  const navigate = (href: string, notificationId: string) => {
+  const navigate = (href: string, notificationId?: string) => {
     if (href === '/mover/requests') {
       void queryClient.invalidateQueries({
         queryKey: receivedRequestKeys.all,
@@ -245,7 +255,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
   ])
 
   const renderContent = () => {
-    if (isPending) {
+    if (isLoading) {
       return (
         <div role="status" className="flex justify-center py-10">
           <LoaderCircle
@@ -257,7 +267,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
       )
     }
 
-    if (isError && !hasData) {
+    if (showListError) {
       return (
         <div role="alert" className="flex flex-col items-center gap-2 py-10">
           <p className="text-sm text-gray-400 md:text-base">
@@ -274,7 +284,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
       )
     }
 
-    if (notifications.length === 0) {
+    if (notifications.length === 0 && !displayedSummary) {
       return <PanelStatus>알림이 없습니다</PanelStatus>
     }
 
@@ -283,6 +293,18 @@ export default function NotificationMenu({ role }: { role: Role }) {
         ref={listRef}
         className="max-h-90 divide-y divide-line-200 overflow-y-auto px-2 md:max-h-100 md:px-4"
       >
+        {displayedSummary && (
+          <NotificationRow
+            href="/mover/requests"
+            onNavigate={navigate}
+            createdAt={displayedSummary.latestAt}
+            unread
+          >
+            <MessageText
+              parts={toNewRequestSummaryParts(displayedSummary.count)}
+            />
+          </NotificationRow>
+        )}
         {notifications.map((notification) => (
           <NotificationRow
             key={notification.id}
@@ -360,7 +382,8 @@ export default function NotificationMenu({ role }: { role: Role }) {
                 type="button"
                 onClick={() => readAllNotifications()}
                 disabled={
-                  isReadingAll || (!hasUnread && shownUnreadIds.length === 0)
+                  isReadingAll ||
+                  (!hasUnread && shownUnreadIds.length === 0 && !summary)
                 }
                 className="text-sm font-semibold text-black-100 disabled:text-gray-400"
               >

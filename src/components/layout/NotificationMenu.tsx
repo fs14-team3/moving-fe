@@ -6,7 +6,10 @@ import type {
   NotificationType,
 } from '@/features/notifications/api'
 import { getNotificationHref } from '@/features/notifications/link'
-import { toMessageParts } from '@/features/notifications/message'
+import {
+  toMessageParts,
+  type MessagePart,
+} from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
@@ -40,6 +43,18 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
 
 const ITEM = 'flex gap-2 px-4 py-4 md:px-6'
 
+function MessageText({ parts }: { parts: MessagePart[] }) {
+  return parts.map(({ text, highlight }, index) =>
+    highlight ? (
+      <span key={index} className="text-primary-400">
+        {text}
+      </span>
+    ) : (
+      text
+    ),
+  )
+}
+
 function NotificationMessage({
   notification,
   role,
@@ -52,14 +67,62 @@ function NotificationMessage({
     return notification.message || DEFAULT_MESSAGE[notification.type]
   }
 
-  return parts.map(({ text, highlight }, index) =>
-    highlight ? (
-      <span key={index} className="text-primary-400">
-        {text}
-      </span>
-    ) : (
-      text
-    ),
+  return <MessageText parts={parts} />
+}
+
+function NotificationRow({
+  notificationId,
+  href,
+  onNavigate,
+  createdAt,
+  unread,
+  children,
+}: {
+  notificationId: string
+  href: string | null
+  onNavigate: (href: string, notificationId: string) => void
+  createdAt: string
+  unread: boolean
+  children: ReactNode
+}) {
+  const content = (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+          {children}
+        </p>
+        <time
+          dateTime={createdAt}
+          className="mt-1 block text-xs text-gray-300 md:text-sm"
+        >
+          {formatTimeAgo(createdAt)}
+        </time>
+      </div>
+      {unread && (
+        <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
+          <span className="sr-only">읽지 않은 알림</span>
+        </span>
+      )}
+    </>
+  )
+
+  return (
+    <li data-unread-id={unread ? notificationId : undefined}>
+      {href ? (
+        <Link
+          href={href}
+          onClick={() => onNavigate(href, notificationId)}
+          className={cn(
+            ITEM,
+            'rounded-lg transition-colors hover:bg-background-200',
+          )}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div className={ITEM}>{content}</div>
+      )}
+    </li>
   )
 }
 
@@ -137,6 +200,15 @@ export default function NotificationMenu({ role }: { role: Role }) {
     [shownUnreadIds, readNotifications],
   )
 
+  const navigate = (href: string, notificationId: string) => {
+    if (href === '/mover/requests') {
+      void queryClient.invalidateQueries({
+        queryKey: receivedRequestKeys.all,
+      })
+    }
+    close(notificationId)
+  }
+
   useDismiss({ isOpen, onDismiss: close, containerRef, triggerRef })
 
   const toggle = () => {
@@ -211,61 +283,18 @@ export default function NotificationMenu({ role }: { role: Role }) {
         ref={listRef}
         className="max-h-90 divide-y divide-line-200 overflow-y-auto px-2 md:max-h-100 md:px-4"
       >
-        {notifications.map((notification) => {
-          const href = getNotificationHref(notification, role)
-          const content = (
-            <>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-                  <NotificationMessage
-                    notification={notification}
-                    role={role}
-                  />
-                </p>
-                <time
-                  dateTime={notification.createdAt}
-                  className="mt-1 block text-xs text-gray-300 md:text-sm"
-                >
-                  {formatTimeAgo(notification.createdAt)}
-                </time>
-              </div>
-              {!notification.readAt && (
-                <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
-                  <span className="sr-only">읽지 않은 알림</span>
-                </span>
-              )}
-            </>
-          )
-
-          return (
-            <li
-              key={notification.id}
-              data-unread-id={notification.readAt ? undefined : notification.id}
-            >
-              {href ? (
-                <Link
-                  href={href}
-                  onClick={() => {
-                    if (href === '/mover/requests') {
-                      void queryClient.invalidateQueries({
-                        queryKey: receivedRequestKeys.all,
-                      })
-                    }
-                    close(notification.id)
-                  }}
-                  className={cn(
-                    ITEM,
-                    'rounded-lg transition-colors hover:bg-background-200',
-                  )}
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div className={ITEM}>{content}</div>
-              )}
-            </li>
-          )
-        })}
+        {notifications.map((notification) => (
+          <NotificationRow
+            key={notification.id}
+            notificationId={notification.id}
+            href={getNotificationHref(notification, role)}
+            onNavigate={navigate}
+            createdAt={notification.createdAt}
+            unread={!notification.readAt}
+          >
+            <NotificationMessage notification={notification} role={role} />
+          </NotificationRow>
+        ))}
         {hasNextPage && (
           <li ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage ? (

@@ -3,7 +3,6 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
@@ -14,6 +13,7 @@ import {
   QuotePrice,
 } from '@/components/quotes/QuoteDetail'
 import KakaoScript from '@/components/share/KakaoScript'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
@@ -28,6 +28,7 @@ import {
   shareToKakao,
 } from '@/features/share/utils'
 import { cn } from '@/lib/cn'
+import { getOptionLabel } from '@/lib/options'
 import { Heart, Star } from 'lucide-react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
@@ -90,7 +91,10 @@ export default function QuoteDetail() {
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
   const isFavorite = mover.isFavorite
   const favoriteCount = mover.favoriteCount
-  const moveTypeLabel = MOVE_TYPE[quote.moveRequest.moveType].label
+  const moveTypeLabel = getOptionLabel(
+    SERVICE_TYPE_OPTIONS,
+    quote.moveRequest.moveType,
+  )
   const moveDateLabel = formatMoveDate(quote.moveRequest.moveDate)
   const priceLabel = `${quote.price.toLocaleString()}원`
 

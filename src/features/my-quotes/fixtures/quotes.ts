@@ -3,6 +3,7 @@ import type { QuoteDetail } from '../api'
 export const MOCK_QUOTE_DETAIL: QuoteDetail = {
   id: 'quote-1',
   price: 180000,
+  comment: null,
   status: 'SUBMITTED',
   isDesignated: true,
   createdAt: '2026-11-05T09:00:00.000Z',
@@ -38,6 +39,7 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
       zonecode: '48094',
       region: '부산',
     },
+    details: null,
     status: 'PENDING',
     quoteCount: 2,
     designatedMoverIds: ['mover-quote-1'],

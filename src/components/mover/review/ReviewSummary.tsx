@@ -4,6 +4,7 @@ import Button from '@/components/common/button/Button'
 import Modal from '@/components/common/modal/Modal'
 import { REVIEW_ASPECT_OPTIONS } from '@/constants/review'
 import { useMoverReviewSummary } from '@/features/movers/hooks/useMoverReviewSummary'
+import { getOptionLabel } from '@/lib/options'
 import { Info, LoaderCircle, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
@@ -79,9 +80,13 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
           type="button"
           aria-label="AI 요약 안내"
           onClick={() => setIsOpen(true)}
-          className="flex cursor-pointer items-center gap-1 text-sm font-medium text-gray-500"
+          className="group flex cursor-pointer items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-black-200"
         >
-          AI <Info aria-hidden="true" className="size-4 text-gray-400" />
+          AI{' '}
+          <Info
+            aria-hidden="true"
+            className="size-4 text-gray-400 transition-colors group-hover:text-black-200"
+          />
         </button>
       </header>
 
@@ -101,11 +106,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
         {aspects.map((aspect) => (
           <div key={aspect.key} className="flex items-baseline">
             <span className="font-normal text-gray-500">
-              {
-                REVIEW_ASPECT_OPTIONS.find(
-                  (option) => option.value === aspect.key,
-                )?.label
-              }
+              {getOptionLabel(REVIEW_ASPECT_OPTIONS, aspect.key)}
             </span>
             <span className="ml-auto flex gap-4">
               <span className="w-12 text-right font-semibold">
@@ -124,11 +125,7 @@ export default function ReviewSummary({ moverId }: ReviewSummaryProps) {
         <span />
         {aspects.map((aspect) => (
           <span key={aspect.key} className="font-normal text-gray-500">
-            {
-              REVIEW_ASPECT_OPTIONS.find(
-                (option) => option.value === aspect.key,
-              )?.label
-            }
+            {getOptionLabel(REVIEW_ASPECT_OPTIONS, aspect.key)}
           </span>
         ))}
 

@@ -15,6 +15,7 @@ import {
   getPasswordConfirmError,
   getPasswordError,
   getPhoneError,
+  NAME_MAX_LENGTH,
   toPhoneDigits,
 } from '@/features/auth/lib/validation'
 import type { Role } from '@/features/auth/types'
@@ -155,6 +156,7 @@ export default function BasicInfoForm({ role }: BasicInfoFormProps) {
           autoComplete="name"
           placeholder="성함을 입력해 주세요"
           {...fieldProps('name')}
+          charCount={{ count: name.length, max: NAME_MAX_LENGTH }}
         />
         <ProfileTextField
           label="이메일"

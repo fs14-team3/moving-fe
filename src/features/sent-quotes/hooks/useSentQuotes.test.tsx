@@ -13,6 +13,7 @@ function createSentQuote(id: string): SentQuote {
   return {
     id,
     price: 180000,
+    comment: null,
     status: 'SUBMITTED',
     isDesignated: false,
     createdAt: '2026-11-01T09:00:00.000Z',
@@ -23,6 +24,7 @@ function createSentQuote(id: string): SentQuote {
       moveDate: '2026-11-20',
       from: { address: '서울특별시 중구 세종대로 110', region: '서울' },
       to: { address: '경기도 수원시 팔달구 효원로 1', region: '경기' },
+      details: null,
       status: 'PENDING',
       isDesignated: false,
       createdAt: '2026-10-30T09:00:00.000Z',

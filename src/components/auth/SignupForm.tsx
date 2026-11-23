@@ -17,6 +17,7 @@ import {
   formatPhone,
   getPasswordConfirmError,
   getPhoneError,
+  NAME_MAX_LENGTH,
   toPhoneDigits,
 } from '@/features/auth/lib/validation'
 
@@ -101,6 +102,7 @@ export default function SignupForm({ role }: { role: Role }) {
           autoComplete="name"
           placeholder="성함을 입력해 주세요"
           {...fieldProps('name')}
+          charCount={{ count: name.length, max: NAME_MAX_LENGTH }}
         />
         <AuthTextField
           label="이메일"

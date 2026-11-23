@@ -1,10 +1,12 @@
 import Image from 'next/image'
 import type { ReactNode } from 'react'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
-import type { ServiceType } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
+import { getMoveDetailRows } from '@/features/move-request/format'
+import type { MoveRequestDetails } from '@/features/move-request/types'
 import { formatRequestDate } from '@/features/my-quotes/format'
 import { formatMoveDate } from '@/features/received-requests/format'
 import { cn } from '@/lib/cn'
+import { getOptionLabel } from '@/lib/options'
 
 export function QuoteDetailHeader({ children }: { children?: ReactNode }) {
   return (
@@ -60,6 +62,7 @@ type QuoteInfoProps = {
     moveDate: string
     from: { address: string }
     to: { address: string }
+    details: MoveRequestDetails | null
   }
   className?: string
 }
@@ -67,10 +70,14 @@ type QuoteInfoProps = {
 export function QuoteInfo({ moveRequest, className }: QuoteInfoProps) {
   const rows = [
     { label: '견적 요청일', value: formatRequestDate(moveRequest.createdAt) },
-    { label: '서비스', value: MOVE_TYPE[moveRequest.moveType].label },
+    {
+      label: '서비스',
+      value: getOptionLabel(SERVICE_TYPE_OPTIONS, moveRequest.moveType),
+    },
     { label: '이용일', value: formatMoveDate(moveRequest.moveDate) },
     { label: '출발지', value: moveRequest.from.address },
     { label: '도착지', value: moveRequest.to.address },
+    ...(moveRequest.details ? getMoveDetailRows(moveRequest.details) : []),
   ]
 
   return (
@@ -82,12 +89,12 @@ export function QuoteInfo({ moveRequest, className }: QuoteInfoProps) {
         {rows.map(({ label, value }) => (
           <div
             key={label}
-            className="flex items-center justify-between gap-6 md:justify-start"
+            className="flex items-start justify-between gap-6 md:justify-start"
           >
             <dt className="shrink-0 text-base leading-6 text-gray-400 md:w-22.5">
               {label}
             </dt>
-            <dd className="text-right text-base leading-6 font-medium md:text-left">
+            <dd className="text-right text-base leading-6 font-medium wrap-anywhere break-keep md:text-left">
               {value}
             </dd>
           </div>

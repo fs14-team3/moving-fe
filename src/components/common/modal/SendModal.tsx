@@ -10,6 +10,8 @@ import Modal, {
   type RequestSummaryProps,
 } from './Modal'
 import TextArea from '@/components/common/input/TextArea'
+import MoveDetailsList from '@/components/move-request/MoveDetailsList'
+import type { MoveRequestDetails } from '@/features/move-request/types'
 
 const COMMENT_MIN_LENGTH = 10
 // 9자리(999,999,999원)까지만 받아 Number로 바꿀 때 오차가 없게 한다.
@@ -22,6 +24,7 @@ type Quote = {
 
 type SendFormProps = {
   request: RequestSummaryProps
+  details: MoveRequestDetails | null
   onSubmit: (quote: Quote) => void
   isSubmitting?: boolean
 }
@@ -39,15 +42,21 @@ function formatPrice(digits: string) {
   return digits ? Number(digits).toLocaleString('ko-KR') : ''
 }
 
-function SendForm({ request, onSubmit, isSubmitting = false }: SendFormProps) {
+function SendForm({
+  request,
+  details,
+  onSubmit,
+  isSubmitting = false,
+}: SendFormProps) {
   const priceId = useId()
   const commentId = useId()
   // 콤마 없는 숫자 문자열로 들고 있다가, 보여줄 때만 콤마를 붙인다.
   const [price, setPrice] = useState('')
   const [comment, setComment] = useState('')
 
+  const commentLength = countLetters(comment)
   const canSubmit =
-    price !== '' && countLetters(comment) >= COMMENT_MIN_LENGTH && !isSubmitting
+    price !== '' && commentLength >= COMMENT_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -58,6 +67,7 @@ function SendForm({ request, onSubmit, isSubmitting = false }: SendFormProps) {
   return (
     <>
       <RequestSummary {...request} />
+      {details && <MoveDetailsList details={details} />}
       <form onSubmit={handleSubmit}>
         <ModalField label="견적가를 입력해 주세요" htmlFor={priceId}>
           <Input
@@ -75,6 +85,7 @@ function SendForm({ request, onSubmit, isSubmitting = false }: SendFormProps) {
             placeholder={`최소 ${COMMENT_MIN_LENGTH}자 이상 입력해주세요`}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
+            charCount={{ count: commentLength, min: COMMENT_MIN_LENGTH }}
             wrapperClassName="w-full lg:w-full"
           />
         </ModalField>

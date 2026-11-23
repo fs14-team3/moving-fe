@@ -73,9 +73,11 @@ describe('useProofPhotoUploads', () => {
     let issued = 0
     vi.mocked(createProofPhotoUploads)
       .mockReset()
-      .mockImplementation(async () => [
-        post(String.fromCharCode(97 + issued++)),
-      ])
+      .mockImplementation(async (_, { count }) =>
+        Array.from({ length: count }, () =>
+          post(String.fromCharCode(97 + issued++)),
+        ),
+      )
     vi.mocked(resizeProofPhoto)
       .mockReset()
       .mockResolvedValue({
@@ -92,16 +94,16 @@ describe('useProofPhotoUploads', () => {
     vi.useRealTimers()
   })
 
-  it('사진마다 올리기 직전에 업로드 정보를 받아 올리고 확정한 뒤 목록에 추가한다', async () => {
+  it('올릴 사진 수만큼 업로드 정보를 한 번에 받아 올리고 확정한 뒤 목록에 추가한다', async () => {
     const { result, list } = renderUploads()
 
     act(() => result.current.start(files(2)))
 
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
-    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
     expect(createProofPhotoUploads).toHaveBeenCalledWith(
       'quote-1',
-      { count: 1, contentType: 'image/webp' },
+      { count: 2, contentType: 'image/webp' },
       anySignal,
     )
     expect(resizeProofPhoto).toHaveBeenCalledTimes(2)
@@ -138,7 +140,7 @@ describe('useProofPhotoUploads', () => {
     expect(result.current.uploadedIds).toEqual(['photo-c'])
   })
 
-  it('동시에 올리는 사진만 업로드 정보를 받고 나머지는 차례가 오면 받는다', async () => {
+  it('동시에 올리는 사진들은 업로드 정보 요청 하나를 함께 기다리고 3장씩 올린다', async () => {
     let openGate = () => {}
     const gate = new Promise<void>((resolve) => {
       openGate = resolve
@@ -149,13 +151,58 @@ describe('useProofPhotoUploads', () => {
     act(() => result.current.start(files(4)))
 
     await waitFor(() => expect(uploadToStorage).toHaveBeenCalledTimes(6))
-    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
+    expect(createProofPhotoUploads).toHaveBeenCalledWith(
+      'quote-1',
+      { count: 4, contentType: 'image/webp' },
+      anySignal,
+    )
 
     act(() => openGate())
 
     await waitFor(() => expect(result.current.uploads).toHaveLength(0))
-    expect(createProofPhotoUploads).toHaveBeenCalledTimes(4)
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
     expect(list()?.items).toHaveLength(4)
+  })
+
+  it('확정 응답을 기다리는 사진을 제외하고 최대 10장씩 업로드 정보를 받는다', async () => {
+    const firstBatchSaved = Promise.withResolvers<void>()
+    const pendingResponses = Promise.withResolvers<void>()
+    let saved = 0
+    vi.mocked(confirmProofPhoto).mockImplementation(async (_, uploadId) => {
+      saved++
+      if (saved === 10) firstBatchSaved.resolve()
+      if (uploadId === 'h') await firstBatchSaved.promise
+      if (uploadId === 'i' || uploadId === 'j') await pendingResponses.promise
+      return photo(`photo-${uploadId}`)
+    })
+    const { result, list } = renderUploads()
+
+    act(() => result.current.start(files(12)))
+
+    try {
+      await waitFor(() =>
+        expect(createProofPhotoUploads).toHaveBeenCalledTimes(2),
+      )
+    } finally {
+      await act(async () => pendingResponses.resolve())
+    }
+    await waitFor(() => expect(result.current.uploads).toHaveLength(0))
+    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(createProofPhotoUploads).toHaveBeenNthCalledWith(
+      1,
+      'quote-1',
+      { count: 10, contentType: 'image/webp' },
+      anySignal,
+    )
+    expect(createProofPhotoUploads).toHaveBeenNthCalledWith(
+      2,
+      'quote-1',
+      { count: 2, contentType: 'image/webp' },
+      anySignal,
+    )
+    expect(confirmProofPhoto).toHaveBeenCalledTimes(12)
+    expect(list()?.items).toHaveLength(12)
   })
 
   it('확정 전에 시작된 목록 조회가 늦게 끝나도 올린 사진을 덮어쓰지 않고 끝나면 목록을 다시 불러온다', async () => {
@@ -418,7 +465,7 @@ describe('useProofPhotoUploads', () => {
       error: message,
       retryable: false,
     })
-    expect(createProofPhotoUploads).toHaveBeenCalledTimes(2)
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
     expect(result.current.isUploading).toBe(false)
   })
 
@@ -433,7 +480,7 @@ describe('useProofPhotoUploads', () => {
     unmount()
 
     expect(signal?.aborted).toBe(true)
-    expect(createProofPhotoUploads).toHaveBeenCalledTimes(3)
+    expect(createProofPhotoUploads).toHaveBeenCalledOnce()
   })
 
   it('실패한 사진을 지우면 목록에서 빠진다', async () => {

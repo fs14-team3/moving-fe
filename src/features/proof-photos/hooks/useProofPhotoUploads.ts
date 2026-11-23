@@ -7,6 +7,7 @@ import {
   type ProofPhoto,
   type ProofPhotoList,
   type ProofPhotoType,
+  type ProofPhotoUpload,
 } from '@/features/proof-photos/api'
 import {
   pickPhotoType,
@@ -16,6 +17,7 @@ import { isApiError, isClientError } from '@/lib/api-error'
 import { queryKeys } from '@/lib/queryKeys'
 
 const CONCURRENCY = 3
+const UPLOADS_PER_REQUEST = 10
 const RETRY_DELAYS = [1000, 3000]
 const DONE_MESSAGE_MS = 4000
 
@@ -121,6 +123,7 @@ export function useProofPhotoUploads(quoteId: string) {
   async function sendToStorage(
     { id, file }: PhotoUpload,
     type: ProofPhotoType,
+    takeSlot: () => Promise<ProofPhotoUpload>,
     signal: AbortSignal,
   ) {
     let resized
@@ -140,11 +143,7 @@ export function useProofPhotoUploads(quoteId: string) {
       previewUrls.current.set(id, URL.createObjectURL(thumbnail))
     }
     update(id, { previewUrl: previewUrls.current.get(id) })
-    const [presigned] = await createProofPhotoUploads(
-      quoteId,
-      { count: 1, contentType: type },
-      signal,
-    )
+    const presigned = await takeSlot()
     update(id, { status: 'uploading', progress: 0 })
     const total = image.size + thumbnail.size
     const loaded = [0, 0]
@@ -170,12 +169,13 @@ export function useProofPhotoUploads(quoteId: string) {
   async function process(
     upload: PhotoUpload,
     type: ProofPhotoType,
+    takeSlot: () => Promise<ProofPhotoUpload>,
     signal: AbortSignal,
   ) {
     let { uploadId } = upload
     for (let attempt = 0; !signal.aborted; attempt++) {
       try {
-        uploadId ??= await sendToStorage(upload, type, signal)
+        uploadId ??= await sendToStorage(upload, type, takeSlot, signal)
         if (!uploadId) return
 
         update(upload.id, { status: 'confirming' })
@@ -201,7 +201,41 @@ export function useProofPhotoUploads(quoteId: string) {
   async function run(batch: PhotoUpload[]) {
     const { signal } = controller.current
     const type = await pickPhotoType()
-    await runPool(batch, (upload) => process(upload, type, signal))
+    const slots: ProofPhotoUpload[] = []
+    let refill: Promise<void> | undefined
+    const uploadsNeedingSlots = new Set(
+      batch.filter(({ uploadId }) => !uploadId),
+    )
+
+    async function takeSlot(upload: PhotoUpload) {
+      uploadsNeedingSlots.add(upload)
+      let slot = slots.shift()
+      while (!slot) {
+        refill ??= createProofPhotoUploads(
+          quoteId,
+          {
+            count: Math.min(UPLOADS_PER_REQUEST, uploadsNeedingSlots.size),
+            contentType: type,
+          },
+          signal,
+        )
+          .then((items) => {
+            slots.push(...items)
+          })
+          .finally(() => {
+            refill = undefined
+          })
+        await refill
+        slot = slots.shift()
+      }
+      uploadsNeedingSlots.delete(upload)
+      return slot
+    }
+
+    await runPool(batch, async (upload) => {
+      await process(upload, type, () => takeSlot(upload), signal)
+      uploadsNeedingSlots.delete(upload)
+    })
     void queryClient.invalidateQueries({
       queryKey: queryKeys.proofPhotos.list(quoteId),
     })

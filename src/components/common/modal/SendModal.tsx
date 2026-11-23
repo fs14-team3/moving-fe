@@ -54,8 +54,9 @@ function SendForm({
   const [price, setPrice] = useState('')
   const [comment, setComment] = useState('')
 
+  const commentLength = countLetters(comment)
   const canSubmit =
-    price !== '' && countLetters(comment) >= COMMENT_MIN_LENGTH && !isSubmitting
+    price !== '' && commentLength >= COMMENT_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -84,6 +85,7 @@ function SendForm({
             placeholder={`최소 ${COMMENT_MIN_LENGTH}자 이상 입력해주세요`}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
+            charCount={{ count: commentLength, min: COMMENT_MIN_LENGTH }}
             wrapperClassName="w-full lg:w-full"
           />
         </ModalField>

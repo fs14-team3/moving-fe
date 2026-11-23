@@ -85,6 +85,10 @@
   select {
     font: inherit;
   }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 @utility min-h-page {

@@ -75,7 +75,7 @@ function HistoryQuoteItem({
   return (
     <Link
       href={`/my-quotes/${quote.id}`}
-      className="block rounded-xl focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
+      className="-m-3 block rounded-xl p-3 transition-colors hover:bg-background-200 focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:outline-none"
     >
       <QuoteBadges moveType={moveType} isDesignated={quote.isDesignated} />
 

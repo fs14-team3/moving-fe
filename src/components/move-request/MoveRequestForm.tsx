@@ -288,14 +288,14 @@ export default function MoveRequestForm() {
                 variant="outlined"
                 type="button"
                 onClick={() => goToStep(BASIC_STEP_COUNT)}
-                className="md:h-14 md:w-50 lg:h-14 lg:w-50"
+                className="cursor-pointer md:h-14 md:w-50 lg:h-14 lg:w-50"
               >
                 이전
               </Button>
               <Button
                 type="submit"
                 disabled={!isFormComplete || isPending}
-                className="md:h-14 md:w-50 lg:h-14 lg:w-50"
+                className="cursor-pointer disabled:cursor-not-allowed md:h-14 md:w-50 lg:h-14 lg:w-50"
               >
                 {isPending ? '요청 중...' : '견적 요청하기'}
               </Button>
@@ -305,7 +305,7 @@ export default function MoveRequestForm() {
               type="button"
               disabled={!isBasicComplete}
               onClick={() => goToStep(BASIC_STEP_COUNT + 1)}
-              className="md:h-14 md:w-50 lg:h-14 lg:w-50"
+              className="cursor-pointer disabled:cursor-not-allowed md:h-14 md:w-50 lg:h-14 lg:w-50"
             >
               다음
             </Button>

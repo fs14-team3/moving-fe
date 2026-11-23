@@ -22,7 +22,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-line-100 bg-white">
       <nav className="relative mx-auto flex h-[54px] w-full max-w-400 items-center justify-between px-6 md:px-18 lg:h-22 lg:px-5">
-        <div className="flex items-center gap-20">
+        <div className="flex items-center gap-17">
           <Link href="/" className="flex items-center">
             <Image
               src="/assets/logos/icon-text.png"
@@ -44,7 +44,7 @@ export default function Header() {
             )}
           </Link>
           {!isPending && (
-            <ul className="hidden items-center gap-11 lg:flex">
+            <ul className="hidden items-center gap-5 lg:flex">
               {navItems.map(({ label, href }) => {
                 const isActive = isActivePath(pathname, href)
                 return (
@@ -53,8 +53,10 @@ export default function Header() {
                       href={href}
                       aria-current={isActive ? 'page' : undefined}
                       className={cn(
-                        'text-lg font-bold',
-                        isActive ? 'text-black-500' : 'text-gray-400',
+                        'block rounded-lg px-3 py-2 text-lg font-bold transition-colors hover:bg-background-300',
+                        isActive
+                          ? 'text-black-500'
+                          : 'text-gray-400 hover:text-black-200',
                       )}
                     >
                       {label}

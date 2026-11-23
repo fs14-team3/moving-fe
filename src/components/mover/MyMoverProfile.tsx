@@ -206,7 +206,7 @@ export default function MyMoverProfile() {
 
           <ReviewSection
             mover={mover}
-            showEmptyMessage={false}
+            showEmptyHint={false}
             className="border-t border-line-100 pt-6 md:pt-10"
           />
         </div>

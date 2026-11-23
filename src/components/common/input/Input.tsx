@@ -56,7 +56,7 @@ export default function Input({
             type="button"
             aria-label={isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
             onClick={() => setIsPasswordVisible((prev) => !prev)}
-            className="shrink-0 text-gray-400"
+            className="shrink-0 text-gray-400 transition-colors hover:text-black-200"
           >
             {isPasswordVisible ? (
               <Eye className="size-5 lg:size-6" />

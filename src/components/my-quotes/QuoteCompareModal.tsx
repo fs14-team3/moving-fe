@@ -2,7 +2,7 @@
 
 import { CustomerQuote } from '@/features/my-quotes/api'
 import Modal from '../common/modal/Modal'
-import QuoteCompareSelect from './QuoteCompareSelect'
+import QuoteCompareStep from './QuoteCompareStep'
 
 type ModalProps = {
   open: boolean
@@ -21,9 +21,9 @@ export default function QuoteCompareModal({
       onClose={onClose}
       title="견적을 비교하고 추천해 드려요"
       titleClassName="text-xl"
-      className="m-0 h-dvh max-h-dvh w-full rounded-none md:m-auto md:h-auto md:max-h-[90dvh] md:rounded-4xl lg:w-200"
+      className="lg:w-200"
     >
-      <QuoteCompareSelect pendingQuotes={pendingQuotes} />
+      <QuoteCompareStep pendingQuotes={pendingQuotes} />
     </Modal>
   )
 }

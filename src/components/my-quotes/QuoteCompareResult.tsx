@@ -6,7 +6,12 @@ import { BadgeCheck } from 'lucide-react'
 import { useState } from 'react'
 import Button from '../common/button/Button'
 
-// TODO: api 타입 교체
+type Props = {
+  // TODO: 선택한 견적, 키워드를 props로 받기
+  onPrevious: () => void
+}
+
+// TODO: api 타입으로 교체
 type Quote = (typeof MOCK_QUOTE_COMPARISON.quotes)[number]
 
 type Row = {
@@ -24,7 +29,6 @@ const ASPECT_ROWS = [
 
 const EMPTY_VALUE = ['-', '후기 부족', '언급 없음']
 
-// TODO: 선택 화면과 같은 키워드 상수로 합치기
 const KEYWORD_LABELS: Record<string, string> = {
   PRICE: '가격',
   CAREER: '경력',
@@ -34,10 +38,10 @@ const KEYWORD_LABELS: Record<string, string> = {
   COMMUNICATION: '소통',
 }
 
-export default function QuoteCompareResult() {
+export default function QuoteCompareResult({ onPrevious }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // TODO: api 데이터 변경
+  // TODO: 서버 데이터로 교체
   const quotes = MOCK_QUOTE_COMPARISON.quotes
   const recommendedId = MOCK_QUOTE_COMPARISON.recommendation.quoteId
   const selectedKeywords = MOCK_QUOTE_COMPARISON.selectedKeywords
@@ -205,6 +209,7 @@ export default function QuoteCompareResult() {
 
       <Button
         variant="outlined"
+        onClick={onPrevious}
         className="w-full hover:cursor-pointer md:h-15 lg:w-full lg:text-base"
       >
         다시 선택하기

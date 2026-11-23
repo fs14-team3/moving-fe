@@ -6,17 +6,30 @@ import { useState } from 'react'
 import SelectChip from '../common/SelectChip'
 import Button from '../common/button/Button'
 
+export type Selection = { quoteIds: string[]; keywords: string[] }
+
 type Props = {
   pendingQuotes: CustomerQuote[]
+  initialSelection?: Selection
+  onNext: (value: Selection) => void
 }
 
-// TODO: API 타입으로 교체
+// TODO: api 키로 교체
+// QouteCompareResult.tsx KEYWORD_LABELS와 합치기
 const KEYWORDS = ['가격', '경력', '시간 약속', '짐 취급', '빠른 작업', '소통']
 
-export default function QuoteCompareSelect({ pendingQuotes }: Props) {
+export default function QuoteCompareSelect({
+  pendingQuotes,
+  initialSelection,
+  onNext,
+}: Props) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [selectedQuotes, setSelectedQoutes] = useState<string[]>([])
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([])
+  const [selectedQuotes, setSelectedQoutes] = useState<string[]>(
+    initialSelection?.quoteIds ?? [],
+  )
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>(
+    initialSelection?.keywords ?? [],
+  )
 
   // 견적 선택 핸들러
   function handleQuoteSelect(quoteId: string) {
@@ -50,8 +63,8 @@ export default function QuoteCompareSelect({ pendingQuotes }: Props) {
     <form
       className="flex flex-col gap-10 md:gap-12"
       onSubmit={(event) => {
-        // TODO: 폼 제출 연결하기
         event.preventDefault()
+        onNext({ quoteIds: selectedQuotes, keywords: selectedKeywords })
       }}
     >
       <section className="flex flex-col gap-3">

@@ -1,4 +1,5 @@
 import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
+import { getOptionLabel } from '@/lib/options'
 import { cn } from '@/lib/cn'
 import Image from 'next/image'
 import Badge from '../common/Badge'
@@ -18,9 +19,7 @@ export default function ServiceTypeChip({
   serviceType,
   size = 'responsive',
 }: ServiceTypeChipProps) {
-  const label =
-    SERVICE_TYPE_OPTIONS.find((option) => option.value === serviceType)
-      ?.label ?? serviceType
+  const label = getOptionLabel(SERVICE_TYPE_OPTIONS, serviceType)
   const imageSrc = SERVICE_TYPE_IMAGE[serviceType]
   const isResponsive = size === 'responsive'
 

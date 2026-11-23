@@ -72,15 +72,15 @@ describe('MyMoverProfile', () => {
     expect(within(reviewSection).getByText('6개의 리뷰')).toBeInTheDocument()
   })
 
-  it('받은 리뷰가 없으면 안내 문구 없이 리뷰 칸을 비워 둔다', () => {
+  it('받은 리뷰가 없으면 리뷰 등록 권유 없이 빈 목록 안내를 보여 준다', () => {
     vi.mocked(useMoverReviews).mockReturnValue(
       createReviewsResult({ reviews: [], totalCount: 0, totalPages: 0 }),
     )
 
     render(<MyMoverProfile />)
 
-    expect(screen.getByRole('heading', { name: '리뷰' })).toBeInTheDocument()
-    expect(screen.queryByText('아직 등록된 리뷰가 없어요!')).toBeNull()
+    expect(screen.getByText('아직 등록된 리뷰가 없어요!')).toBeInTheDocument()
+    expect(screen.queryByText('가장 먼저 리뷰를 등록해보세요')).toBeNull()
   })
 
   it('내 프로필과 수정 페이지 링크를 보여 준다', () => {

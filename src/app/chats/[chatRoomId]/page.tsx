@@ -11,6 +11,8 @@ import { useChatRooms } from '@/features/chat/hooks/useChatRooms'
 import { useChatMessages } from '@/features/chat/hooks/useChatMessages'
 import { useSendChatMessage } from '@/features/chat/hooks/useSendChatMessage'
 import { useMarkChatRoomAsRead } from '@/features/chat/hooks/useMarkChatRoomAsRead'
+import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket'
+import type { ChatMessage } from '@/features/chat/types'
 
 export default function ChatDetailPage() {
   const params = useParams<{ chatRoomId: string }>()
@@ -42,6 +44,39 @@ export default function ChatDetailPage() {
       markAsRead()
     }
   }, [roomId, userId, markAsRead])
+
+  useChatRoomSocket({
+    chatRoomId,
+    enabled: Boolean(user && room && !isUserPending && !isRoomsPending),
+    onMessage: (message) => {
+      if (!user) return
+
+      const senderRole =
+        message.senderId === user.id
+          ? user.role
+          : user.role === 'CUSTOMER'
+            ? 'MOVER'
+            : 'CUSTOMER'
+
+      const newMessage: ChatMessage = {
+        id: message.id,
+        chatRoomId: message.chatRoomId,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        senderRole,
+        content: message.content,
+        createdAt: message.createdAt,
+      }
+
+      setMessages((previous) => {
+        if (previous.some((item) => item.id === newMessage.id)) {
+          return previous
+        }
+
+        return [...previous, newMessage]
+      })
+    },
+  })
 
   if (isUserPending || isRoomsPending) {
     return (

@@ -25,7 +25,7 @@ export default function FavoriteMoverCard({ mover }: FavoriteMoverCardProps) {
     mover.careerYears !== null ? `${mover.careerYears}년` : '-'
 
   return (
-    <div className="relative flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)]">
+    <div className="relative flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] transition-shadow has-[a:hover]:shadow-md">
       <div className="flex gap-2">
         {serviceTypes.map((serviceType) => (
           <ServiceTypeChip

@@ -12,6 +12,7 @@ import {
 } from 'vitest'
 import ReceivedRequestsPage from '@/app/mover/requests/page'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
+import { MOCK_MOVE_REQUEST_DETAILS } from '@/features/move-request/fixtures/moveRequests'
 import {
   getReceivedRequests,
   rejectRequest,
@@ -45,6 +46,7 @@ function createRequest(id: string, customerName: string): ReceivedRequest {
     moveDate: '2026-11-20',
     from: { address: '서울특별시 중구 세종대로 110', region: '서울' },
     to: { address: '경기도 수원시 팔달구 효원로 1', region: '경기' },
+    details: null,
     status: 'PENDING',
     isDesignated: false,
     createdAt: '2026-10-30T09:00:00.000Z',
@@ -181,6 +183,39 @@ describe('ReceivedRequestsPage', () => {
     await waitFor(() =>
       expect(mockGetReceivedRequests).toHaveBeenCalledTimes(2),
     )
+  })
+
+  it('견적 보내기 모달에서 요청의 상세 정보를 보고 견적가를 정할 수 있다', async () => {
+    const user = userEvent.setup({ delay: null })
+    mockGetReceivedRequests.mockResolvedValue({
+      items: [
+        {
+          ...createRequest('request-1', '김코드'),
+          details: MOCK_MOVE_REQUEST_DETAILS,
+        },
+      ],
+      hasNext: false,
+      nextCursor: null,
+    })
+    renderPage()
+    await screen.findByText('김코드 고객님', undefined, { timeout: 3000 })
+
+    await user.click(screen.getByRole('button', { name: '견적 보내기' }))
+
+    const details = within(
+      screen.getByRole('dialog', { name: '견적 보내기' }),
+    ).getByRole('region', { name: '요청 상세 정보' })
+    expect(details).toHaveTextContent('반포장이사')
+    expect(details).toHaveTextContent('20평대 · 2인')
+    expect(details).toHaveTextContent('침대(퀸) 2개, 에어컨(스탠드) 1개')
+  })
+
+  it('상세 정보 없이 만든 요청은 견적 보내기 모달에 상세 정보를 보여 주지 않는다', async () => {
+    const { dialog } = await openSendModal()
+
+    expect(
+      within(dialog).queryByRole('region', { name: '요청 상세 정보' }),
+    ).not.toBeInTheDocument()
   })
 
   it('보내는 중에는 다시 누르거나 닫을 수 없고, 실패하면 알리고 입력을 고칠 수 있게 모달을 열어 둔다', async () => {

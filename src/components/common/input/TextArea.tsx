@@ -1,8 +1,12 @@
 import { useId, type ComponentProps } from 'react'
+import FieldMessage, {
+  type CharCount,
+} from '@/components/common/input/FieldMessage'
 import { cn } from '@/lib/cn'
 
 type TextAreaProps = ComponentProps<'textarea'> & {
   error?: string
+  charCount?: CharCount
   wrapperClassName?: string
 }
 
@@ -18,17 +22,20 @@ const BORDER_ERROR = 'border-red-500'
 
 export default function TextArea({
   error,
+  charCount,
   wrapperClassName,
   className,
   'aria-invalid': ariaInvalid,
   'aria-describedby': ariaDescribedBy,
   ...rest
 }: TextAreaProps) {
-  const errorId = useId()
+  const messageId = useId()
 
-  // 페이지에서 넘긴 설명과 에러 메시지를 둘 다 연결한다.
+  // 페이지에서 넘긴 설명, 에러 메시지, 글자 수를 모두 연결한다.
   const describedBy =
-    [ariaDescribedBy, error && errorId].filter(Boolean).join(' ') || undefined
+    [ariaDescribedBy, (error || charCount) && messageId]
+      .filter(Boolean)
+      .join(' ') || undefined
 
   return (
     <div className={cn(WRAPPER, wrapperClassName)}>
@@ -42,14 +49,7 @@ export default function TextArea({
           className,
         )}
       />
-      {error && (
-        <p
-          id={errorId}
-          className="mt-1 pl-2 text-xs font-medium text-red-500 lg:mt-2 lg:text-base"
-        >
-          {error}
-        </p>
-      )}
+      <FieldMessage id={messageId} error={error} charCount={charCount} />
     </div>
   )
 }

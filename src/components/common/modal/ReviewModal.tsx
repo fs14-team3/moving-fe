@@ -84,8 +84,9 @@ function ReviewForm({
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
 
+  const contentLength = countLetters(content)
   const canSubmit =
-    rating > 0 && countLetters(content) >= CONTENT_MIN_LENGTH && !isSubmitting
+    rating > 0 && contentLength >= CONTENT_MIN_LENGTH && !isSubmitting
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -110,6 +111,7 @@ function ReviewForm({
             placeholder={`최소 ${CONTENT_MIN_LENGTH}자 이상 입력해주세요`}
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            charCount={{ count: contentLength, min: CONTENT_MIN_LENGTH }}
             wrapperClassName="w-full lg:w-full"
           />
         </ModalField>

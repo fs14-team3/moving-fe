@@ -294,8 +294,11 @@ export interface paths {
     }
     /**
      * 기사님 리뷰 AI 요약
-     * @description 공개 API. 리뷰가 10건 미만이거나 요약을 만들 수 없으면 `null`입니다.
-     *     리뷰 수가 바뀌면 다시 생성하고, 생성에 실패했을 때 이전 저장본이 있으면 이를 반환합니다.
+     * @description 공개 API. 리뷰가 10건 미만이면 `null`을 반환합니다.
+     *     현재 리뷰 수가 요약 생성 당시와 같으면 저장된 요약을 반환합니다.
+     *     요약이 없거나 리뷰 수가 달라지면 요약 생성 작업을 큐에 등록합니다.
+     *     생성 완료를 기다리지 않고 기존 요약을 반환하며, 저장된 요약이 없으면 `null`을 반환합니다.
+     *     큐 등록에 실패한 경우에도 기존 요약 또는 `null`을 반환합니다.
      */
     get: operations['getMoverReviewSummary']
     put?: never
@@ -377,6 +380,7 @@ export interface paths {
      *     출발지와 도착지의 지역은 서버가 주소의 첫 단어(시/도)로 판별하며, 강원도, 전라북도, 제주도처럼 바뀌기 전 명칭과 줄임 명칭도 인식합니다.
      *     새 요청을 모든 서비스 지역의 기사님들에게 알립니다.
      *     입력 중 수정(§4.1.4)은 제출 전 프론트엔드 폼에서 처리합니다.
+     *     `details`로 이사 방식, 출발지·도착지 환경, 집 규모, 짐 목록, 잔짐 양, 요청사항을 함께 저장할 수 있으며, 기사님에게 보이는 요청에도 같은 정보가 포함됩니다.
      */
     post: operations['createMoveRequest']
     delete?: never
@@ -516,7 +520,9 @@ export interface paths {
     /**
      * 견적 요청 반려 (기사님)
      * @description 로그인 세션으로 인증된 기사님만 요청할 수 있습니다. 비로그인은 401, 고객은 403을 반환합니다.
-     *     지역에 관계없이 받은 요청을 반려합니다(§8.3). 반려 사유 입력은 요구하지 않습니다.
+     *     지역에 관계없이 받은 요청을 반려합니다(§8.3).
+     *     반려 사유는 선택 입력이며, 생략하거나 빈 문자열로 전달하면 사유 없이 반려합니다.
+     *     이미 반려한 요청은 최초 반려 기록과 사유를 유지합니다.
      */
     post: operations['rejectMoveRequest']
     delete?: never
@@ -562,6 +568,27 @@ export interface paths {
      *     고객명은 User.name을 사용하며, 이름이 없으면 null을 반환합니다.
      */
     get: operations['listMySentQuotes']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/movers/me/quotes/{quoteId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 보낸 견적 상세 조회 (기사님)
+     * @description 로그인한 기사님이 본인이 보낸 견적 하나를 조회합니다.
+     *     다른 기사님이 보낸 견적이거나 없는 견적이면 404를 반환합니다.
+     */
+    get: operations['getMySentQuote']
     put?: never
     post?: never
     delete?: never
@@ -823,6 +850,74 @@ export interface paths {
     head?: never
     /** 개별 알림 읽음 처리 */
     patch: operations['readNotification']
+    trace?: never
+  }
+  '/chats/{chatRoomId}/messages': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 채팅 메시지 목록 조회
+     * @description 채팅방 참여자만 메시지를 조회할 수 있습니다.
+     *     메시지는 생성 시각과 ID 기준 내림차순으로 조회합니다.
+     *     cursor 기반 페이지네이션을 사용합니다.
+     *     견적이 NOT_SELECTED 상태여도 기존 메시지는 조회할 수 있습니다.
+     */
+    get: operations['listChatMessages']
+    put?: never
+    /**
+     * 채팅 메시지 전송
+     * @description 채팅방 참여자만 메시지를 전송할 수 있습니다.
+     *     견적이 NOT_SELECTED 상태인 채팅방에는 새 메시지를 전송할 수 없습니다.
+     */
+    post: operations['sendChatMessage']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/chats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 채팅방 목록 조회
+     * @description 로그인한 사용자의 채팅방 목록을 최근 메시지 순으로 조회합니다.
+     */
+    get: operations['listChats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/chats/{chatRoomId}/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * 채팅방 읽음 처리
+     * @description 채팅방 참여자의 마지막 읽은 시각을 현재 시각으로 갱신합니다.
+     */
+    patch: operations['markChatRoomAsRead']
     trace?: never
   }
   '/estimates': {
@@ -1215,6 +1310,107 @@ export interface components {
       zonecode?: string | null
       region: components['schemas']['Region']
     }
+    /**
+     * @description BASIC 일반이사, HALF_PACKING 반포장이사, FULL_PACKING 포장이사
+     * @enum {string}
+     */
+    ServiceLevel: 'BASIC' | 'HALF_PACKING' | 'FULL_PACKING'
+    /**
+     * @description APARTMENT 아파트, VILLA 빌라·연립, OFFICETEL 오피스텔, HOUSE 주택, COMMERCIAL 상가·사무실
+     * @enum {string}
+     */
+    BuildingType: 'APARTMENT' | 'VILLA' | 'OFFICETEL' | 'HOUSE' | 'COMMERCIAL'
+    /**
+     * @description UNDER_10 10평 미만, TENS 10평대, TWENTIES 20평대, THIRTIES 30평대, OVER_40 40평 이상
+     * @enum {string}
+     */
+    AreaRange: 'UNDER_10' | 'TENS' | 'TWENTIES' | 'THIRTIES' | 'OVER_40'
+    /**
+     * @description 잔짐 박스(이사박스 5호 기준) 개수. UP_TO_10 10개 이하, UP_TO_20 11~20개, UP_TO_30 21~30개, UP_TO_50 31~50개, OVER_50 51개 이상
+     * @enum {string}
+     */
+    BoxRange: 'UP_TO_10' | 'UP_TO_20' | 'UP_TO_30' | 'UP_TO_50' | 'OVER_50'
+    /**
+     * @description 짐 종류. 크기나 형태가 다르면 코드가 다릅니다. 예) BED_SINGLE, BED_QUEEN
+     * @enum {string}
+     */
+    MoveItem:
+      | 'BED_SINGLE'
+      | 'BED_SUPER_SINGLE'
+      | 'BED_DOUBLE'
+      | 'BED_QUEEN'
+      | 'BED_KING'
+      | 'WARDROBE_ONE_DOOR'
+      | 'WARDROBE_TWO_DOOR'
+      | 'WARDROBE_THREE_PLUS_DOOR'
+      | 'SOFA_SMALL'
+      | 'SOFA_MEDIUM'
+      | 'SOFA_LARGE'
+      | 'DINING_TABLE'
+      | 'DESK'
+      | 'CHAIR'
+      | 'BOOKSHELF'
+      | 'DRAWER'
+      | 'HANGER'
+      | 'VANITY'
+      | 'SHOE_CABINET'
+      | 'TV_STAND'
+      | 'FRIDGE_SMALL'
+      | 'FRIDGE_STANDARD'
+      | 'FRIDGE_SIDE_BY_SIDE'
+      | 'FRIDGE_FOUR_DOOR'
+      | 'KIMCHI_FRIDGE'
+      | 'WASHER_DRUM'
+      | 'WASHER_TOP_LOAD'
+      | 'DRYER'
+      | 'AIRCON_WALL'
+      | 'AIRCON_STAND'
+      | 'TV'
+      | 'COMPUTER'
+      | 'MICROWAVE'
+      | 'CLOTHES_CARE'
+      | 'WATER_PURIFIER'
+      | 'AIR_PURIFIER'
+      | 'MASSAGE_CHAIR'
+      | 'PIANO'
+      | 'BICYCLE'
+      | 'EXERCISE_EQUIPMENT'
+      | 'PLANT'
+      | 'SUITCASE'
+      | 'CAT_TOWER'
+      | 'MIRROR'
+    /** @description 출발지 또는 도착지 건물 환경 */
+    Building: {
+      buildingType: components['schemas']['BuildingType']
+      /**
+       * @description 층수. -1은 지하, 5는 5층 이상
+       * @enum {integer}
+       */
+      floor: -1 | 1 | 2 | 3 | 4 | 5
+      hasElevator: boolean
+      /** @description 건물 앞 차량 정차 가능 여부 */
+      canPark: boolean
+    }
+    MoveRequestItem: {
+      item: components['schemas']['MoveItem']
+      quantity: number
+    }
+    MoveRequestDetails: {
+      serviceLevel: components['schemas']['ServiceLevel']
+      from: components['schemas']['Building']
+      to: components['schemas']['Building']
+      areaRange: components['schemas']['AreaRange']
+      /**
+       * @description 거주 인원. 4는 4인 이상. 사무실이사(OFFICE)가 아니면 필수
+       * @enum {integer|null}
+       */
+      residentCount?: 1 | 2 | 3 | 4 | null
+      /** @description 옮길 짐 목록. 선택 입력이며 빈 배열이면 짐을 입력하지 않은 요청입니다. 같은 item은 한 번만 보낼 수 있습니다. */
+      items: components['schemas']['MoveRequestItem'][]
+      boxRange: components['schemas']['BoxRange']
+      /** @description 기사님께 전할 요청사항. 빈 문자열은 null로 저장됩니다. */
+      memo?: string | null
+    }
     MoveRequestCreate: {
       moveType: components['schemas']['ServiceType']
       /**
@@ -1224,6 +1420,8 @@ export interface components {
       moveDate: string
       from: components['schemas']['AddressInput']
       to: components['schemas']['AddressInput']
+      /** @description 이사 상세 정보. 생략하면 상세 정보 없이 요청을 만듭니다. */
+      details?: components['schemas']['MoveRequestDetails']
     }
     MoveRequest: {
       /** Format: uuid */
@@ -1233,6 +1431,8 @@ export interface components {
       moveDate: string
       from: components['schemas']['Address']
       to: components['schemas']['Address']
+      /** @description 상세 정보 없이 만든 요청은 null */
+      details: components['schemas']['MoveRequestDetails'] | null
       status: components['schemas']['MoveRequestStatus']
       quoteCount: number
       designatedMoverIds: string[]
@@ -1268,6 +1468,8 @@ export interface components {
        * @example 350000
        */
       price: number
+      /** @description 기사님이 견적 제출 시 입력한 코멘트. 미입력 시 null. */
+      comment: string | null
       status: components['schemas']['QuoteStatus']
       /** @description 지정 견적 라벨 표시용 */
       isDesignated: boolean
@@ -1284,6 +1486,8 @@ export interface components {
     QuoteCreate: {
       /** @description 견적가 (원) */
       price: number
+      /** @description 견적 코멘트. 선택 입력이며 빈 문자열은 null로 저장됩니다. */
+      comment?: string | null
     }
     /** @description 기사님에게 보이는 견적 요청 */
     RequestForMover: {
@@ -1296,6 +1500,8 @@ export interface components {
       moveDate: string
       from: components['schemas']['Address']
       to: components['schemas']['Address']
+      /** @description 상세 정보 없이 만든 요청은 null */
+      details: components['schemas']['MoveRequestDetails'] | null
       status: components['schemas']['MoveRequestStatus']
       isDesignated: boolean
       /** Format: date-time */
@@ -1309,6 +1515,7 @@ export interface components {
       /** Format: uuid */
       id: string
       price: number
+      comment: string | null
       status: components['schemas']['QuoteStatus']
       isDesignated: boolean
       /** Format: date-time */
@@ -1322,6 +1529,8 @@ export interface components {
       moveRequest: components['schemas']['RequestForMover']
       /** Format: date-time */
       rejectedAt: string
+      /** @description 반려 사유. 입력하지 않은 경우 null을 반환합니다. */
+      reason: string | null
     }
     RejectedRequestListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['RejectedRequest'][]
@@ -1407,6 +1616,91 @@ export interface components {
     }
     NotificationListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['Notification'][]
+    }
+    ChatMessage: {
+      /** Format: uuid */
+      id: string
+      /** Format: uuid */
+      chatRoomId: string
+      /** Format: uuid */
+      senderId: string
+      content: string
+      /** Format: date-time */
+      createdAt: string
+      /** @description 메시지 작성자 이름 */
+      senderName: string | null
+    }
+    ChatMessageListResponse: components['schemas']['CursorMeta'] & {
+      items: components['schemas']['ChatMessage'][]
+    }
+    SendChatMessageRequest: {
+      /** @description 공백만 입력한 메시지는 허용하지 않습니다. */
+      content: string
+    }
+    ChatReadResponse: {
+      /** @enum {boolean} */
+      updated: true
+      /** Format: date-time */
+      lastReadAt: string
+    }
+    ChatOtherParticipant: {
+      /** Format: uuid */
+      id: string
+      role: components['schemas']['Role']
+      /** @description 상대방 이름 또는 기사님 닉네임 */
+      name: string
+      imageUrl: string | null
+    }
+    ChatMoveRequestCustomer: {
+      imageUrl: string | null
+      user: {
+        /** Format: uuid */
+        id: string
+        name: string
+      }
+    }
+    ChatMoveRequestSummary: {
+      /** Format: uuid */
+      id: string
+      moveType: components['schemas']['ServiceType']
+      /** Format: date */
+      moveDate: string
+      fromRegion: components['schemas']['Region']
+      toRegion: components['schemas']['Region']
+      customer: components['schemas']['ChatMoveRequestCustomer']
+    }
+    ChatLastMessage: {
+      /** Format: uuid */
+      id: string
+      content: string
+      /** Format: uuid */
+      senderId: string
+      /** Format: date-time */
+      createdAt: string
+    }
+    ChatRoomListItem: {
+      /** Format: uuid */
+      id: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      lastMessageAt: string | null
+      otherParticipant: components['schemas']['ChatOtherParticipant']
+      quote: {
+        /** Format: uuid */
+        id: string
+        /** @description 견적 금액 */
+        price: number
+        status: components['schemas']['QuoteStatus']
+        isDesignated: boolean
+        moveRequest: components['schemas']['ChatMoveRequestSummary']
+      }
+      lastMessage: components['schemas']['ChatLastMessage'] | null
+      /** @description 읽지 않은 메시지 수 */
+      unreadCount: number
+    }
+    ChatListResponse: components['schemas']['CursorMeta'] & {
+      items: components['schemas']['ChatRoomListItem'][]
     }
   }
   responses: {
@@ -2248,7 +2542,7 @@ export interface operations {
           'application/json': components['schemas']['MoveRequest']
         }
       }
-      /** @description `VALIDATION_ERROR`. 필수 정보가 없거나, 이사 날짜가 한국 시간 기준으로 지났거나, 주소에서 시/도를 판별할 수 없는 경우 */
+      /** @description `VALIDATION_ERROR`. 필수 정보가 없거나, 이사 날짜가 한국 시간 기준으로 지났거나, 주소에서 시/도를 판별할 수 없거나, 상세 정보 값이 올바르지 않은 경우. 사무실이사가 아닌데 거주 인원이 없거나 같은 짐을 중복해서 보낸 경우도 포함합니다. */
       400: {
         headers: {
           [name: string]: unknown
@@ -2515,7 +2809,14 @@ export interface operations {
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody?: {
+      content: {
+        'application/json': {
+          /** @description 선택적 반려 사유. 빈 문자열과 공백만 입력한 경우 null로 저장됩니다. */
+          reason?: string | null
+        }
+      }
+    }
     responses: {
       /** @description 반려 완료. 해당 요청은 받은 요청 목록에서 사라집니다. */
       201: {
@@ -2593,6 +2894,32 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
+    }
+  }
+  getMySentQuote: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 보낸 견적 상세 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SentQuote']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      404: components['responses']['NotFound']
     }
   }
   listMyRejectedRequests: {
@@ -3056,6 +3383,140 @@ export interface operations {
       }
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
+    }
+  }
+  listChatMessages: {
+    parameters: {
+      query?: {
+        /** @description 이전 응답의 nextCursor 값 */
+        cursor?: string
+        /** @description 한 페이지에 조회할 메시지 수 */
+        limit?: number
+      }
+      header?: never
+      path: {
+        chatRoomId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 채팅 메시지 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatMessageListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description 채팅방 참여자가 아닌 경우 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  sendChatMessage: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        chatRoomId: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SendChatMessageRequest']
+      }
+    }
+    responses: {
+      /** @description 메시지 전송 완료 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatMessage']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description 채팅방 참여자가 아니거나 메시지 전송이 제한된 견적 상태인 경우 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  listChats: {
+    parameters: {
+      query?: {
+        /** @description 이전 페이지의 `nextCursor`. 첫 페이지에서는 생략합니다. */
+        cursor?: components['parameters']['Cursor']
+        /** @description 한 페이지에 조회할 채팅방 수 */
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 채팅방 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatListResponse']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+    }
+  }
+  markChatRoomAsRead: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        chatRoomId: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 읽음 처리 완료 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ChatReadResponse']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      /** @description 채팅방 참여자가 아닌 경우 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   getMoveEstimate: {

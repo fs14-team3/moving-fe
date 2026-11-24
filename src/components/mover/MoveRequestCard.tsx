@@ -1,13 +1,15 @@
 import { FileText, MoveRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import Badge from '@/components/common/Badge'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
+import { MOVE_TYPE_ICON } from '@/components/common/modal/Modal'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import type { ReceivedRequest } from '@/features/received-requests/api'
 import {
   formatMoveDate,
   toCustomerName,
   toShortAddress,
 } from '@/features/received-requests/format'
+import { getOptionLabel } from '@/lib/options'
 
 type MoveRequestCardProps = {
   request: ReceivedRequest
@@ -34,7 +36,8 @@ export default function MoveRequestCard({
   aside,
   children,
 }: MoveRequestCardProps) {
-  const { label, icon } = MOVE_TYPE[request.moveType]
+  const icon = MOVE_TYPE_ICON[request.moveType]
+  const label = getOptionLabel(SERVICE_TYPE_OPTIONS, request.moveType)
 
   return (
     <article className="rounded-2xl border border-line-100 bg-white px-5 py-6 shadow-sm lg:px-6 lg:py-7">

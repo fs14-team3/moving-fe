@@ -15,6 +15,8 @@ import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile'
 import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile'
 import { isSameSelection } from '@/features/profile/lib/selection'
 import {
+  DESCRIPTION_MIN_LENGTH,
+  INTRO_MIN_LENGTH,
   getCareerYearsError,
   getDescriptionError,
   getIntroError,
@@ -179,6 +181,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
           label="한 줄 소개"
           placeholder="한 줄 소개를 입력해 주세요"
           {...textFieldProps('intro')}
+          charCount={{ count: intro.length, min: INTRO_MIN_LENGTH }}
         />
       </div>
       <div className="*:last:border-b-0">
@@ -187,6 +190,7 @@ export default function MoverProfileForm({ mode }: MoverProfileFormProps) {
           label="상세 설명"
           placeholder="상세 내용을 입력해 주세요"
           {...textFieldProps('description')}
+          charCount={{ count: description.length, min: DESCRIPTION_MIN_LENGTH }}
         />
         <ProfileChipField
           label="제공 서비스"

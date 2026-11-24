@@ -9,6 +9,7 @@ import ChatMessageList from '@/components/chat/ChatMessageList'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { MOCK_CHAT_MESSAGES } from '@/features/chat/fixtures/chatMessages'
 import { useChatRooms } from '@/features/chat/hooks/useChatRooms'
+import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket'
 import type { ChatMessage } from '@/features/chat/types'
 
 export default function ChatDetailPage() {
@@ -21,6 +22,39 @@ export default function ChatDetailPage() {
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_MESSAGES)
 
   const room = rooms?.find((item) => item.chatRoomId === chatRoomId)
+
+  useChatRoomSocket({
+    chatRoomId,
+    enabled: Boolean(user && room && !isUserPending && !isRoomsPending),
+    onMessage: (message) => {
+      if (!user) return
+
+      const senderRole =
+        message.senderId === user.id
+          ? user.role
+          : user.role === 'CUSTOMER'
+            ? 'MOVER'
+            : 'CUSTOMER'
+
+      const newMessage: ChatMessage = {
+        id: message.id,
+        chatRoomId: message.chatRoomId,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        senderRole,
+        content: message.content,
+        createdAt: message.createdAt,
+      }
+
+      setMessages((previous) => {
+        if (previous.some((item) => item.id === newMessage.id)) {
+          return previous
+        }
+
+        return [...previous, newMessage]
+      })
+    },
+  })
 
   if (isUserPending || isRoomsPending) {
     return (

@@ -54,6 +54,15 @@ describe('SignupForm', () => {
     signupState.isSuccess = false
   })
 
+  it('이름은 앞뒤 공백을 뺀 글자 수와 최대 글자 수를 보여 준다', async () => {
+    const { user, fields } = renderSignupForm()
+    expect(fields.name).toHaveAccessibleDescription('0 / 20자')
+
+    await user.type(fields.name, ' 김고객 ')
+
+    expect(fields.name).toHaveAccessibleDescription('3 / 20자')
+  })
+
   it('전화번호는 숫자만 11자리까지 받아 하이픈을 넣어 보여 준다', async () => {
     const { user, fields } = renderSignupForm()
 

@@ -5,14 +5,20 @@ import type {
   Notification,
   NotificationType,
 } from '@/features/notifications/api'
+import { getNotificationHref } from '@/features/notifications/link'
 import { toMessageParts } from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
+import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { useDismiss } from '@/hooks/useDismiss'
+import { cn } from '@/lib/cn'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
+import { useQueryClient } from '@tanstack/react-query'
 import { LoaderCircle } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   useCallback,
   useEffect,
@@ -31,6 +37,8 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   MOVE_DAY: '내일은 이사 예정일이에요',
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
 }
+
+const ITEM = 'flex gap-2 px-4 py-4 md:px-6'
 
 function NotificationMessage({
   notification,
@@ -64,6 +72,7 @@ function PanelStatus({ children }: { children: ReactNode }) {
 }
 
 export default function NotificationMenu({ role }: { role: Role }) {
+  const queryClient = useQueryClient()
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -73,6 +82,8 @@ export default function NotificationMenu({ role }: { role: Role }) {
   const titleId = useId()
   const { hasUnread } = useUnreadNotificationCount()
   const { mutate: readNotifications } = useReadNotifications()
+  const { mutate: readAllNotifications, isPending: isReadingAll } =
+    useReadAllNotifications()
   const {
     notifications,
     hasData,
@@ -90,7 +101,6 @@ export default function NotificationMenu({ role }: { role: Role }) {
     [notifications],
   )
 
-  // 열어 둔 동안 읽음 처리하면 다음 페이지(읽지 않은 알림만)가 어긋나서, 닫을 때 한 번에 읽음 처리한다.
   const close = useCallback(() => {
     setIsOpen(false)
     if (shownUnreadIds.length > 0) readNotifications(shownUnreadIds)
@@ -162,7 +172,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
     }
 
     if (notifications.length === 0) {
-      return <PanelStatus>모든 알림을 확인하였습니다</PanelStatus>
+      return <PanelStatus>알림이 없습니다</PanelStatus>
     }
 
     return (
@@ -170,19 +180,58 @@ export default function NotificationMenu({ role }: { role: Role }) {
         ref={listRef}
         className="max-h-90 divide-y divide-line-200 overflow-y-auto px-2 md:max-h-100 md:px-4"
       >
-        {notifications.map((notification) => (
-          <li key={notification.id} className="px-4 py-4 md:px-6">
-            <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-              <NotificationMessage notification={notification} role={role} />
-            </p>
-            <time
-              dateTime={notification.createdAt}
-              className="mt-1 block text-xs text-gray-300 md:text-sm"
-            >
-              {formatTimeAgo(notification.createdAt)}
-            </time>
-          </li>
-        ))}
+        {notifications.map((notification) => {
+          const href = getNotificationHref(notification, role)
+          const content = (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+                  <NotificationMessage
+                    notification={notification}
+                    role={role}
+                  />
+                </p>
+                <time
+                  dateTime={notification.createdAt}
+                  className="mt-1 block text-xs text-gray-300 md:text-sm"
+                >
+                  {formatTimeAgo(notification.createdAt)}
+                </time>
+              </div>
+              {!notification.readAt && (
+                <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
+                  <span className="sr-only">읽지 않은 알림</span>
+                </span>
+              )}
+            </>
+          )
+
+          return (
+            <li key={notification.id}>
+              {href ? (
+                <Link
+                  href={href}
+                  onClick={() => {
+                    if (href === '/mover/requests') {
+                      void queryClient.invalidateQueries({
+                        queryKey: receivedRequestKeys.all,
+                      })
+                    }
+                    close()
+                  }}
+                  className={cn(
+                    ITEM,
+                    'rounded-lg transition-colors hover:bg-background-200',
+                  )}
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div className={ITEM}>{content}</div>
+              )}
+            </li>
+          )
+        })}
         {hasNextPage && (
           <li ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage ? (
@@ -217,7 +266,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={toggle}
-        className="relative flex"
+        className="relative -m-1.5 flex rounded-lg p-1.5 transition-colors hover:bg-background-300 aria-expanded:bg-background-300"
       >
         <Image
           src="/assets/icons/alarm.svg"
@@ -227,7 +276,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
           className="size-6 lg:size-9"
         />
         {hasUnread && (
-          <span className="absolute top-0 right-0 size-2 rounded-full bg-red-500 ring-2 ring-white lg:size-3" />
+          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white lg:size-3" />
         )}
       </button>
       {isOpen && (
@@ -243,23 +292,35 @@ export default function NotificationMenu({ role }: { role: Role }) {
             >
               알림
             </h2>
-            <button
-              type="button"
-              aria-label="알림 닫기"
-              onClick={() => {
-                close()
-                triggerRef.current?.focus()
-              }}
-              className="flex size-6 items-center justify-center"
-            >
-              <Image
-                src="/assets/icons/Xicon.png"
-                alt=""
-                width={72}
-                height={72}
-                className="size-6"
-              />
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => readAllNotifications()}
+                disabled={
+                  isReadingAll || (!hasUnread && shownUnreadIds.length === 0)
+                }
+                className="text-sm font-semibold text-black-100 disabled:text-gray-400"
+              >
+                모두 읽음
+              </button>
+              <button
+                type="button"
+                aria-label="알림 닫기"
+                onClick={() => {
+                  close()
+                  triggerRef.current?.focus()
+                }}
+                className="-m-1 flex items-center justify-center rounded-full p-1 transition-colors hover:bg-background-300"
+              >
+                <Image
+                  src="/assets/icons/Xicon.png"
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="size-6"
+                />
+              </button>
+            </div>
           </div>
           {renderContent()}
         </section>

@@ -22,6 +22,7 @@ type ModalProps = {
   children: ReactNode
   // false면 모바일에서도 바텀시트 대신 가운데 모달로 보여준다.
   mobileSheet?: boolean
+  titleClassName?: string
   className?: string
 }
 
@@ -48,6 +49,7 @@ export default function Modal({
   title,
   children,
   mobileSheet = true,
+  titleClassName,
   className,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -89,7 +91,10 @@ export default function Modal({
       {open && (
         <div className={PADDING[layout]}>
           <div className="mb-6 flex items-center justify-between md:mb-10">
-            <h2 id={titleId} className="text-lg font-bold md:text-2xl">
+            <h2
+              id={titleId}
+              className={cn('text-lg font-bold md:text-2xl', titleClassName)}
+            >
               {title}
             </h2>
             <button
@@ -98,7 +103,7 @@ export default function Modal({
               onClick={onClose}
               className="flex size-6 items-center justify-center text-gray-400 transition-colors hover:text-black-200 md:size-9"
             >
-              <X strokeWidth={1.5} className="size-6" />
+              <X strokeWidth={1.5} className="size-6 cursor-pointer" />
             </button>
           </div>
           {children}

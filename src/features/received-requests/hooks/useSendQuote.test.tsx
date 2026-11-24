@@ -14,7 +14,11 @@ vi.mock('sonner', () => ({ toast }))
 
 vi.mock('@/features/received-requests/api', () => ({ sendQuote: vi.fn() }))
 
-const variables = { requestId: 'request-1', price: 250000 }
+const variables = {
+  requestId: 'request-1',
+  price: 250000,
+  comment: '꼼꼼하게 옮겨 드릴게요',
+}
 
 function renderUseSendQuote() {
   const queryClient = new QueryClient()
@@ -43,7 +47,10 @@ describe('useSendQuote', () => {
     act(() => result.current.mutate(variables))
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(sendQuote).toHaveBeenCalledWith('request-1', { price: 250000 })
+    expect(sendQuote).toHaveBeenCalledWith('request-1', {
+      price: 250000,
+      comment: '꼼꼼하게 옮겨 드릴게요',
+    })
     expect(toast.success).toHaveBeenCalledWith(
       TOAST_MESSAGES.estimate.sendSuccess,
     )

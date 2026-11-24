@@ -166,14 +166,17 @@ describe('ReceivedRequestsPage', () => {
     vi.clearAllMocks()
   })
 
-  it('견적 보내기를 누른 요청으로 모달을 열고, 보내면 견적가를 보낸 뒤 모달을 닫고 목록을 다시 불러온다', async () => {
+  it('견적 보내기를 누른 요청으로 모달을 열고, 보내면 견적가와 코멘트를 보낸 뒤 모달을 닫고 목록을 다시 불러온다', async () => {
     mockSendQuote.mockResolvedValue({} as SentQuote)
     const { dialog, submit } = await openSendModal()
     expect(within(dialog).getByText('김코드 고객님')).toBeInTheDocument()
 
     await submit()
 
-    expect(mockSendQuote).toHaveBeenCalledWith('request-1', { price: 250000 })
+    expect(mockSendQuote).toHaveBeenCalledWith('request-1', {
+      price: 250000,
+      comment: '꼼꼼하게 옮겨 드릴게요',
+    })
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )

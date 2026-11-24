@@ -37,16 +37,13 @@ describe('getReceivedRequests', () => {
 })
 
 describe('sendQuote', () => {
-  it('요청 id 경로로 견적가를 보내고 보낸 견적을 반환한다', async () => {
-    const sentQuote = { id: 'quote-1', price: 250000 }
+  it('요청 id 경로로 견적가와 코멘트를 보내고 보낸 견적을 반환한다', async () => {
+    const body = { price: 250000, comment: '꼼꼼하게 옮겨 드릴게요' }
+    const sentQuote = { id: 'quote-1', ...body }
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: sentQuote })
 
-    await expect(sendQuote('request-1', { price: 250000 })).resolves.toEqual(
-      sentQuote,
-    )
-    expect(post).toHaveBeenCalledWith('/move-requests/request-1/quotes', {
-      price: 250000,
-    })
+    await expect(sendQuote('request-1', body)).resolves.toEqual(sentQuote)
+    expect(post).toHaveBeenCalledWith('/move-requests/request-1/quotes', body)
   })
 })
 

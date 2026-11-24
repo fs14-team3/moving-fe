@@ -671,6 +671,8 @@ export interface paths {
     /**
      * 작업 사진 목록
      * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canEdit`이 `true`일 때만 사진 올리기와 삭제 버튼을 보여 줍니다.
+     *
+     *     사진 주소는 CloudFront 서명 URL이며 발급 후 최소 1시간, 최대 2시간 동안 유효합니다. 같은 시간대(정각 기준 1시간)에는 같은 주소를 반환하므로 다시 조회해도 이미지를 새로 받지 않습니다. 화면을 1시간 넘게 열어 둘 때는 목록을 다시 조회해 주소를 갱신합니다.
      */
     get: operations['listProofPhotos']
     put?: never
@@ -1045,9 +1047,15 @@ export interface components {
     ProofPhoto: {
       /** Format: uuid */
       id: string
-      /** Format: uri */
+      /**
+       * Format: uri
+       * @description 사진 CloudFront 서명 URL. 발급 후 최소 1시간, 최대 2시간 동안 유효합니다.
+       */
       url: string
-      /** Format: uri */
+      /**
+       * Format: uri
+       * @description 썸네일 CloudFront 서명 URL. `url`과 같은 시각에 만료됩니다.
+       */
       thumbnailUrl: string
       /** Format: date-time */
       createdAt: string
@@ -3033,6 +3041,15 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       404: components['responses']['NotFound']
+      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   confirmProofPhoto: {
@@ -3080,7 +3097,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
-      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
       503: {
         headers: {
           [name: string]: unknown

@@ -1,58 +1,82 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
-import { useState } from 'react'
 import { useParams } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/queryKeys'
 import ChatHeader from '@/components/chat/ChatHeader'
 import ChatMessageInput from '@/components/chat/ChatMessageInput'
 import ChatMessageList from '@/components/chat/ChatMessageList'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
-import { MOCK_CHAT_MESSAGES } from '@/features/chat/fixtures/chatMessages'
 import { useChatRooms } from '@/features/chat/hooks/useChatRooms'
+import { useChatMessages } from '@/features/chat/hooks/useChatMessages'
+import { useSendChatMessage } from '@/features/chat/hooks/useSendChatMessage'
+import { useMarkChatRoomAsRead } from '@/features/chat/hooks/useMarkChatRoomAsRead'
 import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket'
-import type { ChatMessage } from '@/features/chat/types'
+import type { ChatMessageListResponse } from '@/features/chat/types'
 
 export default function ChatDetailPage() {
   const params = useParams<{ chatRoomId: string }>()
+  const queryClient = useQueryClient()
   const chatRoomId = params.chatRoomId
 
   const { user, isPending: isUserPending } = useCurrentUser()
-  const { data: rooms, isPending: isRoomsPending } = useChatRooms()
+  const {
+    data: rooms,
+    isPending: isRoomsPending,
+    isError: isRoomsError,
+  } = useChatRooms()
 
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_MESSAGES)
+  const room = rooms?.items.find((item) => item.id === chatRoomId)
 
-  const room = rooms?.find((item) => item.chatRoomId === chatRoomId)
+  const {
+    data: messageResponse,
+    isPending: isMessagesPending,
+    isError: isMessagesError,
+  } = useChatMessages(chatRoomId, Boolean(room && user))
+
+  const sendMessage = useSendChatMessage(chatRoomId)
+  const { mutate: markAsRead } = useMarkChatRoomAsRead(chatRoomId)
+
+  const roomId = room?.id
+  const userId = user?.id
+
+  useEffect(() => {
+    if (roomId && userId) {
+      markAsRead()
+    }
+  }, [roomId, userId, markAsRead])
 
   useChatRoomSocket({
     chatRoomId,
     enabled: Boolean(user && room && !isUserPending && !isRoomsPending),
     onMessage: (message) => {
-      if (!user) return
+      queryClient.setQueryData<ChatMessageListResponse>(
+        queryKeys.chats.messages(chatRoomId),
+        (previous) => {
+          if (!previous) return previous
 
-      const senderRole =
-        message.senderId === user.id
-          ? user.role
-          : user.role === 'CUSTOMER'
-            ? 'MOVER'
-            : 'CUSTOMER'
+          if (previous.items.some((item) => item.id === message.id)) {
+            return previous
+          }
 
-      const newMessage: ChatMessage = {
-        id: message.id,
-        chatRoomId: message.chatRoomId,
-        senderId: message.senderId,
-        senderName: message.senderName,
-        senderRole,
-        content: message.content,
-        createdAt: message.createdAt,
-      }
-
-      setMessages((previous) => {
-        if (previous.some((item) => item.id === newMessage.id)) {
-          return previous
-        }
-
-        return [...previous, newMessage]
-      })
+          return {
+            ...previous,
+            items: [
+              ...previous.items,
+              {
+                id: message.id,
+                chatRoomId: message.chatRoomId,
+                senderId: message.senderId,
+                senderName: message.senderName,
+                content: message.content,
+                createdAt: message.createdAt,
+              },
+            ],
+          }
+        },
+      )
     },
   })
 
@@ -64,7 +88,7 @@ export default function ChatDetailPage() {
     )
   }
 
-  if (!user || !room) {
+  if (!user || isRoomsError || !room) {
     return (
       <main className="flex min-h-page flex-col items-center justify-center px-4 text-center">
         <p className="font-semibold text-black-300">
@@ -80,44 +104,41 @@ export default function ChatDetailPage() {
     )
   }
 
-  const currentUser = user
-
-  const opponent = currentUser.role === 'CUSTOMER' ? room.mover : room.customer
-  const roomMessages = messages.filter(
-    (message) => message.chatRoomId === chatRoomId,
-  )
-  const isReadOnly = room.quoteStatus === 'NOT_SELECTED'
+  const isReadOnly = room.quote.status === 'NOT_SELECTED'
+  const messages = messageResponse?.items ?? []
 
   function handleSend(content: string) {
-    const newMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      chatRoomId,
-      senderId: currentUser.id,
-      senderName: currentUser.name ?? '나',
-      senderRole: currentUser.role,
-      content,
-      createdAt: new Date().toISOString(),
-    }
-
-    setMessages((previous) => [...previous, newMessage])
+    sendMessage.mutate(content)
   }
 
   return (
     <main className="min-h-page px-3 py-4 md:px-8 md:py-8">
       <div className="mx-auto flex h-[calc(100dvh-150px)] min-h-120 max-w-5xl flex-col overflow-hidden rounded-xl border border-line-200 bg-white md:h-[calc(100dvh-170px)]">
-        <ChatHeader room={room} opponent={opponent} />
+        <ChatHeader room={room} />
 
-        <ChatMessageList
-          messages={roomMessages}
-          currentUserRole={currentUser.role}
-        />
+        {isMessagesPending ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-gray-500">
+            메시지를 불러오는 중입니다.
+          </div>
+        ) : isMessagesError ? (
+          <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-red-500">
+            메시지를 불러오지 못했습니다.
+          </div>
+        ) : (
+          <ChatMessageList messages={messages} currentUserId={user.id} />
+        )}
 
         {isReadOnly ? (
           <div className="border-t border-line-100 bg-background-200 px-4 py-4 text-center text-sm text-gray-500">
             선택되지 않은 견적의 채팅방입니다. 이전 대화만 확인할 수 있습니다.
           </div>
         ) : (
-          <ChatMessageInput onSend={handleSend} />
+          <ChatMessageInput
+            onSend={handleSend}
+            disabled={
+              sendMessage.isPending || isMessagesPending || isMessagesError
+            }
+          />
         )}
       </div>
     </main>

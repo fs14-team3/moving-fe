@@ -131,5 +131,8 @@ export const queryKeys = {
     // GET /chats/{chatRoomId}
     detail: (chatRoomId: string) =>
       [...queryKeys.chats.all, 'detail', chatRoomId] as const,
+    // GET /chats/{chatRoomId}/messages
+    messages: (chatRoomId: string) =>
+      [...queryKeys.chats.all, 'messages', chatRoomId] as const,
   },
 }

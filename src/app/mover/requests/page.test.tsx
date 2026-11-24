@@ -280,7 +280,10 @@ describe('ReceivedRequestsPage', () => {
 
     await submit()
 
-    expect(mockRejectRequest).toHaveBeenCalledWith('request-1')
+    expect(mockRejectRequest).toHaveBeenCalledWith(
+      'request-1',
+      '일정이 맞지 않아 반려합니다',
+    )
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )
@@ -322,6 +325,25 @@ describe('ReceivedRequestsPage', () => {
     )
     expect(screen.getByRole('dialog', { name: '반려요청' })).toBeInTheDocument()
     expect(submitButton).toBeEnabled()
+  })
+
+  it('이미 반려할 수 없는 요청이면 알리고 모달을 닫은 뒤 목록을 다시 불러온다', async () => {
+    mockRejectRequest.mockRejectedValue(
+      new ApiError('NOT_FOUND', 'Not Found', 404),
+    )
+    const { submit } = await openRejectModal()
+
+    await submit()
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.rejectFailed,
+    )
+    await waitFor(() =>
+      expect(mockGetReceivedRequests).toHaveBeenCalledTimes(2),
+    )
   })
 
   it('다음 페이지를 불러오지 못하면 다시 요청하지 않고, 다시 시도를 누르면 이어서 불러온다', async () => {

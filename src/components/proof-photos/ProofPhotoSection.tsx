@@ -1,12 +1,14 @@
 'use client'
 
 import { Check, CircleCheck, ImagePlus } from 'lucide-react'
-import Image from 'next/image'
 import { useId, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 import Button from '@/components/common/button/Button'
 import ConfirmModal from '@/components/common/modal/ConfirmModal'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
+import PhotoThumbnail, {
+  PHOTO_GRID,
+} from '@/components/proof-photos/PhotoThumbnail'
 import ProofPhotoViewer from '@/components/proof-photos/ProofPhotoViewer'
 import UploadTile from '@/components/proof-photos/UploadTile'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
@@ -119,28 +121,16 @@ export default function ProofPhotoSection({
     }
 
     return (
-      <ul className="grid grid-cols-3 gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5">
+      <ul className={PHOTO_GRID}>
         {photos.map((photo, index) => (
-          <li
+          <PhotoThumbnail
             key={photo.id}
-            className="relative aspect-square overflow-hidden rounded-lg bg-background-300"
+            src={photo.thumbnailUrl}
+            label={`작업 사진 ${index + 1} 크게 보기`}
+            onClick={() => setViewing(index)}
           >
-            <button
-              type="button"
-              aria-label={`작업 사진 ${index + 1} 크게 보기`}
-              onClick={() => setViewing(index)}
-              className="relative size-full cursor-pointer"
-            >
-              <Image
-                src={photo.thumbnailUrl}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </button>
             {uploadedIds.includes(photo.id) && <UploadedMark />}
-          </li>
+          </PhotoThumbnail>
         ))}
         {uploads.map((upload) => (
           <UploadTile

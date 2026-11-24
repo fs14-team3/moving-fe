@@ -48,7 +48,6 @@ function createQuote(
   return {
     id,
     price: 180000,
-    comment: null,
     status: 'SUBMITTED',
     isDesignated: false,
     createdAt: '2026-11-05T09:00:00.000Z',

@@ -40,7 +40,6 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
       zonecode: '48094',
       region: '부산',
     },
-    details: null,
     status: 'PENDING',
     quoteCount: 2,
     designatedMoverIds: ['mover-quote-1'],

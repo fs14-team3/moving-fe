@@ -8,6 +8,7 @@ import type {
 import { getNotificationHref } from '@/features/notifications/link'
 import { toMessageParts } from '@/features/notifications/message'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
@@ -37,7 +38,7 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
 }
 
-const ITEM = 'block px-4 py-4 md:px-6'
+const ITEM = 'flex gap-2 px-4 py-4 md:px-6'
 
 function NotificationMessage({
   notification,
@@ -81,6 +82,8 @@ export default function NotificationMenu({ role }: { role: Role }) {
   const titleId = useId()
   const { hasUnread } = useUnreadNotificationCount()
   const { mutate: readNotifications } = useReadNotifications()
+  const { mutate: readAllNotifications, isPending: isReadingAll } =
+    useReadAllNotifications()
   const {
     notifications,
     hasData,
@@ -98,7 +101,6 @@ export default function NotificationMenu({ role }: { role: Role }) {
     [notifications],
   )
 
-  // 열어 둔 동안 읽음 처리하면 다음 페이지(읽지 않은 알림만)가 어긋나서, 닫을 때 한 번에 읽음 처리한다.
   const close = useCallback(() => {
     setIsOpen(false)
     if (shownUnreadIds.length > 0) readNotifications(shownUnreadIds)
@@ -170,7 +172,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
     }
 
     if (notifications.length === 0) {
-      return <PanelStatus>모든 알림을 확인하였습니다</PanelStatus>
+      return <PanelStatus>알림이 없습니다</PanelStatus>
     }
 
     return (
@@ -182,15 +184,25 @@ export default function NotificationMenu({ role }: { role: Role }) {
           const href = getNotificationHref(notification, role)
           const content = (
             <>
-              <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-                <NotificationMessage notification={notification} role={role} />
-              </p>
-              <time
-                dateTime={notification.createdAt}
-                className="mt-1 block text-xs text-gray-300 md:text-sm"
-              >
-                {formatTimeAgo(notification.createdAt)}
-              </time>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+                  <NotificationMessage
+                    notification={notification}
+                    role={role}
+                  />
+                </p>
+                <time
+                  dateTime={notification.createdAt}
+                  className="mt-1 block text-xs text-gray-300 md:text-sm"
+                >
+                  {formatTimeAgo(notification.createdAt)}
+                </time>
+              </div>
+              {!notification.readAt && (
+                <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
+                  <span className="sr-only">읽지 않은 알림</span>
+                </span>
+              )}
             </>
           )
 
@@ -280,23 +292,35 @@ export default function NotificationMenu({ role }: { role: Role }) {
             >
               알림
             </h2>
-            <button
-              type="button"
-              aria-label="알림 닫기"
-              onClick={() => {
-                close()
-                triggerRef.current?.focus()
-              }}
-              className="-m-1 flex items-center justify-center rounded-full p-1 transition-colors hover:bg-background-300"
-            >
-              <Image
-                src="/assets/icons/Xicon.png"
-                alt=""
-                width={72}
-                height={72}
-                className="size-6"
-              />
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => readAllNotifications()}
+                disabled={
+                  isReadingAll || (!hasUnread && shownUnreadIds.length === 0)
+                }
+                className="text-sm font-semibold text-black-100 disabled:text-gray-400"
+              >
+                모두 읽음
+              </button>
+              <button
+                type="button"
+                aria-label="알림 닫기"
+                onClick={() => {
+                  close()
+                  triggerRef.current?.focus()
+                }}
+                className="-m-1 flex items-center justify-center rounded-full p-1 transition-colors hover:bg-background-300"
+              >
+                <Image
+                  src="/assets/icons/Xicon.png"
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="size-6"
+                />
+              </button>
+            </div>
           </div>
           {renderContent()}
         </section>

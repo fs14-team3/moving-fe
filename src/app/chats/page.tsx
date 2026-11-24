@@ -30,7 +30,7 @@ export default function ChatsPage() {
               채팅 목록을 불러오지 못했습니다.
             </div>
           ) : user ? (
-            <ChatRoomList rooms={rooms ?? []} userRole={user.role} />
+            <ChatRoomList rooms={rooms?.items ?? []} />
           ) : null}
         </div>
       </div>

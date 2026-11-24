@@ -10,6 +10,8 @@ export type ProofPhotoList = Schemas['ProofPhotoList']
 
 export type ProofPhotoType = Schemas['ProofPhotoUploadCreate']['contentType']
 
+export type ProofPhotoUpload = Schemas['ProofPhotoUpload']
+
 export async function getProofPhotos(quoteId: string) {
   const { data } = await api.get<ProofPhotoList>(
     `/quotes/${quoteId}/proof-photos`,

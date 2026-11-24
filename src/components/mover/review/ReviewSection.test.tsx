@@ -54,15 +54,15 @@ describe('ReviewSection', () => {
     expect(screen.getByText('아직 등록된 리뷰가 없어요!')).toBeInTheDocument()
   })
 
-  it('showEmptyMessage가 false면 리뷰가 없어도 안내 문구를 보여 주지 않는다', () => {
+  it('showEmptyHint가 false면 리뷰 등록 권유 없이 빈 상태를 보여 준다', () => {
     vi.mocked(useMoverReviews).mockReturnValue(
       createReviewsResult({ reviews: [], totalCount: 0, totalPages: 0 }),
     )
 
-    render(<ReviewSection mover={mover} showEmptyMessage={false} />)
+    render(<ReviewSection mover={mover} showEmptyHint={false} />)
 
-    expect(screen.getByRole('heading', { name: '리뷰' })).toBeInTheDocument()
-    expect(screen.queryByText('아직 등록된 리뷰가 없어요!')).toBeNull()
+    expect(screen.getByText('아직 등록된 리뷰가 없어요!')).toBeInTheDocument()
+    expect(screen.queryByText('가장 먼저 리뷰를 등록해보세요')).toBeNull()
   })
 
   it('조회에 실패하면 다시 시도한다', async () => {

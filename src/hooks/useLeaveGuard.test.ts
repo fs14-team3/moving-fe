@@ -143,6 +143,21 @@ describe('useLeaveGuard', () => {
     expect(clickLink('/movers')).toBe(false)
   })
 
+  it('확인 창 없이 나가도 스크롤 복원 설정을 되돌리고 기록은 그대로 둔다', () => {
+    window.history.scrollRestoration = 'auto'
+    const { result, unmount } = renderHook(() =>
+      useLeaveGuard(true, '/mover/quotes'),
+    )
+
+    expect(window.history.scrollRestoration).toBe('manual')
+
+    act(() => result.current.leave())
+    unmount()
+
+    expect(window.history.scrollRestoration).toBe('auto')
+    expect(window.history.back).not.toHaveBeenCalled()
+  })
+
   it('나가기를 고른 뒤에는 브라우저 확인 창을 띄우지 않는다', () => {
     const { result } = renderHook(() => useLeaveGuard(true, '/mover/quotes'))
 

@@ -66,6 +66,7 @@ function createQuote(
       favoriteCount: 136,
     },
     ...overrides,
+    comment: overrides.comment ?? null,
   }
 }
 

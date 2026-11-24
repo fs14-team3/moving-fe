@@ -3,7 +3,8 @@
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import ReviewSection from '@/components/mover/review/ReviewSection'
-import { getServiceTypeLabel } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
+import { getOptionLabel } from '@/lib/options'
 import { useMyMover } from '@/features/movers/hooks/useMyMover'
 import { Heart, LoaderCircle, PencilLine } from 'lucide-react'
 import Image from 'next/image'
@@ -181,7 +182,7 @@ export default function MyMoverProfile() {
                   key={serviceType}
                   className="rounded-[100px] border border-primary-400 px-3 py-[5px] leading-6 font-medium md:px-5 md:py-[10px] md:text-lg"
                 >
-                  {getServiceTypeLabel(serviceType)}
+                  {getOptionLabel(SERVICE_TYPE_OPTIONS, serviceType)}
                 </Badge>
               ))}
             </div>
@@ -205,7 +206,7 @@ export default function MyMoverProfile() {
 
           <ReviewSection
             mover={mover}
-            showEmptyMessage={false}
+            showEmptyHint={false}
             className="border-t border-line-100 pt-6 md:pt-10"
           />
         </div>

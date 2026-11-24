@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Button from '@/components/common/button/Button'
 import ConfirmModal from '@/components/common/modal/ConfirmModal'
 import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
@@ -12,11 +11,14 @@ import {
   PageBody,
 } from '@/components/my-quotes/PageState'
 import PendingQuoteCard from '@/components/my-quotes/PendingQuoteCard'
+import QuoteCompareModal from '@/components/my-quotes/QuoteCompareModal'
 import { useActiveMoveRequest } from '@/features/move-request/hooks/useActiveMoveRequest'
 import { useDeleteMoveRequest } from '@/features/move-request/hooks/useDeleteMoveRequest'
 import type { MoveRequestResponse } from '@/features/move-request/types'
 import { useConfirmQuote } from '@/features/my-quotes/hooks/useConfirmQuote'
 import { usePendingQuotes } from '@/features/my-quotes/hooks/usePendingQuotes'
+import { Lightbulb } from 'lucide-react'
+import { useState } from 'react'
 
 function NoQuotes() {
   return (
@@ -35,6 +37,7 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
   const { mutate: confirmQuote, isPending: isConfirming } = useConfirmQuote()
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null)
   const closeConfirmModal = () => setSelectedQuoteId(null)
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false)
 
   if (isPending) return <Loading label="받은 견적을 불러오고 있습니다." />
 
@@ -52,6 +55,19 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
 
   return (
     <>
+      {pendingQuotes.length > 1 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setIsComparisonOpen(true)}
+            className="flex cursor-pointer items-center gap-1 p-4 text-sm leading-6 font-medium text-black-400 hover:text-black-100 hover:underline md:text-base md:font-semibold"
+          >
+            <Lightbulb className="size-4 md:size-5" />
+            견적 비교하기
+          </button>
+        </div>
+      )}
+
       <ul className="grid gap-4 lg:grid-cols-2 lg:gap-6">
         {pendingQuotes.map((quote) => (
           <li key={quote.id}>
@@ -64,6 +80,13 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
           </li>
         ))}
       </ul>
+
+      <QuoteCompareModal
+        open={isComparisonOpen}
+        onClose={() => setIsComparisonOpen(false)}
+        pendingQuotes={pendingQuotes}
+      />
+
       <ConfirmQuoteModal
         open={selectedQuoteId !== null}
         onClose={closeConfirmModal}

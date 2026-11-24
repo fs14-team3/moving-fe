@@ -1,7 +1,8 @@
 import { FileText } from 'lucide-react'
 import Badge from '@/components/common/Badge'
-import { MOVE_TYPE } from '@/components/common/modal/Modal'
-import type { ServiceType } from '@/constants/services'
+import { MOVE_TYPE_ICON } from '@/components/common/modal/Modal'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
+import { getOptionLabel } from '@/lib/options'
 
 // 견적 카드 위쪽의 이사 유형 · 지정 견적 요청 배지
 export default function QuoteBadges({
@@ -11,7 +12,8 @@ export default function QuoteBadges({
   moveType: ServiceType
   isDesignated: boolean
 }) {
-  const { label, icon } = MOVE_TYPE[moveType]
+  const icon = MOVE_TYPE_ICON[moveType]
+  const label = getOptionLabel(SERVICE_TYPE_OPTIONS, moveType)
 
   return (
     <div className="flex flex-wrap gap-2">

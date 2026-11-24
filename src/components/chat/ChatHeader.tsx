@@ -2,15 +2,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import Badge from '@/components/common/Badge'
-import type { ChatParticipant, ChatRoom } from '@/features/chat/types'
+import type { ChatRoom } from '@/features/chat/types'
 import { formatMoveDate } from '@/features/chat/lib/messageFormat'
 
 type ChatHeaderProps = {
   room: ChatRoom
-  opponent: ChatParticipant
 }
 
-export default function ChatHeader({ room, opponent }: ChatHeaderProps) {
+export default function ChatHeader({ room }: ChatHeaderProps) {
+  const opponent = room.otherParticipant
+  const moveRequest = room.quote.moveRequest
+
   return (
     <header className="flex items-center gap-3 border-b border-line-100 px-4 py-4 md:px-6">
       <Link
@@ -41,9 +43,9 @@ export default function ChatHeader({ room, opponent }: ChatHeaderProps) {
         </h1>
 
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <Badge>{room.moveType}</Badge>
+          <Badge>{moveRequest.moveType}</Badge>
           <span className="text-xs text-gray-500">
-            이사 예정일 · {formatMoveDate(room.moveDate)}
+            이사 예정일 · {formatMoveDate(moveRequest.moveDate)}
           </span>
         </div>
       </div>

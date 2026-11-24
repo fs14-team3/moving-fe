@@ -1,6 +1,6 @@
 import { LoaderCircle, RotateCw, X } from 'lucide-react'
 import Image from 'next/image'
-import type { PhotoUpload } from '@/features/proof-photos/hooks/useProofPhotoUploads'
+import type { PhotoUpload } from '@/features/proof-photos/hooks/usePhotoUploads'
 
 type UploadTileProps = {
   upload: PhotoUpload

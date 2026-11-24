@@ -4,10 +4,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useDeleteProofPhoto } from '@/features/proof-photos/hooks/useDeleteProofPhoto'
-import {
-  useProofPhotoUploads,
-  type PhotoUpload,
-} from '@/features/proof-photos/hooks/useProofPhotoUploads'
+import type { PhotoUpload } from '@/features/proof-photos/hooks/usePhotoUploads'
+import { useProofPhotoUploads } from '@/features/proof-photos/hooks/useProofPhotoUploads'
 import { useProofPhotos } from '@/features/proof-photos/hooks/useProofPhotos'
 import { useLeaveGuard } from '@/hooks/useLeaveGuard'
 

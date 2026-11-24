@@ -12,11 +12,13 @@ import {
 const CONCURRENCY = 3
 const UPLOADS_PER_REQUEST = 10
 const RETRY_DELAYS = [1000, 3000]
+const UPLOAD_ATTEMPT_TIMEOUT_MS = 90_000
 
 export type PhotoUpload = {
   id: number
   file: File
-  status: 'waiting' | 'uploading' | 'confirming' | 'retrying' | 'failed'
+  status:
+    'waiting' | 'uploading' | 'confirming' | 'retrying' | 'uploaded' | 'failed'
   progress: number
   previewUrl?: string
   uploadId?: string
@@ -31,9 +33,9 @@ type PhotoUploadsOptions = {
     body: { count: number; contentType: ProofPhotoType },
     signal: AbortSignal,
   ) => Promise<ProofPhotoUpload[]>
-  confirm: (uploadId: string, signal: AbortSignal) => Promise<void>
+  confirm?: (uploadId: string, signal: AbortSignal) => Promise<void>
   toFailure: (error: unknown) => UploadFailure
-  onFinish: () => void
+  onFinish?: () => void
 }
 
 function wait(ms: number) {
@@ -63,7 +65,9 @@ export function usePhotoUploads({
   const previewUrls = useRef(new Map<number, string>())
   const controller = useRef(new AbortController())
 
-  const isUploading = uploads.some(({ status }) => status !== 'failed')
+  const isUploading = uploads.some(
+    ({ status }) => status !== 'failed' && status !== 'uploaded',
+  )
   const failed = uploads.filter(({ status }) => status === 'failed')
 
   useEffect(() => {
@@ -101,6 +105,7 @@ export function usePhotoUploads({
     try {
       resized = await resizeProofPhoto(file, type)
     } catch {
+      if (signal.aborted) return
       update(id, {
         status: 'failed',
         error: '사진을 열 수 없어요',
@@ -108,6 +113,7 @@ export function usePhotoUploads({
       })
       return
     }
+    if (signal.aborted) return
     const { image, thumbnail } = resized
 
     if (!previewUrls.current.has(id)) {
@@ -115,6 +121,7 @@ export function usePhotoUploads({
     }
     update(id, { previewUrl: previewUrls.current.get(id) })
     const presigned = await takeSlot()
+    if (signal.aborted) return
     update(id, { status: 'uploading', progress: 0 })
     const total = image.size + thumbnail.size
     const loaded = [0, 0]
@@ -129,10 +136,25 @@ export function usePhotoUploads({
       shown = progress
       update(id, { progress })
     }
-    await Promise.all([
-      uploadToStorage(presigned.image, image, report(0), signal),
-      uploadToStorage(presigned.thumbnail, thumbnail, report(1), signal),
-    ])
+    const attempt = new AbortController()
+    const abortAttempt = () => attempt.abort()
+    signal.addEventListener('abort', abortAttempt, { once: true })
+    const timeout = setTimeout(abortAttempt, UPLOAD_ATTEMPT_TIMEOUT_MS)
+    try {
+      await Promise.all([
+        uploadToStorage(presigned.image, image, report(0), attempt.signal),
+        uploadToStorage(
+          presigned.thumbnail,
+          thumbnail,
+          report(1),
+          attempt.signal,
+        ),
+      ])
+    } finally {
+      clearTimeout(timeout)
+      signal.removeEventListener('abort', abortAttempt)
+      abortAttempt()
+    }
     update(id, { uploadId: presigned.uploadId, progress: 100 })
     return presigned.uploadId
   }
@@ -148,6 +170,10 @@ export function usePhotoUploads({
       try {
         uploadId ??= await sendToStorage(upload, type, takeSlot, signal)
         if (!uploadId) return
+        if (!confirm) {
+          update(upload.id, { status: 'uploaded' })
+          return
+        }
 
         update(upload.id, { status: 'confirming' })
         await confirm(uploadId, signal)
@@ -204,7 +230,7 @@ export function usePhotoUploads({
       await process(upload, type, () => takeSlot(upload), signal)
       uploadsNeedingSlots.delete(upload)
     })
-    onFinish()
+    onFinish?.()
   }
 
   function start(files: File[]) {
@@ -226,5 +252,21 @@ export function usePhotoUploads({
     void run(retryable)
   }
 
-  return { uploads, isUploading, failed, start, retry, remove }
+  function expire() {
+    setUploads((prev) =>
+      prev.map((upload) =>
+        upload.status === 'uploaded'
+          ? {
+              ...upload,
+              status: 'failed',
+              uploadId: undefined,
+              error: '다시 올려 주세요',
+              retryable: true,
+            }
+          : upload,
+      ),
+    )
+  }
+
+  return { uploads, isUploading, failed, start, retry, remove, expire }
 }

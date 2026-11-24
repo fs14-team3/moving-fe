@@ -19,6 +19,7 @@ export function useDamageReports(quoteId: string) {
 
   return {
     reports: data?.items ?? [],
+    canReport: data?.canReport ?? false,
     isPending,
     isLoadingError,
     isRefetchError,

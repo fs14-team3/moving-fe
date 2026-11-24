@@ -1,6 +1,8 @@
 'use client'
 
 import { useId, useState } from 'react'
+import Button from '@/components/common/button/Button'
+import DamageReportForm from '@/components/damage-reports/DamageReportForm'
 import {
   LoadError,
   Loading,
@@ -26,12 +28,14 @@ export default function DamageReportSection({
   className,
 }: DamageReportSectionProps) {
   const headingId = useId()
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [viewing, setViewing] = useState<{
     reportId: string
     index: number
   } | null>(null)
   const {
     reports,
+    canReport,
     isPending,
     isLoadingError,
     isRefetchError,
@@ -98,19 +102,38 @@ export default function DamageReportSection({
       aria-labelledby={headingId}
       className={cn('py-5 md:py-8', className)}
     >
-      <div className="flex items-center gap-2 pb-5 md:pb-8">
-        <h2
-          id={headingId}
-          className="text-base leading-6 font-semibold md:text-xl md:leading-8"
-        >
-          파손 접수
-        </h2>
-        {reports.length > 0 && (
-          <p className="text-sm font-medium text-gray-400 md:text-base">
-            {reports.length}건
-          </p>
+      <div className="flex items-center justify-between gap-3 pb-5 md:pb-8">
+        <div className="flex items-center gap-2">
+          <h2
+            id={headingId}
+            className="text-base leading-6 font-semibold md:text-xl md:leading-8"
+          >
+            파손 접수
+          </h2>
+          {reports.length > 0 && (
+            <p className="text-sm font-medium text-gray-400 md:text-base">
+              {reports.length}건
+            </p>
+          )}
+        </div>
+
+        {canReport && !isFormOpen && (
+          <Button
+            variant="outlined"
+            onClick={() => setIsFormOpen(true)}
+            className="h-10 w-auto rounded-xl px-4 text-sm lg:h-11 lg:w-auto lg:text-base"
+          >
+            파손 접수하기
+          </Button>
         )}
       </div>
+
+      {canReport && isFormOpen && (
+        <DamageReportForm
+          quoteId={quoteId}
+          onClose={() => setIsFormOpen(false)}
+        />
+      )}
 
       {isRefetchError && (
         <RefetchError

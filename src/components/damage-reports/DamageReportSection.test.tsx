@@ -13,6 +13,17 @@ vi.mock('@/features/damage-reports/hooks/useDamageReports', () => ({
   useDamageReports: vi.fn(),
 }))
 
+vi.mock('@/components/damage-reports/DamageReportForm', () => ({
+  default: ({ quoteId, onClose }: { quoteId: string; onClose: () => void }) => (
+    <form aria-label="파손 접수">
+      {quoteId}
+      <button type="button" onClick={onClose}>
+        닫기
+      </button>
+    </form>
+  ),
+}))
+
 function photos(name: string, count: number) {
   return Array.from({ length: count }, (_, index) => ({
     url: `https://img/${name}-${index}`,
@@ -43,6 +54,7 @@ function mockReports(
 ) {
   vi.mocked(useDamageReports).mockReturnValue({
     reports,
+    canReport: false,
     isPending: false,
     isLoadingError: false,
     isRefetchError: false,
@@ -124,6 +136,55 @@ describe('DamageReportSection', () => {
     expect(
       screen.queryByRole('dialog', { name: '파손 사진' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('접수할 수 있을 때만 파손 접수하기 버튼을 보여준다', () => {
+    const { rerender } = renderSection()
+
+    expect(
+      screen.queryByRole('button', { name: '파손 접수하기' }),
+    ).not.toBeInTheDocument()
+
+    mockReports(REPORTS, { canReport: true })
+    rerender(<DamageReportSection quoteId="quote-1" emptyMessage="없음" />)
+
+    expect(
+      screen.getByRole('button', { name: '파손 접수하기' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('form')).not.toBeInTheDocument()
+  })
+
+  it('파손 접수하기를 누르면 접수 양식을 열고 양식이 닫히면 버튼을 다시 보여준다', async () => {
+    const user = userEvent.setup()
+    mockReports(REPORTS, { canReport: true })
+    renderSection()
+
+    await user.click(screen.getByRole('button', { name: '파손 접수하기' }))
+
+    const form = screen.getByRole('form', { name: '파손 접수' })
+    expect(form).toHaveTextContent('quote-1')
+    expect(
+      screen.queryByRole('button', { name: '파손 접수하기' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(within(form).getByRole('button', { name: '닫기' }))
+
+    expect(screen.queryByRole('form')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '파손 접수하기' }),
+    ).toBeInTheDocument()
+  })
+
+  it('양식을 연 뒤 접수 기간이 끝나면 양식을 닫는다', async () => {
+    const user = userEvent.setup()
+    mockReports(REPORTS, { canReport: true })
+    const { rerender } = renderSection()
+    await user.click(screen.getByRole('button', { name: '파손 접수하기' }))
+
+    mockReports(REPORTS, { canReport: false })
+    rerender(<DamageReportSection quoteId="quote-1" emptyMessage="없음" />)
+
+    expect(screen.queryByRole('form')).not.toBeInTheDocument()
   })
 
   it('불러오는 동안 로딩 상태를 보여준다', () => {

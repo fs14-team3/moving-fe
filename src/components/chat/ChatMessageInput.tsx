@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { Send, Smile } from 'lucide-react'
 
 const EMOJIS = [
@@ -50,6 +50,9 @@ export default function ChatMessageInput({
   const emojiPickerRef = useRef<HTMLDivElement>(null)
   const pendingCursorPositionRef = useRef<number | null>(null)
 
+  const emojiPickerId = useId()
+  const emojiButtonRef = useRef<HTMLButtonElement>(null)
+
   useEffect(() => {
     if (!isEmojiPickerOpen) return
 
@@ -59,10 +62,19 @@ export default function ChatMessageInput({
       }
     }
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return
+
+      setIsEmojiPickerOpen(false)
+      emojiButtonRef.current?.focus()
+    }
+
     document.addEventListener('pointerdown', handleOutsideClick)
+    document.addEventListener('keydown', handleKeyDown)
 
     return () => {
       document.removeEventListener('pointerdown', handleOutsideClick)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isEmojiPickerOpen])
 
@@ -126,10 +138,6 @@ export default function ChatMessageInput({
             event.preventDefault()
             event.currentTarget.form?.requestSubmit()
           }
-
-          if (event.key === 'Escape') {
-            setIsEmojiPickerOpen(false)
-          }
         }}
         disabled={disabled}
         rows={1}
@@ -140,12 +148,13 @@ export default function ChatMessageInput({
 
       <div ref={emojiPickerRef} className="relative shrink-0">
         <button
+          ref={emojiButtonRef}
           type="button"
           disabled={disabled}
           onClick={() => setIsEmojiPickerOpen((prev) => !prev)}
           aria-label="이모지 선택"
           aria-expanded={isEmojiPickerOpen}
-          aria-controls="chat-emoji-picker"
+          aria-controls={emojiPickerId}
           className="flex size-11 items-center justify-center rounded-xl border border-line-200 text-gray-500 transition-colors hover:bg-background-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Smile size={20} />
@@ -153,8 +162,8 @@ export default function ChatMessageInput({
 
         {isEmojiPickerOpen && (
           <div
-            id="chat-emoji-picker"
-            role="dialog"
+            id={emojiPickerId}
+            role="group"
             aria-label="이모지 선택"
             className="absolute right-0 bottom-full z-50 mb-2 grid w-64 grid-cols-6 gap-1 rounded-xl border border-line-200 bg-white p-3 shadow-lg"
           >

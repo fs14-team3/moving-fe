@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { Me } from '@/features/auth/types'
 import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
 import { useRemoveFavorite } from '@/features/favorites/hooks/useRemoveFavorite'
+import { MOCK_MOVE_REQUEST_DETAILS } from '@/features/move-request/fixtures/moveRequests'
 import { MOCK_QUOTE_DETAIL } from '@/features/my-quotes/fixtures/quotes'
 import { useConfirmQuote } from '@/features/my-quotes/hooks/useConfirmQuote'
 import { useQuoteDetail } from '@/features/my-quotes/hooks/useQuoteDetail'
@@ -311,6 +312,40 @@ describe('QuoteDetailPage', () => {
     expect(screen.getByRole('region', { name: '작업 사진' })).toHaveTextContent(
       '기사님이 올린 작업 사진이 아직 없어요.',
     )
+  })
+
+  it('요청에 상세 정보가 있으면 견적 정보에 함께 보여준다', () => {
+    vi.mocked(useQuoteDetail).mockReturnValue(
+      createQuoteResult({
+        quote: {
+          ...MOCK_QUOTE_DETAIL,
+          moveRequest: {
+            ...MOCK_QUOTE_DETAIL.moveRequest,
+            details: MOCK_MOVE_REQUEST_DETAILS,
+          },
+        },
+      }),
+    )
+
+    render(<QuoteDetail />)
+
+    const info = screen.getByRole('heading', { name: '견적 정보' })
+      .parentElement as HTMLElement
+    expect(within(info).getByText('출발지 환경').nextSibling).toHaveTextContent(
+      '빌라·연립 · 3층 · 엘리베이터 없음 · 주차 가능',
+    )
+    expect(within(info).getByText('짐 목록').nextSibling).toHaveTextContent(
+      '침대(퀸) 2개, 에어컨(스탠드) 1개',
+    )
+    expect(within(info).getByText('요청사항').nextSibling).toHaveTextContent(
+      '피아노가 있어요',
+    )
+  })
+
+  it('상세 정보 없이 만든 요청은 상세 항목을 보여 주지 않는다', () => {
+    render(<QuoteDetail />)
+
+    expect(screen.queryByText('이사 방식')).not.toBeInTheDocument()
   })
 
   it('확정되지 않은 견적은 작업 사진을 보여 주지 않는다', () => {

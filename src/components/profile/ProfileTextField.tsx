@@ -1,4 +1,5 @@
 import { useId, type ChangeEvent, type ComponentProps, type Ref } from 'react'
+import type { CharCount } from '@/components/common/input/FieldMessage'
 import Input from '@/components/common/input/Input'
 import TextArea from '@/components/common/input/TextArea'
 import ProfileField from '@/components/profile/ProfileField'
@@ -14,6 +15,7 @@ type ProfileTextFieldProps = {
   inputMode?: ComponentProps<'input'>['inputMode']
   autoComplete?: string
   error?: string
+  charCount?: CharCount
   onChange: (value: string) => void
   onBlur: () => void
   ref?: Ref<HTMLInputElement>

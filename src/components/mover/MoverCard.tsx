@@ -70,7 +70,7 @@ export default function MoverCard({
   }
 
   return (
-    <div className="relative flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] md:px-7 md:py-6">
+    <div className="relative flex flex-col gap-2 rounded-2xl bg-white p-5 shadow-[2px_2px_10px_0_rgba(220,220,220,0.2),-2px_-2px_10px_0_rgba(220,220,220,0.2)] transition-shadow has-[a:hover]:shadow-md md:px-7 md:py-6">
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           {serviceTypes.map((serviceType) => (

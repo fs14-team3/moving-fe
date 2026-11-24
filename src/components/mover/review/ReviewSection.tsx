@@ -16,8 +16,7 @@ type ReviewSectionProps = {
     MoverDetail,
     'id' | 'averageRating' | 'reviewCount' | 'ratingCounts'
   >
-  // 리뷰가 없을 때 안내 문구를 보여 줄지. 기사님 마이페이지는 리뷰 칸을 비워 둔다.
-  showEmptyMessage?: boolean
+  showEmptyHint?: boolean
   className?: string
 }
 
@@ -25,7 +24,7 @@ const PAGE_SIZE = 5
 
 export default function ReviewSection({
   mover,
-  showEmptyMessage = true,
+  showEmptyHint = true,
   className,
 }: ReviewSectionProps) {
   const [page, setPage] = useState(1)
@@ -81,7 +80,7 @@ export default function ReviewSection({
           </Button>
         </div>
       ) : totalCount === 0 ? (
-        showEmptyMessage && <ReviewList reviews={[]} />
+        <ReviewList reviews={[]} showEmptyHint={showEmptyHint} />
       ) : (
         <>
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">

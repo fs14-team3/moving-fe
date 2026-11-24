@@ -43,6 +43,12 @@ vi.mock('@/components/move-progress/MoveProgressSection', () => ({
   ),
 }))
 
+vi.mock('@/components/damage-reports/DamageReportSection', () => ({
+  default: ({ emptyMessage }: { emptyMessage: string }) => (
+    <section aria-label="파손 접수">{emptyMessage}</section>
+  ),
+}))
+
 const toast = vi.hoisted(() => ({
   error: vi.fn(),
 }))
@@ -381,6 +387,28 @@ describe('QuoteDetailPage', () => {
 
     expect(
       screen.queryByRole('region', { name: '이사 진행 상황' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('확정된 견적은 파손 접수 내역과 접수 기간을 보여준다', () => {
+    vi.mocked(useQuoteDetail).mockReturnValue(
+      createQuoteResult({
+        quote: { ...MOCK_QUOTE_DETAIL, status: 'CONFIRMED' },
+      }),
+    )
+
+    render(<QuoteDetail />)
+
+    expect(screen.getByRole('region', { name: '파손 접수' })).toHaveTextContent(
+      '이사일 다음 날부터 30일 동안 파손을 접수할 수 있어요.',
+    )
+  })
+
+  it('확정되지 않은 견적은 파손 접수를 보여 주지 않는다', () => {
+    render(<QuoteDetail />)
+
+    expect(
+      screen.queryByRole('region', { name: '파손 접수' }),
     ).not.toBeInTheDocument()
   })
 })

@@ -162,8 +162,8 @@ describe('MoverProfileForm', () => {
 
   it.each<['nickname' | 'intro' | 'description', string, string]>([
     ['nickname', ' ', '별명을 입력해 주세요.'],
-    ['intro', '안녕하세요.', '8자 이상 입력해 주세요.'],
-    ['description', '  후기  ', '10자 이상 입력해 주세요.'],
+    ['intro', '안녕하세요.', '8자 이상 입력해 주세요. 6 / 최소 8자'],
+    ['description', '  후기  ', '10자 이상 입력해 주세요. 2 / 최소 10자'],
   ])(
     '%s 입력란에 %j를 입력하면 "%s"를 안내한다',
     async (field, text, message) => {

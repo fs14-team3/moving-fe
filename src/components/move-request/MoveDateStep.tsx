@@ -3,6 +3,7 @@
 import { ChevronProps, DayPicker, getDefaultClassNames } from '@daypicker/react'
 import { ko } from '@daypicker/react/locale'
 import '@daypicker/react/style.css'
+import KoreanLunarCalendar from 'korean-lunar-calendar'
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import Button from '../common/button/Button'
@@ -15,6 +16,7 @@ type MoveDateStepProps = {
 export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
   const defaultClassNames = getDefaultClassNames()
   const calendarRef = useRef<HTMLDivElement>(null)
+  const lunarCalendar = new KoreanLunarCalendar()
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -46,6 +48,19 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
       }).format(value)
     : '이사 예정일 선택하기'
 
+  // 손 없는 날 계산
+  const handlessDays = new Set([9, 10, 19, 20, 29, 30])
+  function isHandlessDay(date: Date) {
+    const converted = lunarCalendar.setSolarDate(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate(),
+    )
+    if (!converted) return false
+
+    return handlessDays.has(lunarCalendar.getLunarCalendar().day)
+  }
+
   return (
     <div ref={calendarRef} className="w-full md:relative md:w-100 md:shrink-0">
       <button
@@ -53,7 +68,7 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
-        className={`hidden h-[50px] w-full items-center rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 ${isOpen ? 'border border-primary-400' : ''} md:flex`}
+        className={`hidden h-[50px] w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 ${isOpen ? 'border border-primary-400' : ''} md:flex`}
       >
         <Calendar className="size-6 text-primary-400" />
 
@@ -67,7 +82,7 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
       </button>
 
       <div
-        className={`mx-auto w-full rounded-xl bg-gray-50 py-8 md:absolute md:top-full md:left-0 md:z-20 md:mt-4 md:min-h-[442px] md:flex-col md:items-center md:border md:border-gray-200 ${isOpen ? 'md:flex' : 'md:hidden'} `}
+        className={`mx-auto w-full rounded-xl bg-gray-50 py-8 md:mt-4 md:min-h-[442px] md:flex-col md:items-center md:border md:border-gray-200 ${isOpen ? 'md:flex' : 'md:hidden'} `}
       >
         <DayPicker
           locale={ko}
@@ -99,16 +114,25 @@ export default function MoveDateStep({ value, onChange }: MoveDateStepProps) {
             weekday: `${defaultClassNames.weekday} h-12 text-base font-medium leading-6 text-gray-400`,
             today: '',
             day: `${defaultClassNames.day} h-12 w-auto! text-base font-medium`,
-            day_button: `${defaultClassNames.day_button} flex! h-full! w-full! items-center justify-center p-0`,
-            selected: 'rounded-xl bg-primary-400 font-semibold text-white',
+            day_button: `${defaultClassNames.day_button} flex! h-full! w-full! items-center justify-center p-0 hover:rounded-xl! hover:bg-primary-100! in-data-selected:hover:bg-transparent!`,
+            selected:
+              'rounded-xl bg-primary-400 font-semibold text-white hover:bg-primary-400 in-data-selected:hover:bg-transparent',
             disabled: 'text-gray-300',
           }}
+          modifiers={{ handlessDay: isHandlessDay }}
+          modifiersClassNames={{
+            handlessDay:
+              'relative after:absolute after:bottom-1 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary-400 data-selected:after:bg-white',
+          }}
         />
+        <p className="text-center text-xs leading-6 font-normal text-black-200">
+          <span className="text-lg text-primary-400">•</span> 손 없는 날
+        </p>
         <Button
           type="button"
           disabled={!value}
           onClick={() => setIsOpen(false)}
-          className="mt-6 hidden md:flex md:h-[54px] md:w-[279px] lg:h-[54px] lg:w-[279px]"
+          className="mt-4 hidden md:flex md:h-[54px] md:w-[279px] lg:h-[54px] lg:w-[279px]"
         >
           선택 완료
         </Button>

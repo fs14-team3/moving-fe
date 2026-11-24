@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { getProofPhotos } from '@/features/proof-photos/api'
 import { queryKeys } from '@/lib/queryKeys'
 
+const URL_REFRESH_INTERVAL = 30 * 60 * 1000
+
 export function useProofPhotos(quoteId: string) {
   const {
     data,
@@ -13,6 +15,7 @@ export function useProofPhotos(quoteId: string) {
   } = useQuery({
     queryKey: queryKeys.proofPhotos.list(quoteId),
     queryFn: () => getProofPhotos(quoteId),
+    refetchInterval: URL_REFRESH_INTERVAL,
   })
 
   return {

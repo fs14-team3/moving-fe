@@ -266,7 +266,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={toggle}
-        className="relative flex"
+        className="relative -m-1.5 flex rounded-lg p-1.5 transition-colors hover:bg-background-300 aria-expanded:bg-background-300"
       >
         <Image
           src="/assets/icons/alarm.svg"
@@ -276,7 +276,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
           className="size-6 lg:size-9"
         />
         {hasUnread && (
-          <span className="absolute top-0 right-0 size-2 rounded-full bg-red-500 ring-2 ring-white lg:size-3" />
+          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-red-500 ring-2 ring-white lg:size-3" />
         )}
       </button>
       {isOpen && (
@@ -310,7 +310,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
                   close()
                   triggerRef.current?.focus()
                 }}
-                className="flex size-6 items-center justify-center"
+                className="-m-1 flex items-center justify-center rounded-full p-1 transition-colors hover:bg-background-300"
               >
                 <Image
                   src="/assets/icons/Xicon.png"

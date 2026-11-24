@@ -154,11 +154,11 @@ function MoversPageContent() {
                 type="button"
                 aria-label="검색 조건 초기화"
                 onClick={resetFilters}
-                className="cursor-pointer text-gray-300"
+                className="cursor-pointer text-gray-300 transition-colors hover:text-black-200 md:text-gray-400"
               >
                 <span
                   aria-hidden="true"
-                  className="hidden pl-3 text-base leading-6 font-medium text-gray-400 md:inline"
+                  className="hidden pl-3 text-base leading-6 font-medium md:inline"
                 >
                   초기화
                 </span>

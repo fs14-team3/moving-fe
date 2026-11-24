@@ -1,6 +1,7 @@
 import type { Role } from '@/features/auth/types'
 import type { Notification } from '@/features/notifications/api'
-import { getServiceTypeLabel, type ServiceType } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
+import { getOptionLabel } from '@/lib/options'
 
 // 알림 문구 조각. highlight는 시안에서 주황색으로 강조하는 부분이다.
 export type MessagePart = { text: string; highlight?: boolean }
@@ -50,7 +51,8 @@ export function toMessageParts(
 ): MessagePart[] | null {
   const { payload } = notification
   const moveType = readString(payload, 'moveType')
-  const moveTypeLabel = moveType && getServiceTypeLabel(moveType as ServiceType)
+  const moveTypeLabel =
+    moveType && getOptionLabel(SERVICE_TYPE_OPTIONS, moveType as ServiceType)
   const customerName = readString(payload, 'customerName')
   const moverNickname = readString(payload, 'moverNickname')
 

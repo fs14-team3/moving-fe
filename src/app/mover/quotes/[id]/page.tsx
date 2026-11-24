@@ -48,7 +48,7 @@ export default function SentQuoteDetailPage() {
       <QuoteDetailHeader />
 
       <div className="px-5 pt-6 pb-20 md:px-18 md:pt-8 lg:mx-auto lg:max-w-338.5 lg:pt-10">
-        <article className="lg:max-w-191.5">
+        <article>
           <header className="flex flex-col gap-3 border-b border-line-100 pb-3 md:pb-5">
             <QuoteBadges
               moveType={quote.moveRequest.moveType}

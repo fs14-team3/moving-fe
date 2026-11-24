@@ -753,6 +753,58 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/quotes/{quoteId}/damage-reports': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 파손 접수 목록
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 최근에 접수한 순서로 반환합니다. `canReport`가 `true`일 때만 파손 접수하기 버튼을 보여 줍니다.
+     *
+     *     사진 주소는 작업 사진과 같은 CloudFront 서명 URL이므로, 화면을 1시간 넘게 열어 둘 때는 목록을 다시 조회해 주소를 갱신합니다.
+     */
+    get: operations['listDamageReports']
+    put?: never
+    /**
+     * 파손 접수
+     * @description 일반 유저가 본인의 확정된 견적에 파손된 품목을 접수합니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 30일 동안 접수할 수 있습니다.
+     *
+     *     `POST /quotes/{quoteId}/damage-reports/uploads`로 받은 업로드 정보로 사진과 썸네일을 S3에 모두 올린 뒤, 올린 사진의 `uploadId`를 보여 줄 순서대로 `uploadIds`에 담아 보냅니다. 응답을 받지 못했을 때 같은 품목명, 상세 내용, 같은 순서의 `uploadIds`로 다시 보내면 접수 기간이 지났어도 기존 접수를 반환합니다. 이미 접수된 사진을 사용하면서 품목명, 상세 내용, 사진 구성이나 순서를 바꾸면 `409 DAMAGE_REPORT_CONFLICT`를 반환합니다.
+     *
+     *     접수하면 견적을 보낸 기사님에게 `DAMAGE_REPORTED` 알림이 생성됩니다. 알림의 `quoteId`는 이 견적이며 `payload`에 `customerName`과 `itemName`이 담깁니다.
+     */
+    post: operations['createDamageReport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/damage-reports/uploads': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 파손 사진 업로드 정보 발급
+     * @description 일반 유저가 본인의 확정된 견적에 접수할 파손 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 30일 동안 받을 수 있으며, 한 번에 10장까지 요청할 수 있습니다.
+     *
+     *     사진을 만들어 올리는 방법(`image`·`thumbnail` 인코딩, `contentType`, `multipart/form-data` POST, 크기와 10분 제한)은 `POST /quotes/{quoteId}/proof-photos/uploads`와 같습니다.
+     */
+    post: operations['createDamagePhotoUploads']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reviews': {
     parameters: {
       query?: never
@@ -1003,6 +1055,7 @@ export interface components {
       | 'NEW_QUOTE'
       | 'QUOTE_CONFIRMED'
       | 'MOVE_DAY'
+      | 'DAMAGE_REPORTED'
     /**
      * @description 리뷰 많은 순 / 평점 높은 순 / 경력 많은 순 / 확정 많은 순. 값이 같으면 기사님 id 순서이며, 경력순에서는 경력을 입력하지 않은 기사님이 마지막에 옵니다.
      * @enum {string}
@@ -1040,6 +1093,9 @@ export interface components {
       | 'PROOF_PHOTO_NOT_UPLOADED'
       | 'MOVE_PROGRESS_NOT_ALLOWED'
       | 'MOVE_PROGRESS_OUT_OF_ORDER'
+      | 'DAMAGE_REPORT_NOT_ALLOWED'
+      | 'DAMAGE_REPORT_CONFLICT'
+      | 'DAMAGE_PHOTO_NOT_UPLOADED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -1151,6 +1207,61 @@ export interface components {
        * @example true
        */
       canRecord: boolean
+    }
+    DamagePhotoUploadCreate: {
+      /** @example 3 */
+      count: number
+      /**
+       * @example image/webp
+       * @enum {string}
+       */
+      contentType: 'image/jpeg' | 'image/webp'
+    }
+    DamageReportCreate: {
+      /**
+       * @description 파손된 품목명. 앞뒤 공백은 빼고 저장합니다.
+       * @example 4인용 식탁
+       */
+      itemName: string
+      /**
+       * @description 파손 상세 내용. 앞뒤 공백은 빼고 저장합니다.
+       * @example 상판 모서리가 깨졌어요.
+       */
+      description: string
+      /** @description S3에 올린 사진의 `uploadId`. 이 순서대로 사진을 보여 줍니다. */
+      uploadIds: string[]
+    }
+    DamageReport: {
+      /** Format: uuid */
+      id: string
+      /** @example 4인용 식탁 */
+      itemName: string
+      /** @example 상판 모서리가 깨졌어요. */
+      description: string
+      /** Format: date-time */
+      createdAt: string
+      /** @description 접수할 때 보낸 `uploadIds` 순서입니다. */
+      photos: components['schemas']['DamagePhoto'][]
+    }
+    DamageReportList: {
+      items: components['schemas']['DamageReport'][]
+      /**
+       * @description 호출자가 지금 파손을 접수할 수 있으면 `true` (견적을 요청한 일반 유저, 확정된 견적의 이사일 다음 날부터 30일 동안)
+       * @example true
+       */
+      canReport: boolean
+    }
+    DamagePhoto: {
+      /**
+       * Format: uri
+       * @description 사진 CloudFront 서명 URL. 작업 사진과 같은 방식으로 발급되어 최소 1시간, 최대 2시간 동안 유효합니다.
+       */
+      url: string
+      /**
+       * Format: uri
+       * @description 썸네일 CloudFront 서명 URL. `url`과 같은 시각에 만료됩니다.
+       */
+      thumbnailUrl: string
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -3093,7 +3204,7 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       404: components['responses']['NotFound']
-      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
       503: {
         headers: {
           [name: string]: unknown
@@ -3338,6 +3449,160 @@ export interface operations {
       }
       /** @description `MOVE_PROGRESS_NOT_ALLOWED` (확정되지 않은 견적이거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  listDamageReports: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 파손 접수 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DamageReportList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `NOT_FOUND`. 견적을 보낸 기사님이나 견적을 요청한 일반 유저가 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 접수가 있는데 서버에 `IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createDamageReport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DamageReportCreate']
+      }
+    }
+    responses: {
+      /** @description 저장된 파손 접수 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DamageReport']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인이 요청한 견적이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `DAMAGE_REPORT_NOT_ALLOWED` (확정되지 않은 견적이거나 접수 기간이 아님), `DAMAGE_REPORT_CONFLICT` (이미 접수된 사진이 포함되어 있고 기존 접수 내용과 다름) 또는 `DAMAGE_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 사진을 올린 뒤 접수) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 S3 설정이나 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY`가 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createDamagePhotoUploads: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DamagePhotoUploadCreate']
+      }
+    }
+    responses: {
+      /** @description 업로드 정보 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoUploadList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인이 요청한 견적이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `DAMAGE_REPORT_NOT_ALLOWED`. 확정되지 않은 견적이거나 접수 기간(이사일 다음 날부터 30일)이 아님 */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
         headers: {
           [name: string]: unknown
         }

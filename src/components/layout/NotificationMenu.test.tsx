@@ -14,6 +14,7 @@ import {
   type Notification,
 } from '@/features/notifications/api'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
+import { queryKeys } from '@/lib/queryKeys'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn() } }))
 
@@ -455,6 +456,32 @@ describe('NotificationMenu', () => {
     expect(queryPanel()).toBeNull()
     expect(mockRead).toHaveBeenCalledWith('1')
     expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true)
+  })
+
+  it('파손 접수 알림을 누르면 해당 견적의 파손 접수 목록만 무효화한다', async () => {
+    mockPage([
+      createNotification({
+        id: '1',
+        type: 'DAMAGE_REPORTED',
+        quoteId: 'quote-1',
+        message: '파손 접수 알림',
+      }),
+    ])
+    const { user, open, queryClient } = renderMenu('MOVER')
+    const reports = queryKeys.damageReports.list('quote-1')
+    const otherReports = queryKeys.damageReports.list('quote-2')
+    queryClient.setQueryData(reports, { items: [], canReport: false })
+    queryClient.setQueryData(otherReports, { items: [], canReport: false })
+    await open()
+
+    const link = await within(getPanel()).findByRole('link', {
+      name: /파손 접수 알림/,
+    })
+    link.addEventListener('click', (event) => event.preventDefault())
+    await user.click(link)
+
+    expect(queryClient.getQueryState(reports)?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(otherReports)?.isInvalidated).toBe(false)
   })
 
   it('불러오지 못하면 알리고, 다시 시도를 누르면 다시 불러온다', async () => {

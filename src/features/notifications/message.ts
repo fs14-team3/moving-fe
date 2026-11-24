@@ -105,6 +105,15 @@ export function toMessageParts(
         { text: '이에요.' },
       ]
     }
+    case 'DAMAGE_REPORTED': {
+      const itemName = readString(payload, 'itemName')
+      if (!customerName || !itemName) return null
+      return [
+        { text: `${customerName} 고객님이 ` },
+        { text: `${itemName} 파손`, highlight: true },
+        { text: '을 접수했어요' },
+      ]
+    }
     default:
       return null
   }

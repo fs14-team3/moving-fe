@@ -8,11 +8,12 @@ describe('getNotificationHref', () => {
     ['MOVER', 'NEW_REQUEST', '/mover/requests'],
     ['MOVER', 'NEW_DESIGNATED_REQUEST', '/mover/requests'],
     ['MOVER', 'QUOTE_CONFIRMED', '/mover/quotes/quote-1'],
+    ['MOVER', 'DAMAGE_REPORTED', '/mover/quotes/quote-1'],
   ] as const)('%s의 %s 알림은 %s로 연결한다', (role, type, href) => {
     expect(getNotificationHref({ type, quoteId: 'quote-1' }, role)).toBe(href)
   })
 
-  it.each(['NEW_QUOTE', 'QUOTE_CONFIRMED'] as const)(
+  it.each(['NEW_QUOTE', 'QUOTE_CONFIRMED', 'DAMAGE_REPORTED'] as const)(
     '견적 id가 없는 %s 알림은 연결하지 않는다',
     (type) => {
       expect(

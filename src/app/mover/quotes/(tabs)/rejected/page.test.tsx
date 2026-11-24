@@ -24,6 +24,7 @@ function createRejected(id: string, customerName: string): RejectedRequest {
       details: null,
       from: { address: '서울특별시 중구 세종대로 110', region: '서울' },
       to: { address: '경기도 수원시 팔달구 효원로 1', region: '경기' },
+      details: null,
       status: 'PENDING',
       isDesignated: true,
       createdAt: '2026-10-30T09:00:00.000Z',

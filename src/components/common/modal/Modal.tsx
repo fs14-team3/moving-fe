@@ -2,8 +2,9 @@
 
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
-import type { ServiceType } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
 import { cn } from '@/lib/cn'
+import { getOptionLabel } from '@/lib/options'
 import { Building2, FileText, House, MoveRight, Package, X } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -21,6 +22,7 @@ type ModalProps = {
   children: ReactNode
   // false면 모바일에서도 바텀시트 대신 가운데 모달로 보여준다.
   mobileSheet?: boolean
+  titleClassName?: string
   className?: string
 }
 
@@ -47,6 +49,7 @@ export default function Modal({
   title,
   children,
   mobileSheet = true,
+  titleClassName,
   className,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -88,7 +91,10 @@ export default function Modal({
       {open && (
         <div className={PADDING[layout]}>
           <div className="mb-6 flex items-center justify-between md:mb-10">
-            <h2 id={titleId} className="text-lg font-bold md:text-2xl">
+            <h2
+              id={titleId}
+              className={cn('text-lg font-bold md:text-2xl', titleClassName)}
+            >
               {title}
             </h2>
             <button
@@ -97,7 +103,7 @@ export default function Modal({
               onClick={onClose}
               className="flex size-6 items-center justify-center text-gray-400 transition-colors hover:text-black-200 md:size-9"
             >
-              <X strokeWidth={1.5} className="size-6" />
+              <X strokeWidth={1.5} className="size-6 cursor-pointer" />
             </button>
           </div>
           {children}
@@ -174,14 +180,11 @@ export type RequestSummaryProps = {
 
 const ICON = 'size-3.5 md:size-4'
 
-// 이사 유형 배지의 라벨과 아이콘. 키는 API 값(ServiceType)을 그대로 쓴다.
-export const MOVE_TYPE: Record<
-  ServiceType,
-  { label: string; icon: ReactNode }
-> = {
-  SMALL: { label: '소형이사', icon: <Package className={ICON} /> },
-  HOME: { label: '가정이사', icon: <House className={ICON} /> },
-  OFFICE: { label: '사무실이사', icon: <Building2 className={ICON} /> },
+// 이사 유형 배지의 아이콘. 키는 API 값(ServiceType)을 그대로 쓴다.
+export const MOVE_TYPE_ICON: Record<ServiceType, ReactNode> = {
+  SMALL: <Package className={ICON} />,
+  HOME: <House className={ICON} />,
+  OFFICE: <Building2 className={ICON} />,
 }
 
 const NAME = 'text-base font-semibold md:text-xl'
@@ -238,7 +241,8 @@ export function RequestSummary({
   to,
   movingDate,
 }: RequestSummaryProps) {
-  const { label, icon } = MOVE_TYPE[moveType]
+  const icon = MOVE_TYPE_ICON[moveType]
+  const label = getOptionLabel(SERVICE_TYPE_OPTIONS, moveType)
   const isMover = variant === 'mover'
 
   return (

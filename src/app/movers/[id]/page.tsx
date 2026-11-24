@@ -8,7 +8,8 @@ import ReviewSection from '@/components/mover/review/ReviewSection'
 import ReviewSummary from '@/components/mover/review/ReviewSummary'
 import ServiceTypeChip from '@/components/mover/ServiceTypeChip'
 import KakaoScript from '@/components/share/KakaoScript'
-import { getServiceTypeLabel } from '@/constants/services'
+import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
+import { getOptionLabel } from '@/lib/options'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser'
 import { useAddFavorite } from '@/features/favorites/hooks/useAddFavorite'
@@ -120,6 +121,7 @@ export default function MoverDetailPage() {
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
   const nickname = mover.nickname?.trim() || '익명'
   const isFavorite = mover.isFavorite
+  const isDesignated = mover.isDesignated
   const favoriteCount = mover.favoriteCount
   const description =
     mover.description?.trim() || '등록된 상세 설명이 없습니다.'
@@ -350,7 +352,7 @@ export default function MoverDetailPage() {
                     key={serviceType}
                     className="rounded-[100px] border border-primary-400 px-3 py-[6px] leading-6 font-medium md:px-5 md:py-[10px] md:text-lg"
                   >
-                    {getServiceTypeLabel(serviceType)}
+                    {getOptionLabel(SERVICE_TYPE_OPTIONS, serviceType)}
                   </Badge>
                 ))}
               </div>
@@ -400,14 +402,14 @@ export default function MoverDetailPage() {
                 <Button
                   onClick={handleDesignate}
                   disabled={
+                    isDesignated ||
                     isUserPending ||
                     isCreatingDesignation ||
-                    (canFetchActiveRequest && isActiveRequestPending) ||
-                    mover.isDesignated === true
+                    (canFetchActiveRequest && isActiveRequestPending)
                   }
                   className="w-auto min-w-0 flex-1 lg:w-full lg:flex-none"
                 >
-                  지정 견적 요청하기
+                  {isDesignated ? '지정 완료' : '지정 견적 요청하기'}
                 </Button>
                 <Button
                   icon={

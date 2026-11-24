@@ -9,8 +9,31 @@ import {
   RESIDENT_COUNT_OPTIONS,
   SERVICE_LEVEL_OPTIONS,
 } from '@/constants/moveDetails'
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/constants/services'
+import { formatMoveDate } from '@/features/received-requests/format'
 import { getOptionLabel } from '@/lib/options'
 import type { Building, MoveRequestDetails } from './types'
+
+type MoveBasicInfo = {
+  moveType: ServiceType
+  moveDate: string
+  from: { address: string }
+  to: { address: string }
+}
+
+export function getMoveBasicRows({
+  moveType,
+  moveDate,
+  from,
+  to,
+}: MoveBasicInfo) {
+  return [
+    { label: '서비스', value: getOptionLabel(SERVICE_TYPE_OPTIONS, moveType) },
+    { label: '이용일', value: formatMoveDate(moveDate) },
+    { label: '출발지', value: from.address },
+    { label: '도착지', value: to.address },
+  ]
+}
 
 function formatBuilding({
   buildingType,

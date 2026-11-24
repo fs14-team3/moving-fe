@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import { MOCK_MOVE_REQUEST_DETAILS } from '@/features/move-request/fixtures/moveRequests'
-import { getMoveDetailRows } from '@/features/move-request/format'
+import {
+  getMoveBasicRows,
+  getMoveDetailRows,
+} from '@/features/move-request/format'
+
+describe('getMoveBasicRows', () => {
+  it('서비스, 이용일, 출발지, 도착지를 화면에 보여 줄 문구로 바꾼다', () => {
+    expect(
+      getMoveBasicRows({
+        moveType: 'HOME',
+        moveDate: '2026-12-05',
+        from: { address: '서울 중구 세종대로 110' },
+        to: { address: '서울 강남구 테헤란로 152' },
+      }),
+    ).toEqual([
+      { label: '서비스', value: '가정이사' },
+      { label: '이용일', value: '2026년 12월 05일 (토)' },
+      { label: '출발지', value: '서울 중구 세종대로 110' },
+      { label: '도착지', value: '서울 강남구 테헤란로 152' },
+    ])
+  })
+})
 
 describe('getMoveDetailRows', () => {
   it('상세 정보를 화면에 보여 줄 문구로 바꾸고, 짐은 목록 순서대로 보여 준다', () => {

@@ -1,15 +1,15 @@
 'use client'
 
-import { Check, CircleCheck, ImagePlus } from 'lucide-react'
-import { useId, useRef, useState, type ChangeEvent } from 'react'
+import { Check, CircleCheck } from 'lucide-react'
+import { useId, useState } from 'react'
 import { toast } from 'sonner'
-import Button from '@/components/common/button/Button'
 import ConfirmModal from '@/components/common/modal/ConfirmModal'
 import {
   LoadError,
   Loading,
   RefetchError,
 } from '@/components/my-quotes/PageState'
+import PhotoPickerButton from '@/components/proof-photos/PhotoPickerButton'
 import PhotoThumbnail, {
   PHOTO_GRID,
 } from '@/components/proof-photos/PhotoThumbnail'
@@ -47,7 +47,6 @@ export default function ProofPhotoSection({
   className,
 }: ProofPhotoSectionProps) {
   const headingId = useId()
-  const inputRef = useRef<HTMLInputElement>(null)
   const [selected, setSelected] = useState<File[]>([])
   const [viewing, setViewing] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -74,10 +73,7 @@ export default function ProofPhotoSection({
     '/mover/quotes',
   )
 
-  function select(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? [])
-    event.target.value = ''
-    if (files.length === 0) return
+  function select(files: File[]) {
     if (files.length > remaining) {
       toast.error(TOAST_MESSAGES.proofPhoto.tooMany(remaining))
       return
@@ -170,27 +166,14 @@ export default function ProofPhotoSection({
         </div>
 
         {canEdit && (
-          <>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              onChange={select}
-            />
-            <Button
-              variant="outlined"
-              disabled={
-                isPending || isLoadingError || isUploading || remaining <= 0
-              }
-              onClick={() => inputRef.current?.click()}
-              icon={<ImagePlus aria-hidden="true" className="size-4" />}
-              className="h-10 w-auto gap-1 rounded-xl px-4 text-sm lg:h-11 lg:w-auto lg:text-base"
-            >
-              사진 올리기
-            </Button>
-          </>
+          <PhotoPickerButton
+            disabled={
+              isPending || isLoadingError || isUploading || remaining <= 0
+            }
+            onSelect={select}
+          >
+            사진 올리기
+          </PhotoPickerButton>
         )}
       </div>
 

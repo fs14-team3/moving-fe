@@ -14,6 +14,7 @@ import PhotoThumbnail, {
   PHOTO_GRID,
 } from '@/components/proof-photos/PhotoThumbnail'
 import ProofPhotoViewer from '@/components/proof-photos/ProofPhotoViewer'
+import UploadStatus from '@/components/proof-photos/UploadStatus'
 import UploadTile from '@/components/proof-photos/UploadTile'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useDeleteProofPhoto } from '@/features/proof-photos/hooks/useDeleteProofPhoto'
@@ -67,7 +68,6 @@ export default function ProofPhotoSection({
 
   const remaining = maxCount - photos.length - uploads.length
   const hasRetryable = failed.some(({ retryable }) => retryable)
-  const canRetry = !isUploading && hasRetryable
   const leaveGuard = useLeaveGuard(
     selected.length > 0 || isUploading || hasRetryable,
     '/mover/quotes',
@@ -177,38 +177,18 @@ export default function ProofPhotoSection({
         )}
       </div>
 
-      <div
-        aria-live="polite"
-        className="flex items-center justify-between gap-3"
+      <UploadStatus
+        uploadingCount={uploads.length - failed.length}
+        failed={failed}
+        onRetry={retry}
       >
-        {isUploading && (
-          <p className="pb-3 text-sm font-medium text-black-200 md:text-base">
-            {uploads.length - failed.length}장을 올리고 있어요.
-          </p>
-        )}
-        {!isUploading && failed.length === 0 && uploadedIds.length > 0 && (
+        {uploadedIds.length > 0 && (
           <p className="flex items-center gap-1 pb-3 text-sm font-medium text-primary-400 md:text-base">
             <CircleCheck aria-hidden="true" className="size-4 md:size-5" />
             {uploadedIds.length}장을 올렸어요.
           </p>
         )}
-        {!isUploading && failed.length > 0 && (
-          <>
-            <p className="pb-3 text-sm font-medium text-red-500 md:text-base">
-              {failed.length}장을 올리지 못했어요.
-            </p>
-            {canRetry && (
-              <button
-                type="button"
-                onClick={() => retry(failed)}
-                className="cursor-pointer pb-3 text-sm font-semibold text-primary-400 md:text-base"
-              >
-                모두 다시 시도
-              </button>
-            )}
-          </>
-        )}
-      </div>
+      </UploadStatus>
 
       {isRefetchError && (
         <RefetchError

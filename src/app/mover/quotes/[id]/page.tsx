@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import MoveProgressSection from '@/components/move-progress/MoveProgressSection'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
 import ProofPhotoSection from '@/components/proof-photos/ProofPhotoSection'
@@ -67,6 +68,13 @@ export default function SentQuoteDetailPage() {
             moveRequest={quote.moveRequest}
             className={cn(isConfirmed && 'border-b border-line-100')}
           />
+          {isConfirmed && (
+            <MoveProgressSection
+              quoteId={quote.id}
+              moveDate={quote.moveRequest.moveDate}
+              className="border-b border-line-100"
+            />
+          )}
           {isConfirmed && (
             <ProofPhotoSection
               quoteId={quote.id}

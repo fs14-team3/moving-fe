@@ -729,6 +729,30 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/quotes/{quoteId}/progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 이사 진행 단계 조회
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 기록한 단계와 기록 시각을 단계 순서대로 반환합니다. 확정되지 않은 견적이거나 아직 기록한 단계가 없으면 `steps`가 빈 배열입니다. `canRecord`가 `true`일 때만 `nextStep` 기록 버튼을 보여 줍니다.
+     */
+    get: operations['getMoveProgress']
+    put?: never
+    /**
+     * 이사 진행 단계 기록
+     * @description 견적을 보낸 기사님이 확정된 견적의 이사 당일(한국 시간 Asia/Seoul 기준)에 다음 진행 단계를 기록합니다. 단계는 출발(`DEPARTED`) → 상차(`LOADING`) → 운행(`IN_TRANSIT`) → 하차(`UNLOADING`) → 완료(`COMPLETED`) 순서로 하나씩만 기록할 수 있으며, 응답의 `nextStep`을 `step`에 담아 보냅니다. 이미 기록한 단계를 다시 보내면 새로 저장하지 않고 현재 진행 상황을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 이사일이 지난 뒤에도 이미 기록한 단계는 같은 방식으로 반환합니다. 완료를 기록해도 리뷰 작성과 작업 사진 업로드는 기존과 같이 이사일 다음 날부터 가능합니다.
+     */
+    post: operations['recordMoveProgress']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/reviews': {
     parameters: {
       query?: never
@@ -1014,6 +1038,8 @@ export interface components {
       | 'QUOTE_LIMIT_REACHED'
       | 'PROOF_PHOTO_LIMIT_REACHED'
       | 'PROOF_PHOTO_NOT_UPLOADED'
+      | 'MOVE_PROGRESS_NOT_ALLOWED'
+      | 'MOVE_PROGRESS_OUT_OF_ORDER'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -1094,11 +1120,37 @@ export interface components {
       items: components['schemas']['ProofPhoto'][]
       /** @example 100 */
       maxCount: number
+      /** @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지) */
+      canEdit: boolean
+    }
+    /**
+     * @description DEPARTED 출발, LOADING 상차, IN_TRANSIT 운행, UNLOADING 하차, COMPLETED 완료. 이 순서대로 기록합니다.
+     * @enum {string}
+     */
+    MoveProgressStep:
+      'DEPARTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED'
+    MoveProgressRecord: {
+      step: components['schemas']['MoveProgressStep']
+    }
+    MoveProgressEntry: {
+      step: components['schemas']['MoveProgressStep']
+      /** Format: date-time */
+      recordedAt: string
+    }
+    MoveProgress: {
+      /** @description 기록한 단계. 출발부터 단계 순서대로 정렬합니다. */
+      steps: components['schemas']['MoveProgressEntry'][]
       /**
-       * @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지)
+       * @description 다음에 기록할 단계. 완료까지 기록했으면 `null`
+       * @enum {string|null}
+       */
+      nextStep:
+        'DEPARTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED' | null
+      /**
+       * @description 호출자가 지금 `nextStep`을 기록할 수 있으면 `true` (견적을 보낸 기사님, 확정된 견적의 이사 당일, 완료 기록 전)
        * @example true
        */
-      canEdit: boolean
+      canRecord: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -3206,6 +3258,86 @@ export interface operations {
       }
       /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
       503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  getMoveProgress: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 진행 상황 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoveProgress']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `NOT_FOUND`. 견적을 보낸 기사님이나 견적을 요청한 일반 유저가 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  recordMoveProgress: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MoveProgressRecord']
+      }
+    }
+    responses: {
+      /** @description 기록 후 진행 상황 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoveProgress']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인이 보낸 견적이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `MOVE_PROGRESS_NOT_ALLOWED` (확정되지 않은 견적이거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
+      409: {
         headers: {
           [name: string]: unknown
         }

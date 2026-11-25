@@ -95,16 +95,47 @@ export default function NotificationMenu({ role }: { role: Role }) {
     fetchNextPage,
     refetch,
   } = useNotifications({ enabled: isOpen })
-  // 패널에 그려진 알림 중 읽지 않은 것. 닫을 때 이 알림들만 읽음 처리한다.
   const shownUnreadIds = useMemo(
     () => notifications.filter(({ readAt }) => !readAt).map(({ id }) => id),
     [notifications],
   )
 
-  const close = useCallback(() => {
-    setIsOpen(false)
-    if (shownUnreadIds.length > 0) readNotifications(shownUnreadIds)
-  }, [shownUnreadIds, readNotifications])
+  const seenUnreadIds = useRef(new Set<string>())
+
+  useEffect(() => {
+    const list = listRef.current
+    if (!isOpen || !list || shownUnreadIds.length === 0) return
+
+    const seen = seenUnreadIds.current
+    const minimumVisibleRatio = 0.5
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.intersectionRatio < minimumVisibleRatio) continue
+
+          const id = entry.target.getAttribute('data-unread-id')
+          if (id) seen.add(id)
+        }
+      },
+      { threshold: minimumVisibleRatio },
+    )
+    list.querySelectorAll('[data-unread-id]').forEach((row) => {
+      observer.observe(row)
+    })
+    return () => observer.disconnect()
+  }, [isOpen, shownUnreadIds])
+
+  const close = useCallback(
+    (clickedId?: string) => {
+      const idsToRead = shownUnreadIds.filter(
+        (id) => id === clickedId || seenUnreadIds.current.has(id),
+      )
+      seenUnreadIds.current = new Set()
+      setIsOpen(false)
+      if (idsToRead.length > 0) readNotifications(idsToRead)
+    },
+    [shownUnreadIds, readNotifications],
+  )
 
   useDismiss({ isOpen, onDismiss: close, containerRef, triggerRef })
 
@@ -207,7 +238,10 @@ export default function NotificationMenu({ role }: { role: Role }) {
           )
 
           return (
-            <li key={notification.id}>
+            <li
+              key={notification.id}
+              data-unread-id={notification.readAt ? undefined : notification.id}
+            >
               {href ? (
                 <Link
                   href={href}
@@ -217,7 +251,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
                         queryKey: receivedRequestKeys.all,
                       })
                     }
-                    close()
+                    close(notification.id)
                   }}
                   className={cn(
                     ITEM,

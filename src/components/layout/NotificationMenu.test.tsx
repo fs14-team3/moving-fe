@@ -28,6 +28,8 @@ const mockGetNotifications = vi.mocked(getNotifications)
 const mockGetUnreadCount = vi.mocked(getUnreadNotificationCount)
 const mockRead = vi.mocked(readNotification)
 const mockReadAll = vi.mocked(readAllNotifications)
+const initialVisibility = new Map<string, number>()
+const reportVisibility = new Map<string, (ratio: number) => void>()
 
 function createNotification(
   overrides: Partial<Notification> & Pick<Notification, 'id'>,
@@ -79,9 +81,34 @@ describe('NotificationMenu', () => {
   beforeEach(() => {
     mockGetUnreadCount.mockResolvedValue(0)
     mockRead.mockResolvedValue({ updated: true })
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(private readonly callback: IntersectionObserverCallback) {}
+
+        observe(target: Element) {
+          const id = target.getAttribute('data-unread-id')
+          if (!id) return
+
+          const report = (intersectionRatio: number) => {
+            this.callback(
+              [{ target, intersectionRatio } as IntersectionObserverEntry],
+              this as unknown as IntersectionObserver,
+            )
+          }
+          reportVisibility.set(id, report)
+          report(initialVisibility.get(id) ?? 1)
+        }
+
+        disconnect() {}
+      },
+    )
   })
 
   afterEach(() => {
+    initialVisibility.clear()
+    reportVisibility.clear()
+    vi.unstubAllGlobals()
     vi.resetAllMocks()
   })
 
@@ -200,14 +227,6 @@ describe('NotificationMenu', () => {
   })
 
   it('패널에 보여 준 알림만 읽음 처리하고, 불러오지 않은 다음 페이지는 남겨 둔다', async () => {
-    // 목록 끝까지 스크롤하지 않은 상황: 다음 페이지를 부르지 않는다.
-    vi.stubGlobal(
-      'IntersectionObserver',
-      class {
-        observe() {}
-        disconnect() {}
-      },
-    )
     mockGetUnreadCount.mockResolvedValueOnce(3).mockResolvedValue(1)
     mockGetNotifications.mockResolvedValue({
       items: [createNotification({ id: '1' }), createNotification({ id: '2' })],
@@ -229,7 +248,25 @@ describe('NotificationMenu', () => {
     expect(
       await screen.findByRole('button', { name: '알림, 새 알림 있음' }),
     ).toBeInTheDocument()
-    vi.unstubAllGlobals()
+  })
+
+  it('불러온 알림 중 절반 이상 화면에 들어온 알림만 읽음 처리한다', async () => {
+    const notifications = Array.from({ length: 10 }, (_, index) =>
+      createNotification({ id: String(index + 1) }),
+    )
+    for (const { id } of notifications) initialVisibility.set(id, 0)
+    initialVisibility.set('1', 1)
+    initialVisibility.set('3', 0.25)
+    mockPage(notifications)
+    const { open } = renderMenu()
+
+    await open()
+    expect(await within(getPanel()).findAllByRole('listitem')).toHaveLength(10)
+    reportVisibility.get('1')?.(0)
+    reportVisibility.get('2')?.(0.5)
+    await open()
+
+    expect(mockRead.mock.calls).toEqual([['1'], ['2']])
   })
 
   it('읽지 않은 알림에만 읽지 않음 표시를 한다', async () => {
@@ -431,6 +468,7 @@ describe('NotificationMenu', () => {
   })
 
   it('받은 요청 알림을 누르면 목록 캐시를 무효화하고 읽음 처리한다', async () => {
+    initialVisibility.set('1', 0)
     mockPage([
       createNotification({
         id: '1',

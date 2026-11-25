@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
@@ -42,24 +42,88 @@ export default function ChatDetailPage() {
   const roomId = room?.id
   const userId = user?.id
 
-  useEffect(() => {
-    if (roomId && userId) {
-      markAsRead()
+  const shouldMarkAsReadWhenVisible = useRef(false)
+  const initialReadRoomIdRef = useRef<string | null>(null)
+
+  const markAsReadWhenVisible = useCallback(() => {
+    if (document.visibilityState !== 'visible') {
+      shouldMarkAsReadWhenVisible.current = true
+      return
     }
-  }, [roomId, userId, markAsRead])
+
+    shouldMarkAsReadWhenVisible.current = false
+    markAsRead()
+  }, [markAsRead])
+
+  useEffect(() => {
+    if (
+      !roomId ||
+      !userId ||
+      isMessagesPending ||
+      isMessagesError ||
+      !messageResponse
+    ) {
+      return
+    }
+
+    if (initialReadRoomIdRef.current === roomId) {
+      return
+    }
+
+    initialReadRoomIdRef.current = roomId
+    markAsReadWhenVisible()
+  }, [
+    roomId,
+    userId,
+    isMessagesPending,
+    isMessagesError,
+    messageResponse,
+    markAsReadWhenVisible,
+  ])
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (
+        document.visibilityState === 'visible' &&
+        shouldMarkAsReadWhenVisible.current
+      ) {
+        markAsReadWhenVisible()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [markAsReadWhenVisible])
 
   useChatRoomSocket({
     chatRoomId,
-    enabled: Boolean(user && room && !isUserPending && !isRoomsPending),
+    enabled: Boolean(
+      user &&
+      room &&
+      !isUserPending &&
+      !isRoomsPending &&
+      !isMessagesPending &&
+      !isMessagesError &&
+      messageResponse,
+    ),
     onMessage: (message) => {
+      let isNewMessage = false
+
       queryClient.setQueryData<ChatMessageListResponse>(
         queryKeys.chats.messages(chatRoomId),
         (previous) => {
-          if (!previous) return previous
+          if (!previous) {
+            return previous
+          }
 
           if (previous.items.some((item) => item.id === message.id)) {
             return previous
           }
+
+          isNewMessage = true
 
           return {
             ...previous,
@@ -77,6 +141,10 @@ export default function ChatDetailPage() {
           }
         },
       )
+
+      if (isNewMessage && message.senderId !== userId) {
+        markAsReadWhenVisible()
+      }
     },
   })
 

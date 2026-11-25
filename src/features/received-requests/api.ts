@@ -57,6 +57,3 @@ export async function getRejectedRequests(query: RejectedRequestQuery = {}) {
   )
   return data
 }
-
-// TODO: 견적 보내기 명세(QuoteCreate)에 코멘트가 없어 지금은 견적가만 보낸다.
-// BE 명세에 comment가 추가되면 견적 보내기 모달에서 입력한 코멘트도 함께 보낸다.

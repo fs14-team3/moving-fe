@@ -51,12 +51,16 @@ describe('sendQuote', () => {
 })
 
 describe('rejectRequest', () => {
-  it('요청 id 경로로 반려하고 반려한 요청을 반환한다', async () => {
+  it('요청 id 경로로 반려 사유와 함께 반려하고 반려한 요청을 반환한다', async () => {
     const rejected = { rejectedAt: '2026-10-30T09:00:00.000Z' }
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: rejected })
 
-    await expect(rejectRequest('request-1')).resolves.toEqual(rejected)
-    expect(post).toHaveBeenCalledWith('/move-requests/request-1/rejections')
+    await expect(
+      rejectRequest('request-1', '일정이 맞지 않아 반려합니다'),
+    ).resolves.toEqual(rejected)
+    expect(post).toHaveBeenCalledWith('/move-requests/request-1/rejections', {
+      reason: '일정이 맞지 않아 반려합니다',
+    })
   })
 })
 

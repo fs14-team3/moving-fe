@@ -16,6 +16,11 @@ vi.mock('@/features/received-requests/api', () => ({ rejectRequest: vi.fn() }))
 
 type RejectedRequest = Awaited<ReturnType<typeof rejectRequest>>
 
+const VARIABLES = {
+  requestId: 'request-1',
+  reason: '일정이 맞지 않아 반려합니다',
+}
+
 function renderUseRejectRequest() {
   const queryClient = new QueryClient()
   const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
@@ -38,10 +43,13 @@ describe('useRejectRequest', () => {
     vi.mocked(rejectRequest).mockResolvedValue({} as RejectedRequest)
     const { result, invalidateQueries } = renderUseRejectRequest()
 
-    act(() => result.current.mutate('request-1'))
+    act(() => result.current.mutate(VARIABLES))
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(rejectRequest).toHaveBeenCalledWith('request-1')
+    expect(rejectRequest).toHaveBeenCalledWith(
+      'request-1',
+      '일정이 맞지 않아 반려합니다',
+    )
     expect(toast.success).toHaveBeenCalledWith(
       TOAST_MESSAGES.estimate.rejectSuccess,
     )
@@ -53,13 +61,17 @@ describe('useRejectRequest', () => {
     })
   })
 
-  it('이미 없어진 요청(404)이면 알리고 목록을 다시 불러온다', async () => {
-    vi.mocked(rejectRequest).mockRejectedValue(
-      new ApiError('NOT_FOUND', 'Not Found', 404),
-    )
+  it.each([
+    ['이미 없어진 요청(404)', new ApiError('NOT_FOUND', 'Not Found', 404)],
+    [
+      '대기 중이 아니거나 이미 견적을 보낸 요청(400)',
+      new ApiError('VALIDATION_ERROR', 'Bad Request', 400),
+    ],
+  ])('%s이면 알리고 목록을 다시 불러온다', async (_name, error) => {
+    vi.mocked(rejectRequest).mockRejectedValue(error)
     const { result, invalidateQueries } = renderUseRejectRequest()
 
-    act(() => result.current.mutate('request-1'))
+    act(() => result.current.mutate(VARIABLES))
 
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
@@ -78,7 +90,7 @@ describe('useRejectRequest', () => {
     vi.mocked(rejectRequest).mockRejectedValue(error)
     const { result, invalidateQueries } = renderUseRejectRequest()
 
-    act(() => result.current.mutate('request-1'))
+    act(() => result.current.mutate(VARIABLES))
 
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
@@ -94,7 +106,7 @@ describe('useRejectRequest', () => {
     )
     const { result } = renderUseRejectRequest()
 
-    act(() => result.current.mutate('request-1'))
+    act(() => result.current.mutate(VARIABLES))
 
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(toast.error).not.toHaveBeenCalled()

@@ -29,6 +29,7 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
     id: 'request-1',
     moveType: 'SMALL',
     moveDate: '2026-11-20',
+    details: null,
     from: {
       address: '서울특별시 중구 세종대로 110',
       zonecode: '04524',
@@ -39,7 +40,6 @@ export const MOCK_QUOTE_DETAIL: QuoteDetail = {
       zonecode: '48094',
       region: '부산',
     },
-    details: null,
     status: 'PENDING',
     quoteCount: 2,
     designatedMoverIds: ['mover-quote-1'],

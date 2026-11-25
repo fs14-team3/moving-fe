@@ -4,16 +4,15 @@ import {
   formatMessageDate,
   formatMessageTime,
 } from '@/features/chat/lib/messageFormat'
-import type { Role } from '@/features/auth/types'
 
 type ChatMessageListProps = {
   messages: ChatMessage[]
-  currentUserRole: Role
+  currentUserId: string
 }
 
 export default function ChatMessageList({
   messages,
-  currentUserRole,
+  currentUserId,
 }: ChatMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -36,7 +35,7 @@ export default function ChatMessageList({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-6 md:px-6">
       {sortedMessages.map((message, index) => {
-        const isMine = message.senderRole === currentUserRole
+        const isMine = message.senderId === currentUserId
         const previousMessage = sortedMessages[index - 1]
         const showDate =
           !previousMessage ||
@@ -68,7 +67,7 @@ export default function ChatMessageList({
                 >
                   {!isMine && (
                     <p className="mb-1 text-xs font-semibold text-black-300">
-                      {message.senderName}
+                      {message.senderName ?? '상대방'}
                     </p>
                   )}
 

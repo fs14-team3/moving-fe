@@ -671,6 +671,8 @@ export interface paths {
     /**
      * 작업 사진 목록
      * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 올린 순서대로 반환하며, `maxCount`는 견적 하나에 올릴 수 있는 최대 장수입니다. `canEdit`이 `true`일 때만 사진 올리기와 삭제 버튼을 보여 줍니다.
+     *
+     *     사진 주소는 CloudFront 서명 URL이며 발급 후 최소 1시간, 최대 2시간 동안 유효합니다. 같은 시간대(정각 기준 1시간)에는 같은 주소를 반환하므로 다시 조회해도 이미지를 새로 받지 않습니다. 화면을 1시간 넘게 열어 둘 때는 목록을 다시 조회해 주소를 갱신합니다.
      */
     get: operations['listProofPhotos']
     put?: never
@@ -721,6 +723,30 @@ export interface paths {
      *     사진마다 `image`(긴 변 약 2000px)와 `thumbnail`(긴 변 약 300px)을 브라우저에서 WebP나 JPEG로 다시 인코딩해 각각 올립니다. 다시 인코딩해야 위치 정보 등 EXIF 메타데이터가 지워지므로 원본 파일을 그대로 올리지 않습니다. `contentType`에는 인코딩한 형식을 보내며 사진과 썸네일 모두 이 형식이어야 합니다. `.jpg` 파일도 `image/jpeg`입니다. Safari처럼 canvas가 WebP로 인코딩하지 못하는 브라우저에서는 `image/jpeg`를 씁니다. `url`로 `multipart/form-data` POST를 보내며, `fields`를 그대로 담고 파일은 마지막 `file` 필드에 넣습니다. S3가 `Content-Type`이 `contentType`과 같은지, 크기(사진 5MB, 썸네일 512KB 이하), 발급 후 10분 이내인지 확인합니다. 두 파일을 모두 올린 뒤 `POST /quotes/{quoteId}/proof-photos`로 확정합니다.
      */
     post: operations['createProofPhotoUploads']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 이사 진행 단계 조회
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 기록한 단계와 기록 시각을 단계 순서대로 반환합니다. 확정되지 않은 견적이거나 아직 기록한 단계가 없으면 `steps`가 빈 배열입니다. `canRecord`가 `true`일 때만 `nextStep` 기록 버튼을 보여 줍니다.
+     */
+    get: operations['getMoveProgress']
+    put?: never
+    /**
+     * 이사 진행 단계 기록
+     * @description 견적을 보낸 기사님이 확정된 견적의 이사 당일(한국 시간 Asia/Seoul 기준)에 다음 진행 단계를 기록합니다. 단계는 출발(`DEPARTED`) → 상차(`LOADING`) → 운행(`IN_TRANSIT`) → 하차(`UNLOADING`) → 완료(`COMPLETED`) 순서로 하나씩만 기록할 수 있으며, 응답의 `nextStep`을 `step`에 담아 보냅니다. 이미 기록한 단계를 다시 보내면 새로 저장하지 않고 현재 진행 상황을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 이사일이 지난 뒤에도 이미 기록한 단계는 같은 방식으로 반환합니다. 완료를 기록해도 리뷰 작성과 작업 사진 업로드는 기존과 같이 이사일 다음 날부터 가능합니다.
+     */
+    post: operations['recordMoveProgress']
     delete?: never
     options?: never
     head?: never
@@ -1012,6 +1038,8 @@ export interface components {
       | 'QUOTE_LIMIT_REACHED'
       | 'PROOF_PHOTO_LIMIT_REACHED'
       | 'PROOF_PHOTO_NOT_UPLOADED'
+      | 'MOVE_PROGRESS_NOT_ALLOWED'
+      | 'MOVE_PROGRESS_OUT_OF_ORDER'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -1045,9 +1073,15 @@ export interface components {
     ProofPhoto: {
       /** Format: uuid */
       id: string
-      /** Format: uri */
+      /**
+       * Format: uri
+       * @description 사진 CloudFront 서명 URL. 발급 후 최소 1시간, 최대 2시간 동안 유효합니다.
+       */
       url: string
-      /** Format: uri */
+      /**
+       * Format: uri
+       * @description 썸네일 CloudFront 서명 URL. `url`과 같은 시각에 만료됩니다.
+       */
       thumbnailUrl: string
       /** Format: date-time */
       createdAt: string
@@ -1086,11 +1120,37 @@ export interface components {
       items: components['schemas']['ProofPhoto'][]
       /** @example 100 */
       maxCount: number
+      /** @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지) */
+      canEdit: boolean
+    }
+    /**
+     * @description DEPARTED 출발, LOADING 상차, IN_TRANSIT 운행, UNLOADING 하차, COMPLETED 완료. 이 순서대로 기록합니다.
+     * @enum {string}
+     */
+    MoveProgressStep:
+      'DEPARTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED'
+    MoveProgressRecord: {
+      step: components['schemas']['MoveProgressStep']
+    }
+    MoveProgressEntry: {
+      step: components['schemas']['MoveProgressStep']
+      /** Format: date-time */
+      recordedAt: string
+    }
+    MoveProgress: {
+      /** @description 기록한 단계. 출발부터 단계 순서대로 정렬합니다. */
+      steps: components['schemas']['MoveProgressEntry'][]
       /**
-       * @description 호출자가 지금 사진을 올리거나 삭제할 수 있으면 `true` (견적을 보낸 기사님, 이사일 다음 날부터 리뷰 작성 전까지)
+       * @description 다음에 기록할 단계. 완료까지 기록했으면 `null`
+       * @enum {string|null}
+       */
+      nextStep:
+        'DEPARTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED' | null
+      /**
+       * @description 호출자가 지금 `nextStep`을 기록할 수 있으면 `true` (견적을 보낸 기사님, 확정된 견적의 이사 당일, 완료 기록 전)
        * @example true
        */
-      canEdit: boolean
+      canRecord: boolean
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -3033,6 +3093,15 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       404: components['responses']['NotFound']
+      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
     }
   }
   confirmProofPhoto: {
@@ -3080,7 +3149,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
-      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
       503: {
         headers: {
           [name: string]: unknown
@@ -3189,6 +3258,86 @@ export interface operations {
       }
       /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
       503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  getMoveProgress: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 진행 상황 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoveProgress']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `NOT_FOUND`. 견적을 보낸 기사님이나 견적을 요청한 일반 유저가 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  recordMoveProgress: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MoveProgressRecord']
+      }
+    }
+    responses: {
+      /** @description 기록 후 진행 상황 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MoveProgress']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인이 보낸 견적이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `MOVE_PROGRESS_NOT_ALLOWED` (확정되지 않은 견적이거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
+      409: {
         headers: {
           [name: string]: unknown
         }

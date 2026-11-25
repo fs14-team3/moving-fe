@@ -5,7 +5,11 @@ import { useId, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 import Button from '@/components/common/button/Button'
 import ConfirmModal from '@/components/common/modal/ConfirmModal'
-import { LoadError, Loading } from '@/components/my-quotes/PageState'
+import {
+  LoadError,
+  Loading,
+  RefetchError,
+} from '@/components/my-quotes/PageState'
 import PhotoThumbnail, {
   PHOTO_GRID,
 } from '@/components/proof-photos/PhotoThumbnail'
@@ -224,22 +228,11 @@ export default function ProofPhotoSection({
       </div>
 
       {isRefetchError && (
-        <div
-          role="alert"
-          className="flex items-center justify-between gap-3 pb-3"
-        >
-          <p className="text-sm font-medium text-red-500 md:text-base">
-            작업 사진을 새로 불러오지 못했어요.
-          </p>
-          <button
-            type="button"
-            disabled={isRefetching}
-            onClick={() => refetch()}
-            className="cursor-pointer text-sm font-semibold text-primary-400 disabled:cursor-not-allowed disabled:opacity-50 md:text-base"
-          >
-            다시 불러오기
-          </button>
-        </div>
+        <RefetchError
+          message="작업 사진을 새로 불러오지 못했어요."
+          isRetrying={isRefetching}
+          onRetry={() => refetch()}
+        />
       )}
 
       {renderBody()}

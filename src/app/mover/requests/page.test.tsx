@@ -166,14 +166,17 @@ describe('ReceivedRequestsPage', () => {
     vi.clearAllMocks()
   })
 
-  it('견적 보내기를 누른 요청으로 모달을 열고, 보내면 견적가를 보낸 뒤 모달을 닫고 목록을 다시 불러온다', async () => {
+  it('견적 보내기를 누른 요청으로 모달을 열고, 보내면 견적가와 코멘트를 보낸 뒤 모달을 닫고 목록을 다시 불러온다', async () => {
     mockSendQuote.mockResolvedValue({} as SentQuote)
     const { dialog, submit } = await openSendModal()
     expect(within(dialog).getByText('김코드 고객님')).toBeInTheDocument()
 
     await submit()
 
-    expect(mockSendQuote).toHaveBeenCalledWith('request-1', { price: 250000 })
+    expect(mockSendQuote).toHaveBeenCalledWith('request-1', {
+      price: 250000,
+      comment: '꼼꼼하게 옮겨 드릴게요',
+    })
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )
@@ -280,7 +283,10 @@ describe('ReceivedRequestsPage', () => {
 
     await submit()
 
-    expect(mockRejectRequest).toHaveBeenCalledWith('request-1')
+    expect(mockRejectRequest).toHaveBeenCalledWith(
+      'request-1',
+      '일정이 맞지 않아 반려합니다',
+    )
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     )
@@ -322,6 +328,25 @@ describe('ReceivedRequestsPage', () => {
     )
     expect(screen.getByRole('dialog', { name: '반려요청' })).toBeInTheDocument()
     expect(submitButton).toBeEnabled()
+  })
+
+  it('이미 반려할 수 없는 요청이면 알리고 모달을 닫은 뒤 목록을 다시 불러온다', async () => {
+    mockRejectRequest.mockRejectedValue(
+      new ApiError('NOT_FOUND', 'Not Found', 404),
+    )
+    const { submit } = await openRejectModal()
+
+    await submit()
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    )
+    expect(toast.error).toHaveBeenCalledWith(
+      TOAST_MESSAGES.estimate.rejectFailed,
+    )
+    await waitFor(() =>
+      expect(mockGetReceivedRequests).toHaveBeenCalledTimes(2),
+    )
   })
 
   it('다음 페이지를 불러오지 못하면 다시 요청하지 않고, 다시 시도를 누르면 이어서 불러온다', async () => {

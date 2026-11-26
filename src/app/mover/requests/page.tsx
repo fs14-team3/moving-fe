@@ -31,7 +31,10 @@ import {
   toCustomerName,
   toShortAddress,
 } from '@/features/received-requests/format'
-import { useRejectRequest } from '@/features/received-requests/hooks/useRejectRequest'
+import {
+  isStaleRejectError,
+  useRejectRequest,
+} from '@/features/received-requests/hooks/useRejectRequest'
 import {
   isStaleRequestError,
   useSendQuote,
@@ -364,10 +367,9 @@ export default function ReceivedRequestsPage() {
           request={toRequestSummary(quoteTarget)}
           details={quoteTarget.details}
           isSubmitting={sendQuote.isPending}
-          // 코멘트는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
-          onSubmit={({ price }) =>
+          onSubmit={({ price, comment }) =>
             sendQuote.mutate(
-              { requestId: quoteTarget.id, price },
+              { requestId: quoteTarget.id, price, comment },
               {
                 onSuccess: () => setQuoteTarget(null),
                 // 다시 보내도 같은 오류가 나는 요청은 목록에서 사라지므로 모달도 닫는다.
@@ -389,11 +391,17 @@ export default function ReceivedRequestsPage() {
           }}
           request={toRequestSummary(rejectTarget)}
           isSubmitting={rejectRequest.isPending}
-          // 반려 사유는 아직 API로 보내지 않는다. (received-requests/api.ts TODO 참고)
-          onSubmit={() =>
-            rejectRequest.mutate(rejectTarget.id, {
-              onSuccess: () => setRejectTarget(null),
-            })
+          onSubmit={(reason) =>
+            rejectRequest.mutate(
+              { requestId: rejectTarget.id, reason },
+              {
+                onSuccess: () => setRejectTarget(null),
+                // 다시 반려해도 같은 오류가 나는 요청은 목록에서 사라지므로 모달도 닫는다.
+                onError: (error) => {
+                  if (isStaleRejectError(error)) setRejectTarget(null)
+                },
+              },
+            )
           }
         />
       )}

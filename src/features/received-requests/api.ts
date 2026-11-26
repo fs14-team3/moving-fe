@@ -41,9 +41,11 @@ export async function sendQuote(requestId: string, body: QuoteCreate) {
   return data
 }
 
-export async function rejectRequest(requestId: string) {
+// 반려 사유는 선택 입력이라 비우면 사유 없이 반려된다.
+export async function rejectRequest(requestId: string, reason?: string) {
   const { data } = await api.post<RejectedRequest>(
     `/move-requests/${requestId}/rejections`,
+    { reason },
   )
   return data
 }
@@ -55,9 +57,3 @@ export async function getRejectedRequests(query: RejectedRequestQuery = {}) {
   )
   return data
 }
-
-// TODO: 견적 보내기 명세(QuoteCreate)에 코멘트가 없어 지금은 견적가만 보낸다.
-// BE 명세에 comment가 추가되면 견적 보내기 모달에서 입력한 코멘트도 함께 보낸다.
-
-// TODO: 요청 반려 명세에 반려 사유가 없어 지금은 사유 없이 반려한다. (BE 명세 작성 중)
-// BE 명세에 반려 사유가 추가되면 반려요청 모달에서 입력한 사유도 함께 보낸다.

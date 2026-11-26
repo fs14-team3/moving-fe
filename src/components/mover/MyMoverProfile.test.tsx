@@ -230,4 +230,24 @@ describe('MyMoverProfile', () => {
       .closest('section')!
     expect(stats.nextElementSibling).toBe(tablet)
   })
+
+  it('모바일에서는 달력 대신 다가오는 일정을 태블릿 일정 바로 아래에 보여준다', () => {
+    vi.mocked(useConfirmedSchedule).mockReturnValue(
+      createScheduleResult({
+        confirmedQuotes: [createConfirmedQuote('박이사')],
+      }),
+    )
+
+    render(<MyMoverProfile />)
+
+    const [, tablet, mobile] = getScheduleSections()
+    expect(mobile).toHaveClass('md:hidden')
+    expect(tablet.nextElementSibling).toBe(mobile)
+    // 모바일은 달력을 그리지 않고 전체 일정 보기 버튼으로 연다.
+    expect(within(mobile).queryByRole('grid')).not.toBeInTheDocument()
+    expect(
+      within(mobile).getByRole('button', { name: /전체 일정 보기/ }),
+    ).toBeInTheDocument()
+    expect(within(tablet).getByRole('grid')).toBeInTheDocument()
+  })
 })

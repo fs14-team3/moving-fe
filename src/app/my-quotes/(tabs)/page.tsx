@@ -11,7 +11,7 @@ import {
   PageBody,
 } from '@/components/my-quotes/PageState'
 import PendingQuoteCard from '@/components/my-quotes/PendingQuoteCard'
-import QuoteCompareModal from '@/components/my-quotes/QuoteCompareModal'
+import QuoteCompareModal from '@/components/quotes-compare/QuoteCompareModal'
 import { useActiveMoveRequest } from '@/features/move-request/hooks/useActiveMoveRequest'
 import { useDeleteMoveRequest } from '@/features/move-request/hooks/useDeleteMoveRequest'
 import type { MoveRequestResponse } from '@/features/move-request/types'

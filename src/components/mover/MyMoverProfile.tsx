@@ -3,6 +3,7 @@
 import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import ReviewSection from '@/components/mover/review/ReviewSection'
+import ScheduleSection from '@/components/mover/schedule/ScheduleSection'
 import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import { getOptionLabel } from '@/lib/options'
 import { useMyMover } from '@/features/movers/hooks/useMyMover'
@@ -149,6 +150,9 @@ export default function MyMoverProfile() {
             기본정보 수정
           </Button>
         </div>
+
+        {/* 데스크톱에서만 오른쪽 열 버튼 아래에 둔다. 헤더(88px) 아래에 붙어 스크롤해도 따라온다. */}
+        <ScheduleSection className="hidden lg:sticky lg:top-28 lg:col-start-2 lg:row-start-2 lg:mt-16 lg:block lg:self-start" />
 
         <div className="mt-6 flex flex-col gap-6 border-t border-line-100 pt-6 md:mt-8 md:gap-10 md:pt-8 lg:col-start-1">
           <section>

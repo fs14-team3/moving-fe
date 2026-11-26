@@ -4,6 +4,7 @@ import Badge from '@/components/common/Badge'
 import Button from '@/components/common/button/Button'
 import ReviewSection from '@/components/mover/review/ReviewSection'
 import ScheduleSection from '@/components/mover/schedule/ScheduleSection'
+import UpcomingSchedule from '@/components/mover/schedule/UpcomingSchedule'
 import { SERVICE_TYPE_OPTIONS } from '@/constants/services'
 import { getOptionLabel } from '@/lib/options'
 import { useMyMover } from '@/features/movers/hooks/useMyMover'
@@ -175,6 +176,12 @@ export default function MyMoverProfile() {
               ))}
             </dl>
           </section>
+
+          {/* 태블릿(md ~ lg 미만)에서만 활동 현황 아래에 전체 너비로 둔다. 데스크톱은 위 오른쪽 열에 있다. */}
+          <ScheduleSection className="hidden md:block lg:hidden" />
+
+          {/* 모바일(md 미만)은 달력 대신 가까운 일정만 보여주고, 전체 일정은 바텀시트로 본다. */}
+          <UpcomingSchedule className="md:hidden" />
 
           <section>
             <h2 className="mb-2 text-base leading-6 font-semibold text-black-400 md:mb-4 md:text-xl md:leading-8">

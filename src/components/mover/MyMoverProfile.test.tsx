@@ -90,6 +90,13 @@ function createMyMoverResult(
   }
 }
 
+// 화면 크기마다 따로 두는 이사 일정 섹션들. DOM 순서(데스크톱 오른쪽 열 → 태블릿)대로 돌려준다.
+function getScheduleSections() {
+  return screen
+    .getAllByRole('heading', { name: '이사 일정' })
+    .map((heading) => heading.closest('section')!)
+}
+
 describe('MyMoverProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -187,10 +194,12 @@ describe('MyMoverProfile', () => {
 
     render(<MyMoverProfile />)
 
-    const schedule = screen
-      .getByRole('heading', { name: '이사 일정' })
-      .closest('section')!
-    expect(within(schedule).getByText('박이사 고객님')).toBeInTheDocument()
+    // 화면 크기별로 일정 섹션을 따로 두기 때문에 여러 개이고, 어느 것이든 같은 일정을 보여준다.
+    const schedules = getScheduleSections()
+    expect(schedules.length).toBeGreaterThan(0)
+    for (const schedule of schedules) {
+      expect(within(schedule).getByText('박이사 고객님')).toBeInTheDocument()
+    }
   })
 
   it('이사 일정을 불러오지 못해도 프로필은 그대로 보여 준다', () => {
@@ -201,8 +210,24 @@ describe('MyMoverProfile', () => {
     render(<MyMoverProfile />)
 
     expect(screen.getByRole('heading', { name: '김무빙' })).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      '이사 일정을 불러오지 못했습니다.',
-    )
+    const alerts = screen.getAllByRole('alert')
+    expect(alerts.length).toBeGreaterThan(0)
+    for (const alert of alerts) {
+      expect(alert).toHaveTextContent('이사 일정을 불러오지 못했습니다.')
+    }
+  })
+
+  // jsdom은 CSS를 적용하지 않아서 화면 크기별 표시는 클래스로 확인한다.
+  it('데스크톱 일정은 오른쪽 열에, 태블릿 일정은 활동 현황 아래에 서로 겹치지 않게 둔다', () => {
+    render(<MyMoverProfile />)
+
+    const [desktop, tablet] = getScheduleSections()
+    expect(desktop).toHaveClass('hidden', 'lg:block', 'lg:col-start-2')
+    expect(tablet).toHaveClass('hidden', 'md:block', 'lg:hidden')
+
+    const stats = screen
+      .getByRole('heading', { name: '활동 현황' })
+      .closest('section')!
+    expect(stats.nextElementSibling).toBe(tablet)
   })
 })

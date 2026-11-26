@@ -79,8 +79,9 @@ export default function ScheduleSection({
     // 다시 불러오기만 실패했다면 이미 받은 일정을 그대로 보여준다.
     if (isError && !hasData) return <LoadError onRetry={() => refetch()} />
 
+    // 태블릿(md ~ lg 미만)은 달력 옆에 그날의 일정을 두고, 모바일과 데스크톱은 위아래로 쌓는다.
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 md:grid md:grid-cols-[300px_minmax(0,1fr)] md:items-start md:gap-8 lg:flex lg:flex-col lg:gap-5">
         <ScheduleCalendar
           counts={counts}
           selectedDate={selectedDate}

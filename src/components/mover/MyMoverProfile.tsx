@@ -176,6 +176,9 @@ export default function MyMoverProfile() {
             </dl>
           </section>
 
+          {/* 태블릿(md ~ lg 미만)에서만 활동 현황 아래에 전체 너비로 둔다. 데스크톱은 위 오른쪽 열에 있다. */}
+          <ScheduleSection className="hidden md:block lg:hidden" />
+
           <section>
             <h2 className="mb-2 text-base leading-6 font-semibold text-black-400 md:mb-4 md:text-xl md:leading-8">
               제공 서비스

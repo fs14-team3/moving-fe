@@ -84,6 +84,7 @@ function PendingQuoteList({ request }: { request: MoveRequestResponse }) {
       <QuoteCompareModal
         open={isComparisonOpen}
         onClose={() => setIsComparisonOpen(false)}
+        requestId={request.id}
         pendingQuotes={pendingQuotes}
       />
 

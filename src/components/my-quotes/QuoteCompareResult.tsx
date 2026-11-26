@@ -8,7 +8,7 @@ import type {
 } from '@/features/quotes-compare/types'
 import { cn } from '@/lib/cn'
 import { BadgeCheck } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '../common/button/Button'
 
 type Props = {
@@ -38,6 +38,22 @@ export default function QuoteCompareResult({
   onPrevious,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isClamped, setIsClamped] = useState(false)
+  const tableRef = useRef<HTMLTableElement>(null)
+
+  useEffect(() => {
+    const table = tableRef.current
+    if (!table || isExpanded || typeof ResizeObserver === 'undefined') return
+
+    const observer = new ResizeObserver(() => {
+      const cells = table.querySelectorAll<HTMLElement>('[data-clamp]')
+      setIsClamped(
+        [...cells].some((cell) => cell.scrollHeight > cell.clientHeight),
+      )
+    })
+    observer.observe(table)
+    return () => observer.disconnect()
+  }, [isExpanded])
 
   const quotes = result.quotes
   const recommendedId = result.recommendation.quoteIds
@@ -126,7 +142,7 @@ export default function QuoteCompareResult({
         </div>
       </div>
 
-      <table className="w-full table-fixed border-collapse">
+      <table ref={tableRef} className="w-full table-fixed border-collapse">
         <thead>
           <tr className="border-b border-line-200">
             <th
@@ -188,6 +204,7 @@ export default function QuoteCompareResult({
                     )}
                   >
                     <div
+                      data-clamp={row.isLong || undefined}
                       className={
                         row.isLong && !isExpanded ? 'line-clamp-4' : ''
                       }
@@ -202,14 +219,16 @@ export default function QuoteCompareResult({
         </tbody>
       </table>
 
-      <button
-        type="button"
-        aria-expanded={isExpanded}
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="self-center text-xs text-black-200 hover:cursor-pointer hover:text-gray-500 hover:underline md:text-sm lg:text-base"
-      >
-        {isExpanded ? '접기' : '리뷰 요약·견적 메시지 더보기'}
-      </button>
+      {(isClamped || isExpanded) && (
+        <button
+          type="button"
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="-mt-1 self-center text-xs text-black-200 hover:cursor-pointer hover:text-gray-500 hover:underline md:-mt-3 md:text-sm lg:text-base"
+        >
+          {isExpanded ? '접기' : '리뷰 요약·견적 메시지 더보기'}
+        </button>
+      )}
 
       <Button
         variant="outlined"

@@ -110,6 +110,12 @@ export const queryKeys = {
       [...queryKeys.moveProgress.all, 'detail', quoteId] as const,
   },
 
+  damageReports: {
+    all: ['damageReports'] as const,
+    list: (quoteId: string) =>
+      [...queryKeys.damageReports.all, 'list', quoteId] as const,
+  },
+
   // 일반 유저의 리뷰. 기사님이 받은 리뷰는 movers.reviews를 쓴다.
   reviews: {
     all: ['reviews'] as const,
@@ -128,6 +134,7 @@ export const queryKeys = {
       [...queryKeys.notifications.all, 'list', query] as const,
     // GET /notifications/unread-count
     unreadCount: () => [...queryKeys.notifications.all, 'unreadCount'] as const,
+    newRequests: () => [...queryKeys.notifications.all, 'newRequests'] as const,
   },
 
   chats: {

@@ -1,6 +1,6 @@
 import { LoaderCircle, RotateCw, X } from 'lucide-react'
 import Image from 'next/image'
-import type { PhotoUpload } from '@/features/proof-photos/hooks/useProofPhotoUploads'
+import type { PhotoUpload } from '@/features/proof-photos/hooks/usePhotoUploads'
 
 type UploadTileProps = {
   upload: PhotoUpload
@@ -75,6 +75,7 @@ export default function UploadTile({
   onRemove,
 }: UploadTileProps) {
   const isFailed = upload.status === 'failed'
+  const isUploaded = upload.status === 'uploaded'
 
   return (
     <li className="relative aspect-square overflow-hidden rounded-lg bg-background-300">
@@ -88,36 +89,40 @@ export default function UploadTile({
         />
       )}
 
-      <div
-        className={
-          isFailed
-            ? 'absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black-500/60 px-2 text-gray-50'
-            : 'absolute inset-0 flex items-center justify-center bg-black-500/40 text-gray-50'
-        }
-      >
-        {isFailed ? (
-          <>
-            <p role="alert" className="text-center text-xs font-medium">
-              {upload.error}
-            </p>
-            {upload.retryable && (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={onRetry}
-                className="flex cursor-pointer items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-semibold text-black-400 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RotateCw aria-hidden="true" className="size-3" />
-                다시 시도
-              </button>
-            )}
-          </>
-        ) : (
-          <Status upload={upload} />
-        )}
-      </div>
+      {isUploaded ? (
+        <span className="sr-only">올린 사진</span>
+      ) : (
+        <div
+          className={
+            isFailed
+              ? 'absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black-500/60 px-2 text-gray-50'
+              : 'absolute inset-0 flex items-center justify-center bg-black-500/40 text-gray-50'
+          }
+        >
+          {isFailed ? (
+            <>
+              <p role="alert" className="text-center text-xs font-medium">
+                {upload.error}
+              </p>
+              {upload.retryable && (
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={onRetry}
+                  className="flex cursor-pointer items-center gap-1 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-semibold text-black-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <RotateCw aria-hidden="true" className="size-3" />
+                  다시 시도
+                </button>
+              )}
+            </>
+          ) : (
+            <Status upload={upload} />
+          )}
+        </div>
+      )}
 
-      {isFailed ? (
+      {isFailed || isUploaded ? (
         <button
           type="button"
           aria-label="목록에서 빼기"

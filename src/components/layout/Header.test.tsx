@@ -24,6 +24,8 @@ vi.mock('@/features/notifications/api', () => ({
   getUnreadNotificationCount: () => new Promise(() => {}),
   readNotification: vi.fn(),
   readAllNotifications: vi.fn(),
+  getNewRequestSummary: () => new Promise(() => {}),
+  readNewRequests: vi.fn(),
 }))
 
 function createUser(role: Role, overrides: Partial<Me> = {}): Me {

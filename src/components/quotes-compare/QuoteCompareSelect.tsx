@@ -1,33 +1,35 @@
 'use client'
 
+import { COMPARISON_KEYWORD_LABELS } from '@/constants/quotesCompare'
 import { CustomerQuote } from '@/features/my-quotes/api'
+import type { ComparisonKeyword } from '@/features/quotes-compare/types'
 import { ChevronDown, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import SelectChip from '../common/SelectChip'
 import Button from '../common/button/Button'
 
-export type Selection = { quoteIds: string[]; keywords: string[] }
+export type Selection = { quoteIds: string[]; keywords: ComparisonKeyword[] }
 
 type Props = {
   pendingQuotes: CustomerQuote[]
   initialSelection?: Selection
+  isPending: boolean
   onNext: (value: Selection) => void
 }
 
-// TODO: api 키로 교체
-// QouteCompareResult.tsx KEYWORD_LABELS와 합치기
-const KEYWORDS = ['가격', '경력', '시간 약속', '짐 취급', '빠른 작업', '소통']
+const KEYWORDS = Object.keys(COMPARISON_KEYWORD_LABELS) as ComparisonKeyword[]
 
 export default function QuoteCompareSelect({
   pendingQuotes,
   initialSelection,
+  isPending,
   onNext,
 }: Props) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [selectedQuotes, setSelectedQoutes] = useState<string[]>(
     initialSelection?.quoteIds ?? [],
   )
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>(
+  const [selectedKeywords, setSelectedKeywords] = useState<ComparisonKeyword[]>(
     initialSelection?.keywords ?? [],
   )
 
@@ -43,7 +45,7 @@ export default function QuoteCompareSelect({
   }
 
   // 키워드 선택 핸들러
-  function handleKeywordSelect(keyword: string) {
+  function handleKeywordSelect(keyword: ComparisonKeyword) {
     if (selectedKeywords.includes(keyword)) {
       setSelectedKeywords(
         selectedKeywords.filter(
@@ -77,8 +79,9 @@ export default function QuoteCompareSelect({
         <div>
           <button
             type="button"
+            disabled={isPending}
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`flex w-full items-center justify-between rounded-xl border border-line-100 px-5 py-2 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 md:text-base ${isDropdownOpen ? 'border-primary-400 bg-primary-100 text-primary-400 hover:bg-primary-100' : 'border-line-100'}`}
+            className={`flex w-full items-center justify-between rounded-xl border border-line-100 px-5 py-2 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 disabled:cursor-not-allowed md:text-base ${isDropdownOpen ? 'border-primary-400 bg-primary-100 text-primary-400 hover:bg-primary-100' : 'border-line-100'}`}
           >
             견적 선택
             <ChevronDown
@@ -94,8 +97,9 @@ export default function QuoteCompareSelect({
                   <li key={pendingQuote.id}>
                     <button
                       type="button"
+                      disabled={isPending}
                       onClick={() => handleQuoteSelect(pendingQuote.id)}
-                      className="flex w-full items-center justify-center gap-1 border-b border-line-100 px-5 py-4 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 md:text-base"
+                      className="flex w-full items-center justify-center gap-1 border-b border-line-100 px-5 py-4 text-sm leading-6 font-medium hover:cursor-pointer hover:bg-gray-100 disabled:cursor-not-allowed md:text-base"
                     >
                       {nickname} 기사님
                       <span className="text-xs font-normal md:text-sm">
@@ -124,8 +128,9 @@ export default function QuoteCompareSelect({
                   <p className="text-xs md:text-sm">{nickname} 기사님</p>
                   <button
                     type="button"
+                    disabled={isPending}
                     onClick={() => handleQuoteSelect(quoteId)}
-                    className="hover:cursor-pointer"
+                    className="hover:cursor-pointer disabled:cursor-not-allowed"
                   >
                     <XIcon
                       aria-label={`${nickname} 기사님 선택 해제`}
@@ -151,10 +156,11 @@ export default function QuoteCompareSelect({
             <SelectChip
               key={keyword}
               selected={selectedKeywords.includes(keyword)}
+              disabled={isPending}
               onClick={() => handleKeywordSelect(keyword)}
-              className="hover:cursor-pointer"
+              className="hover:cursor-pointer disabled:cursor-not-allowed"
             >
-              {keyword}
+              {COMPARISON_KEYWORD_LABELS[keyword]}
             </SelectChip>
           ))}
         </div>
@@ -162,10 +168,10 @@ export default function QuoteCompareSelect({
 
       <Button
         type="submit"
-        disabled={!isFormComplete}
+        disabled={!isFormComplete || isPending}
         className="w-full hover:cursor-pointer disabled:cursor-not-allowed md:h-15 lg:w-full lg:text-base"
       >
-        견적 비교하기
+        {isPending ? '견적 비교 중...' : '견적 비교하기'}
       </Button>
     </form>
   )

@@ -6,14 +6,21 @@ import type {
   NotificationType,
 } from '@/features/notifications/api'
 import { getNotificationHref } from '@/features/notifications/link'
-import { toMessageParts } from '@/features/notifications/message'
+import {
+  toMessageParts,
+  toNewRequestSummaryParts,
+  type MessagePart,
+} from '@/features/notifications/message'
+import { useNewRequestSummary } from '@/features/notifications/hooks/useNewRequestSummary'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
 import { useReadAllNotifications } from '@/features/notifications/hooks/useReadAllNotifications'
+import { useReadNewRequests } from '@/features/notifications/hooks/useReadNewRequests'
 import { useReadNotifications } from '@/features/notifications/hooks/useReadNotifications'
 import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUnreadNotificationCount'
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { useDismiss } from '@/hooks/useDismiss'
 import { cn } from '@/lib/cn'
+import { queryKeys } from '@/lib/queryKeys'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
 import { useQueryClient } from '@tanstack/react-query'
 import { LoaderCircle } from 'lucide-react'
@@ -31,14 +38,26 @@ import {
 
 // payload로 문구를 만들 수 없고 서버 문구도 없을 때 보여줄 기본 문구
 const DEFAULT_MESSAGE: Record<NotificationType, string> = {
-  NEW_REQUEST: '새로운 견적 요청이 도착했어요',
   NEW_QUOTE: '새로운 견적이 도착했어요',
   QUOTE_CONFIRMED: '견적이 확정되었어요',
   MOVE_DAY: '내일은 이사 예정일이에요',
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
+  DAMAGE_REPORTED: '파손 접수가 도착했어요',
 }
 
 const ITEM = 'flex gap-2 px-4 py-4 md:px-6'
+
+function MessageText({ parts }: { parts: MessagePart[] }) {
+  return parts.map(({ text, highlight }, index) =>
+    highlight ? (
+      <span key={index} className="text-primary-400">
+        {text}
+      </span>
+    ) : (
+      text
+    ),
+  )
+}
 
 function NotificationMessage({
   notification,
@@ -52,14 +71,62 @@ function NotificationMessage({
     return notification.message || DEFAULT_MESSAGE[notification.type]
   }
 
-  return parts.map(({ text, highlight }, index) =>
-    highlight ? (
-      <span key={index} className="text-primary-400">
-        {text}
-      </span>
-    ) : (
-      text
-    ),
+  return <MessageText parts={parts} />
+}
+
+function NotificationRow({
+  notificationId,
+  href,
+  onNavigate,
+  createdAt,
+  unread,
+  children,
+}: {
+  notificationId?: string
+  href: string | null
+  onNavigate: (href: string, notificationId?: string) => void
+  createdAt: string
+  unread: boolean
+  children: ReactNode
+}) {
+  const content = (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
+          {children}
+        </p>
+        <time
+          dateTime={createdAt}
+          className="mt-1 block text-xs text-gray-300 md:text-sm"
+        >
+          {formatTimeAgo(createdAt)}
+        </time>
+      </div>
+      {unread && (
+        <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
+          <span className="sr-only">읽지 않은 알림</span>
+        </span>
+      )}
+    </>
+  )
+
+  return (
+    <li data-unread-id={unread ? notificationId : undefined}>
+      {href ? (
+        <Link
+          href={href}
+          onClick={() => onNavigate(href, notificationId)}
+          className={cn(
+            ITEM,
+            'rounded-lg transition-colors hover:bg-background-200',
+          )}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div className={ITEM}>{content}</div>
+      )}
+    </li>
   )
 }
 
@@ -95,16 +162,64 @@ export default function NotificationMenu({ role }: { role: Role }) {
     fetchNextPage,
     refetch,
   } = useNotifications({ enabled: isOpen })
-  // 패널에 그려진 알림 중 읽지 않은 것. 닫을 때 이 알림들만 읽음 처리한다.
+  const { summary, isPending: isSummaryPending } = useNewRequestSummary({
+    enabled: isOpen && role === 'MOVER',
+  })
+  const { mutate: readNewRequests } = useReadNewRequests()
+  const isLoading = isPending || isSummaryPending
+  const showListError = isError && !hasData
+  const displayedSummary = isLoading || showListError ? null : summary
   const shownUnreadIds = useMemo(
     () => notifications.filter(({ readAt }) => !readAt).map(({ id }) => id),
     [notifications],
   )
 
-  const close = useCallback(() => {
-    setIsOpen(false)
-    if (shownUnreadIds.length > 0) readNotifications(shownUnreadIds)
-  }, [shownUnreadIds, readNotifications])
+  const seenUnreadIds = useRef(new Set<string>())
+
+  useEffect(() => {
+    const list = listRef.current
+    if (!isOpen || isLoading || !list || shownUnreadIds.length === 0) return
+
+    const seen = seenUnreadIds.current
+    const minimumVisibleRatio = 0.5
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.intersectionRatio < minimumVisibleRatio) continue
+
+          const id = entry.target.getAttribute('data-unread-id')
+          if (id) seen.add(id)
+        }
+      },
+      { threshold: minimumVisibleRatio },
+    )
+    list.querySelectorAll('[data-unread-id]').forEach((row) => {
+      observer.observe(row)
+    })
+    return () => observer.disconnect()
+  }, [isOpen, isLoading, shownUnreadIds])
+
+  const close = useCallback(
+    (clickedId?: string) => {
+      const idsToRead = shownUnreadIds.filter(
+        (id) => id === clickedId || seenUnreadIds.current.has(id),
+      )
+      seenUnreadIds.current = new Set()
+      setIsOpen(false)
+      if (idsToRead.length > 0) readNotifications(idsToRead)
+      if (displayedSummary) readNewRequests(displayedSummary.latestAt)
+    },
+    [shownUnreadIds, readNotifications, displayedSummary, readNewRequests],
+  )
+
+  const navigate = (href: string, notificationId?: string) => {
+    if (href === '/mover/requests') {
+      void queryClient.invalidateQueries({
+        queryKey: receivedRequestKeys.all,
+      })
+    }
+    close(notificationId)
+  }
 
   useDismiss({ isOpen, onDismiss: close, containerRef, triggerRef })
 
@@ -142,7 +257,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
   ])
 
   const renderContent = () => {
-    if (isPending) {
+    if (isLoading) {
       return (
         <div role="status" className="flex justify-center py-10">
           <LoaderCircle
@@ -154,7 +269,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
       )
     }
 
-    if (isError && !hasData) {
+    if (showListError) {
       return (
         <div role="alert" className="flex flex-col items-center gap-2 py-10">
           <p className="text-sm text-gray-400 md:text-base">
@@ -171,7 +286,7 @@ export default function NotificationMenu({ role }: { role: Role }) {
       )
     }
 
-    if (notifications.length === 0) {
+    if (notifications.length === 0 && !displayedSummary) {
       return <PanelStatus>알림이 없습니다</PanelStatus>
     }
 
@@ -180,58 +295,40 @@ export default function NotificationMenu({ role }: { role: Role }) {
         ref={listRef}
         className="max-h-90 divide-y divide-line-200 overflow-y-auto px-2 md:max-h-100 md:px-4"
       >
-        {notifications.map((notification) => {
-          const href = getNotificationHref(notification, role)
-          const content = (
-            <>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm leading-6 font-medium break-keep text-black-400 md:text-base md:leading-7">
-                  <NotificationMessage
-                    notification={notification}
-                    role={role}
-                  />
-                </p>
-                <time
-                  dateTime={notification.createdAt}
-                  className="mt-1 block text-xs text-gray-300 md:text-sm"
-                >
-                  {formatTimeAgo(notification.createdAt)}
-                </time>
-              </div>
-              {!notification.readAt && (
-                <span className="mt-2 size-2 shrink-0 rounded-full bg-primary-400 md:mt-2.5">
-                  <span className="sr-only">읽지 않은 알림</span>
-                </span>
-              )}
-            </>
-          )
-
-          return (
-            <li key={notification.id}>
-              {href ? (
-                <Link
-                  href={href}
-                  onClick={() => {
-                    if (href === '/mover/requests') {
-                      void queryClient.invalidateQueries({
-                        queryKey: receivedRequestKeys.all,
-                      })
-                    }
-                    close()
-                  }}
-                  className={cn(
-                    ITEM,
-                    'rounded-lg transition-colors hover:bg-background-200',
-                  )}
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div className={ITEM}>{content}</div>
-              )}
-            </li>
-          )
-        })}
+        {displayedSummary && (
+          <NotificationRow
+            href="/mover/requests"
+            onNavigate={navigate}
+            createdAt={displayedSummary.latestAt}
+            unread
+          >
+            <MessageText
+              parts={toNewRequestSummaryParts(displayedSummary.count)}
+            />
+          </NotificationRow>
+        )}
+        {notifications.map((notification) => (
+          <NotificationRow
+            key={notification.id}
+            notificationId={notification.id}
+            href={getNotificationHref(notification, role)}
+            onNavigate={(href, id) => {
+              if (
+                notification.type === 'DAMAGE_REPORTED' &&
+                notification.quoteId
+              ) {
+                void queryClient.invalidateQueries({
+                  queryKey: queryKeys.damageReports.list(notification.quoteId),
+                })
+              }
+              navigate(href, id)
+            }}
+            createdAt={notification.createdAt}
+            unread={!notification.readAt}
+          >
+            <NotificationMessage notification={notification} role={role} />
+          </NotificationRow>
+        ))}
         {hasNextPage && (
           <li ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage ? (
@@ -297,7 +394,8 @@ export default function NotificationMenu({ role }: { role: Role }) {
                 type="button"
                 onClick={() => readAllNotifications()}
                 disabled={
-                  isReadingAll || (!hasUnread && shownUnreadIds.length === 0)
+                  isReadingAll ||
+                  (!hasUnread && shownUnreadIds.length === 0 && !summary)
                 }
                 className="text-sm font-semibold text-black-100 disabled:text-gray-400"
               >

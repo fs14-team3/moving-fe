@@ -508,6 +508,33 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/move-requests/{requestId}/quotes/compare': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 견적 비교 (대기 중인 견적)
+     * @description 요청자 본인만 받은 견적을 비교할 수 있습니다. 비로그인은 401, 기사님은 403을 반환합니다.
+     *     대기 중인 견적 2~3개와 비교 키워드 1~3개를 선택해 요청합니다.
+     *     견적은 선택한 순서대로 반환하며, 금액·코멘트와 기사님의 경력·평점·리뷰 수·리뷰 요약·후기 항목을 제공합니다.
+     *     리뷰 요약과 후기 항목은 리뷰가 10건 미만이면 null입니다. 후기 항목에는 가격(PRICE)을 제외합니다.
+     *     본인 요청이 아니거나 선택한 견적이 해당 요청의 대기 중 견적이 아니면 404를 반환합니다.
+     *     선택한 키워드에서 가장 많이 앞선 견적을 추천 이유와 함께 반환합니다.
+     *     순위가 같으면 함께 추천하고, 차이가 없으면 추천 견적은 빈 배열입니다.
+     *     결과는 요청 시점에 계산하며 저장하지 않습니다.
+     */
+    post: operations['compareQuotes']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/move-requests/{requestId}/rejections': {
     parameters: {
       query?: never
@@ -744,9 +771,61 @@ export interface paths {
     put?: never
     /**
      * 이사 진행 단계 기록
-     * @description 견적을 보낸 기사님이 확정된 견적의 이사 당일(한국 시간 Asia/Seoul 기준)에 다음 진행 단계를 기록합니다. 단계는 출발(`DEPARTED`) → 상차(`LOADING`) → 운행(`IN_TRANSIT`) → 하차(`UNLOADING`) → 완료(`COMPLETED`) 순서로 하나씩만 기록할 수 있으며, 응답의 `nextStep`을 `step`에 담아 보냅니다. 이미 기록한 단계를 다시 보내면 새로 저장하지 않고 현재 진행 상황을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 이사일이 지난 뒤에도 이미 기록한 단계는 같은 방식으로 반환합니다. 완료를 기록해도 리뷰 작성과 작업 사진 업로드는 기존과 같이 이사일 다음 날부터 가능합니다.
+     * @description 견적을 보낸 기사님은 견적과 이사 요청이 모두 `CONFIRMED`인 경우에만 이사 당일(한국 시간 Asia/Seoul 기준) 다음 진행 단계를 기록할 수 있습니다. 단계는 출발(`DEPARTED`) → 상차(`LOADING`) → 운행(`IN_TRANSIT`) → 하차(`UNLOADING`) → 완료(`COMPLETED`) 순서로 하나씩만 기록할 수 있으며, 응답의 `nextStep`을 `step`에 담아 보냅니다. 이미 기록한 단계를 다시 보내면 새로 저장하지 않고 현재 진행 상황을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 이사 요청이 완료되거나 이사일이 지난 뒤에도 이미 기록한 단계는 같은 방식으로 반환합니다. 완료를 기록해도 리뷰 작성과 작업 사진 업로드는 기존과 같이 이사일 다음 날부터 가능합니다.
      */
     post: operations['recordMoveProgress']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/damage-reports': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 파손 접수 목록
+     * @description 견적을 보낸 기사님과 해당 견적 요청의 일반 유저만 조회할 수 있습니다. 최근에 접수한 순서로 반환합니다. `canReport`가 `true`일 때만 파손 접수하기 버튼을 보여 줍니다.
+     *
+     *     사진 주소는 작업 사진과 같은 CloudFront 서명 URL이므로, 화면을 1시간 넘게 열어 둘 때는 목록을 다시 조회해 주소를 갱신합니다.
+     */
+    get: operations['listDamageReports']
+    put?: never
+    /**
+     * 파손 접수
+     * @description 일반 유저가 본인의 확정된 견적에 파손된 품목을 접수합니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 30일 동안 접수할 수 있습니다.
+     *
+     *     `POST /quotes/{quoteId}/damage-reports/uploads`로 받은 업로드 정보로 사진과 썸네일을 S3에 모두 올린 뒤, 올린 사진의 `uploadId`를 보여 줄 순서대로 `uploadIds`에 담아 보냅니다. 응답을 받지 못했을 때 같은 품목명, 상세 내용, 같은 순서의 `uploadIds`로 다시 보내면 접수 기간이 지났어도 기존 접수를 반환합니다. 이미 접수된 사진을 사용하면서 품목명, 상세 내용, 사진 구성이나 순서를 바꾸면 `409 DAMAGE_REPORT_CONFLICT`를 반환합니다.
+     *
+     *     접수하면 견적을 보낸 기사님에게 `DAMAGE_REPORTED` 알림이 생성됩니다. 알림의 `quoteId`는 이 견적이며 `payload`에 `customerName`과 `itemName`이 담깁니다.
+     */
+    post: operations['createDamageReport']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/quotes/{quoteId}/damage-reports/uploads': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 파손 사진 업로드 정보 발급
+     * @description 일반 유저가 본인의 확정된 견적에 접수할 파손 사진 `count`장의 S3 업로드 정보를 받습니다. 한국 시간(Asia/Seoul) 기준 이사일 다음 날부터 30일 동안 받을 수 있으며, 한 번에 10장까지 요청할 수 있습니다.
+     *
+     *     사진을 만들어 올리는 방법(`image`·`thumbnail` 인코딩, `contentType`, `multipart/form-data` POST, 크기와 10분 제한)은 `POST /quotes/{quoteId}/proof-photos/uploads`와 같습니다.
+     */
+    post: operations['createDamagePhotoUploads']
     delete?: never
     options?: never
     head?: never
@@ -797,7 +876,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 작성 가능한 리뷰 목록 */
+    /**
+     * 작성 가능한 리뷰 목록
+     * @description 본인의 확정 견적(CONFIRMED) 중 한국 시간(Asia/Seoul) 기준 이사일이 지났고 아직 리뷰를 작성하지 않은 견적만 조회합니다.
+     */
     get: operations['listWritableReviews']
     put?: never
     post?: never
@@ -815,8 +897,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * 미읽음 알림 목록 조회
-     * @description 로그인 세션으로 인증된 고객·기사님의 미읽음 알림을 최신순으로 3개씩 조회합니다.
+     * 알림 목록 조회
+     * @description 로그인 세션으로 인증된 고객·기사님의 미읽음 알림과 생성 후 30일 이내의 읽은 알림을 최신순으로 10개씩 조회합니다. 미읽음 알림은 기간과 관계없이 포함하며, 읽음 여부는 `readAt`으로 구분합니다.
      */
     get: operations['listNotifications']
     put?: never
@@ -834,7 +916,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 미읽음 알림 개수 조회 */
+    /**
+     * 미읽음 알림 개수 조회
+     * @description 기사님은 확인하지 않은 새 견적 요청이 있으면 1을 더한 값을 받습니다.
+     */
     get: operations['getUnreadNotificationCount']
     put?: never
     post?: never
@@ -857,8 +942,51 @@ export interface paths {
     delete?: never
     options?: never
     head?: never
-    /** 전체 알림 읽음 처리 */
+    /**
+     * 전체 알림 읽음 처리
+     * @description 기사님은 10초 전까지 들어온 새 견적 요청도 확인 처리합니다.
+     */
     patch: operations['readAllNotifications']
+    trace?: never
+  }
+  '/notifications/new-requests': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 새 견적 요청 요약 조회
+     * @description 기사님이 마지막으로 확인한 뒤 서비스 지역(출발지 또는 도착지)에 들어온 견적 요청 수와 가장 최근 요청 시각을 조회합니다. 받은 요청 목록에 나오는 요청만 세고, 기사님을 지정한 요청과 만들어진 지 10초가 지나지 않은 요청은 제외합니다.
+     */
+    get: operations['getNewRequestSummary']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/notifications/new-requests/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * 새 견적 요청 확인 처리
+     * @description 요약에서 받은 `latestAt`까지의 요청을 확인 처리합니다. 10초 전보다 늦은 시각은 10초 전으로 맞추고, 이미 확인한 시각보다 이른 시각은 무시합니다.
+     */
+    patch: operations['readNewRequests']
     trace?: never
   }
   '/notifications/{id}/read': {
@@ -998,11 +1126,11 @@ export interface components {
     QuoteStatus: 'SUBMITTED' | 'CONFIRMED' | 'NOT_SELECTED'
     /** @enum {string} */
     NotificationType:
-      | 'NEW_REQUEST'
       | 'NEW_DESIGNATED_REQUEST'
       | 'NEW_QUOTE'
       | 'QUOTE_CONFIRMED'
       | 'MOVE_DAY'
+      | 'DAMAGE_REPORTED'
     /**
      * @description 리뷰 많은 순 / 평점 높은 순 / 경력 많은 순 / 확정 많은 순. 값이 같으면 기사님 id 순서이며, 경력순에서는 경력을 입력하지 않은 기사님이 마지막에 옵니다.
      * @enum {string}
@@ -1040,6 +1168,9 @@ export interface components {
       | 'PROOF_PHOTO_NOT_UPLOADED'
       | 'MOVE_PROGRESS_NOT_ALLOWED'
       | 'MOVE_PROGRESS_OUT_OF_ORDER'
+      | 'DAMAGE_REPORT_NOT_ALLOWED'
+      | 'DAMAGE_REPORT_CONFLICT'
+      | 'DAMAGE_PHOTO_NOT_UPLOADED'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
       | 'SERVICE_UNAVAILABLE'
@@ -1147,10 +1278,65 @@ export interface components {
       nextStep:
         'DEPARTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED' | null
       /**
-       * @description 호출자가 지금 `nextStep`을 기록할 수 있으면 `true` (견적을 보낸 기사님, 확정된 견적의 이사 당일, 완료 기록 전)
+       * @description 견적을 보낸 기사님이고, 견적과 이사 요청이 모두 확정 상태이며, 이사 당일에 기록할 단계가 남아 있으면 `true`
        * @example true
        */
       canRecord: boolean
+    }
+    DamagePhotoUploadCreate: {
+      /** @example 3 */
+      count: number
+      /**
+       * @example image/webp
+       * @enum {string}
+       */
+      contentType: 'image/jpeg' | 'image/webp'
+    }
+    DamageReportCreate: {
+      /**
+       * @description 파손된 품목명. 앞뒤 공백은 빼고 저장합니다.
+       * @example 4인용 식탁
+       */
+      itemName: string
+      /**
+       * @description 파손 상세 내용. 앞뒤 공백은 빼고 저장합니다.
+       * @example 상판 모서리가 깨졌어요.
+       */
+      description: string
+      /** @description S3에 올린 사진의 `uploadId`. 이 순서대로 사진을 보여 줍니다. */
+      uploadIds: string[]
+    }
+    DamageReport: {
+      /** Format: uuid */
+      id: string
+      /** @example 4인용 식탁 */
+      itemName: string
+      /** @example 상판 모서리가 깨졌어요. */
+      description: string
+      /** Format: date-time */
+      createdAt: string
+      /** @description 접수할 때 보낸 `uploadIds` 순서입니다. */
+      photos: components['schemas']['DamagePhoto'][]
+    }
+    DamageReportList: {
+      items: components['schemas']['DamageReport'][]
+      /**
+       * @description 호출자가 지금 파손을 접수할 수 있으면 `true` (견적을 요청한 일반 유저, 확정된 견적의 이사일 다음 날부터 30일 동안)
+       * @example true
+       */
+      canReport: boolean
+    }
+    DamagePhoto: {
+      /**
+       * Format: uri
+       * @description 사진 CloudFront 서명 URL. 작업 사진과 같은 방식으로 발급되어 최소 1시간, 최대 2시간 동안 유효합니다.
+       */
+      url: string
+      /**
+       * Format: uri
+       * @description 썸네일 CloudFront 서명 URL. `url`과 같은 시각에 만료됩니다.
+       */
+      thumbnailUrl: string
     }
     SignupRequest: {
       role: components['schemas']['Role']
@@ -1537,6 +1723,66 @@ export interface components {
       createdAt: string
       mover: components['schemas']['MoverSummary']
     }
+    QuoteComparisonRequest: {
+      /** @description 비교할 대기 중인 견적 id. 응답은 이 순서대로 반환합니다. */
+      quoteIds: string[]
+      /** @description 비교 기준 키워드 */
+      keywords: (
+        | 'PRICE'
+        | 'CAREER'
+        | 'PUNCTUALITY'
+        | 'HANDLING'
+        | 'SPEED'
+        | 'COMMUNICATION'
+      )[]
+    }
+    QuoteComparisonMover: {
+      nickname: string | null
+      careerYears: number | null
+      /**
+       * Format: float
+       * @example 4.8
+       */
+      averageRating: number
+      reviewCount: number
+      /** @description AI 리뷰 요약. 리뷰가 10건 미만이면 null. */
+      reviewSummary: string | null
+      /** @description 후기 항목별 언급 수. 가격(PRICE)은 제외합니다. 리뷰가 10건 미만이면 null. */
+      aspects: components['schemas']['ReviewSummaryAspect'][] | null
+    }
+    QuoteComparisonQuote: {
+      /** Format: uuid */
+      id: string
+      /**
+       * @description 원(KRW)
+       * @example 350000
+       */
+      price: number
+      /** @description 기사님이 견적 제출 시 입력한 코멘트. 미입력 시 null. */
+      comment: string | null
+      mover: components['schemas']['QuoteComparisonMover']
+    }
+    /**
+     * @description 선택한 키워드별로 가장 좋은 견적을 정하고, 가장 많은 키워드에서 앞선 견적을 추천합니다.
+     *     가격은 낮을수록, 경력은 길수록, 후기 항목은 (긍정 수 - 부정 수) / 언급 수가 높을수록 앞섭니다.
+     *     경력이 없거나 0년, 후기가 없거나 점수가 0 이하인 기사님은 해당 키워드 비교에서 제외합니다.
+     *     모든 견적이 같은 값인 키워드는 반영하지 않습니다.
+     *     앞선 키워드 수가 같으면 평점이 높은 순, 가격이 낮은 순으로 정하고, 순위가 같은 견적은 함께 추천합니다.
+     */
+    QuoteRecommendation: {
+      /** @description 공동 추천이면 여러 개, 모든 기준에서 차이가 없으면 빈 배열 */
+      quoteIds: string[]
+      /**
+       * @description 추천 이유 문장
+       * @example 가격이 가장 낮고, 경력이 가장 길어요.
+       */
+      reason: string
+    }
+    QuoteComparison: {
+      /** @description 요청한 `quoteIds` 순서대로 반환합니다. */
+      quotes: components['schemas']['QuoteComparisonQuote'][]
+      recommendation: components['schemas']['QuoteRecommendation']
+    }
     QuoteDetail: components['schemas']['CustomerQuote'] & {
       /** Format: date-time */
       confirmedAt: string | null
@@ -1639,6 +1885,8 @@ export interface components {
       /** Format: date */
       moveDate: string
       mover: components['schemas']['MoverSummary']
+      from: components['schemas']['Address']
+      to: components['schemas']['Address']
     }
     MyReview: components['schemas']['ReviewTarget'] & {
       /** Format: uuid */
@@ -1676,6 +1924,11 @@ export interface components {
     }
     NotificationListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['Notification'][]
+    }
+    NewRequestSummary: {
+      count: number
+      /** Format: date-time */
+      latestAt: string | null
     }
     ChatMessage: {
       /** Format: uuid */
@@ -2860,6 +3113,44 @@ export interface operations {
       }
     }
   }
+  compareQuotes: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        requestId: components['parameters']['RequestIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['QuoteComparisonRequest']
+      }
+    }
+    responses: {
+      /** @description 견적 비교 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['QuoteComparison']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인의 이사 요청이 아니거나, 선택한 견적이 해당 요청의 대기 중인 견적이 아닌 경우 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
   rejectMoveRequest: {
     parameters: {
       query?: never
@@ -3093,7 +3384,7 @@ export interface operations {
       400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       404: components['responses']['NotFound']
-      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      /** @description `UPLOAD_NOT_CONFIGURED`. 사진이 있는데 서버에 `IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
       503: {
         headers: {
           [name: string]: unknown
@@ -3336,8 +3627,162 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
-      /** @description `MOVE_PROGRESS_NOT_ALLOWED` (확정되지 않은 견적이거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
+      /** @description `MOVE_PROGRESS_NOT_ALLOWED` (견적 또는 이사 요청이 `CONFIRMED` 상태가 아니거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  listDamageReports: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 파손 접수 목록 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DamageReportList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      /** @description `NOT_FOUND`. 견적을 보낸 기사님이나 견적을 요청한 일반 유저가 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 접수가 있는데 서버에 `IMAGE_BASE_URL`·`CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createDamageReport: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DamageReportCreate']
+      }
+    }
+    responses: {
+      /** @description 저장된 파손 접수 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DamageReport']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인이 요청한 견적이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `DAMAGE_REPORT_NOT_ALLOWED` (확정되지 않은 견적이거나 접수 기간이 아님), `DAMAGE_REPORT_CONFLICT` (이미 접수된 사진이 포함되어 있고 기존 접수 내용과 다름) 또는 `DAMAGE_PHOTO_NOT_UPLOADED` (사진이나 썸네일이 S3에 없음. 업로드 정보를 다시 받아 사진을 올린 뒤 접수) */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 S3 설정이나 `CLOUDFRONT_KEY_PAIR_ID`·`CLOUDFRONT_PRIVATE_KEY`가 없는 경우 (로컬 개발 환경 등) */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
+  createDamagePhotoUploads: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        quoteId: components['parameters']['QuoteIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DamagePhotoUploadCreate']
+      }
+    }
+    responses: {
+      /** @description 업로드 정보 */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProofPhotoUploadList']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인이 요청한 견적이 아님 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `DAMAGE_REPORT_NOT_ALLOWED`. 확정되지 않은 견적이거나 접수 기간(이사일 다음 날부터 30일)이 아님 */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+      /** @description `UPLOAD_NOT_CONFIGURED`. 서버에 `AWS_REGION`·`S3_BUCKET`·`IMAGE_BASE_URL` 중 하나라도 없는 경우 (로컬 개발 환경 등) */
+      503: {
         headers: {
           [name: string]: unknown
         }
@@ -3406,6 +3851,7 @@ export interface operations {
           'application/json': components['schemas']['MyReviewListResponse']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }
@@ -3433,6 +3879,7 @@ export interface operations {
           'application/json': components['schemas']['WritableReviewListResponse']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }
@@ -3449,7 +3896,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 미읽음 알림 목록 */
+      /** @description 알림 목록 */
       200: {
         headers: {
           [name: string]: unknown
@@ -3506,6 +3953,60 @@ export interface operations {
         }
       }
       401: components['responses']['Unauthorized']
+    }
+  }
+  getNewRequestSummary: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 새 견적 요청 요약 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NewRequestSummary']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  readNewRequests: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: date-time */
+          latestAt: string
+        }
+      }
+    }
+    responses: {
+      /** @description 확인 처리 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            updated: boolean
+          }
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
     }
   }
   readNotification: {

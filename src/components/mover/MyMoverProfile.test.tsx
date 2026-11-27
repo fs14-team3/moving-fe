@@ -3,6 +3,8 @@ import { MOCK_MOVER_DETAILS } from '@/features/movers/fixtures/movers'
 import { MOCK_REVIEWS } from '@/features/movers/fixtures/reviews'
 import { useMoverReviews } from '@/features/movers/hooks/useMoverReviews'
 import { useMyMover } from '@/features/movers/hooks/useMyMover'
+import { useConfirmedSchedule } from '@/features/schedule/hooks/useConfirmedSchedule'
+import type { SentQuote } from '@/features/sent-quotes/api'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,6 +20,46 @@ vi.mock('@/features/movers/hooks/useMyMover', () => ({
 vi.mock('@/features/movers/hooks/useMoverReviews', () => ({
   useMoverReviews: vi.fn(),
 }))
+
+vi.mock('@/features/schedule/hooks/useConfirmedSchedule', () => ({
+  useConfirmedSchedule: vi.fn(),
+}))
+
+function createScheduleResult(
+  overrides: Partial<ReturnType<typeof useConfirmedSchedule>> = {},
+) {
+  return {
+    confirmedQuotes: [],
+    hasData: true,
+    isPending: false,
+    isError: false,
+    refetch: vi.fn(),
+    ...overrides,
+  }
+}
+
+function createConfirmedQuote(customerName: string): SentQuote {
+  return {
+    id: 'quote-1',
+    price: 180000,
+    comment: null,
+    status: 'CONFIRMED',
+    isDesignated: false,
+    createdAt: '2026-11-01T09:00:00.000Z',
+    moveRequest: {
+      id: 'request-1',
+      customerName,
+      moveType: 'SMALL',
+      moveDate: '2099-12-31',
+      details: null,
+      from: { address: '서울특별시 중구 세종대로 110', region: '서울' },
+      to: { address: '경기도 수원시 팔달구 효원로 1', region: '경기' },
+      status: 'CONFIRMED',
+      isDesignated: false,
+      createdAt: '2026-10-30T09:00:00.000Z',
+    },
+  }
+}
 
 function createReviewsResult(
   overrides: Partial<ReturnType<typeof useMoverReviews>> = {},
@@ -53,6 +95,7 @@ describe('MyMoverProfile', () => {
     vi.clearAllMocks()
     vi.mocked(useMyMover).mockReturnValue(createMyMoverResult())
     vi.mocked(useMoverReviews).mockReturnValue(createReviewsResult())
+    vi.mocked(useConfirmedSchedule).mockReturnValue(createScheduleResult())
   })
 
   it('내가 받은 리뷰와 평점을 보여 준다', () => {
@@ -133,5 +176,33 @@ describe('MyMoverProfile', () => {
 
     expect(screen.getByRole('heading', { name: '김무빙' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('확정된 이사 일정을 이사 일정 섹션에 보여 준다', () => {
+    vi.mocked(useConfirmedSchedule).mockReturnValue(
+      createScheduleResult({
+        confirmedQuotes: [createConfirmedQuote('박이사')],
+      }),
+    )
+
+    render(<MyMoverProfile />)
+
+    const schedule = screen
+      .getByRole('heading', { name: '이사 일정' })
+      .closest('section')!
+    expect(within(schedule).getByText('박이사 고객님')).toBeInTheDocument()
+  })
+
+  it('이사 일정을 불러오지 못해도 프로필은 그대로 보여 준다', () => {
+    vi.mocked(useConfirmedSchedule).mockReturnValue(
+      createScheduleResult({ isError: true, hasData: false }),
+    )
+
+    render(<MyMoverProfile />)
+
+    expect(screen.getByRole('heading', { name: '김무빙' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '이사 일정을 불러오지 못했습니다.',
+    )
   })
 })

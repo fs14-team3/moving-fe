@@ -26,8 +26,8 @@ export default function MyReviewCard({ review }: { review: MyReview }) {
   const { mover } = review
   const nickname = mover.nickname?.trim() || '익명'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
-  const from = review.from ? toShortAddress(review.from.address) : '-'
-  const to = review.to ? toShortAddress(review.to.address) : '-'
+  const from = toShortAddress(review.from.address)
+  const to = toShortAddress(review.to.address)
 
   return (
     <article className="rounded-2xl bg-white p-5 shadow-sm md:p-6 lg:px-8 lg:py-7">

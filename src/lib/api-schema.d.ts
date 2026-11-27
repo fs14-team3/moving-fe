@@ -508,6 +508,33 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/move-requests/{requestId}/quotes/compare': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 견적 비교 (대기 중인 견적)
+     * @description 요청자 본인만 받은 견적을 비교할 수 있습니다. 비로그인은 401, 기사님은 403을 반환합니다.
+     *     대기 중인 견적 2~3개와 비교 키워드 1~3개를 선택해 요청합니다.
+     *     견적은 선택한 순서대로 반환하며, 금액·코멘트와 기사님의 경력·평점·리뷰 수·리뷰 요약·후기 항목을 제공합니다.
+     *     리뷰 요약과 후기 항목은 리뷰가 10건 미만이면 null입니다. 후기 항목에는 가격(PRICE)을 제외합니다.
+     *     본인 요청이 아니거나 선택한 견적이 해당 요청의 대기 중 견적이 아니면 404를 반환합니다.
+     *     선택한 키워드에서 가장 많이 앞선 견적을 추천 이유와 함께 반환합니다.
+     *     순위가 같으면 함께 추천하고, 차이가 없으면 추천 견적은 빈 배열입니다.
+     *     결과는 요청 시점에 계산하며 저장하지 않습니다.
+     */
+    post: operations['compareQuotes']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/move-requests/{requestId}/rejections': {
     parameters: {
       query?: never
@@ -744,7 +771,7 @@ export interface paths {
     put?: never
     /**
      * 이사 진행 단계 기록
-     * @description 견적을 보낸 기사님이 확정된 견적의 이사 당일(한국 시간 Asia/Seoul 기준)에 다음 진행 단계를 기록합니다. 단계는 출발(`DEPARTED`) → 상차(`LOADING`) → 운행(`IN_TRANSIT`) → 하차(`UNLOADING`) → 완료(`COMPLETED`) 순서로 하나씩만 기록할 수 있으며, 응답의 `nextStep`을 `step`에 담아 보냅니다. 이미 기록한 단계를 다시 보내면 새로 저장하지 않고 현재 진행 상황을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 이사일이 지난 뒤에도 이미 기록한 단계는 같은 방식으로 반환합니다. 완료를 기록해도 리뷰 작성과 작업 사진 업로드는 기존과 같이 이사일 다음 날부터 가능합니다.
+     * @description 견적을 보낸 기사님은 견적과 이사 요청이 모두 `CONFIRMED`인 경우에만 이사 당일(한국 시간 Asia/Seoul 기준) 다음 진행 단계를 기록할 수 있습니다. 단계는 출발(`DEPARTED`) → 상차(`LOADING`) → 운행(`IN_TRANSIT`) → 하차(`UNLOADING`) → 완료(`COMPLETED`) 순서로 하나씩만 기록할 수 있으며, 응답의 `nextStep`을 `step`에 담아 보냅니다. 이미 기록한 단계를 다시 보내면 새로 저장하지 않고 현재 진행 상황을 그대로 반환하므로, 응답을 받지 못했을 때 안전하게 재시도할 수 있습니다. 이사 요청이 완료되거나 이사일이 지난 뒤에도 이미 기록한 단계는 같은 방식으로 반환합니다. 완료를 기록해도 리뷰 작성과 작업 사진 업로드는 기존과 같이 이사일 다음 날부터 가능합니다.
      */
     post: operations['recordMoveProgress']
     delete?: never
@@ -797,7 +824,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 작성 가능한 리뷰 목록 */
+    /**
+     * 작성 가능한 리뷰 목록
+     * @description 본인의 확정 견적(CONFIRMED) 중 한국 시간(Asia/Seoul) 기준 이사일이 지났고 아직 리뷰를 작성하지 않은 견적만 조회합니다.
+     */
     get: operations['listWritableReviews']
     put?: never
     post?: never
@@ -815,8 +845,8 @@ export interface paths {
       cookie?: never
     }
     /**
-     * 미읽음 알림 목록 조회
-     * @description 로그인 세션으로 인증된 고객·기사님의 미읽음 알림을 최신순으로 3개씩 조회합니다.
+     * 알림 목록 조회
+     * @description 로그인 세션으로 인증된 고객·기사님의 미읽음 알림과 생성 후 30일 이내의 읽은 알림을 최신순으로 10개씩 조회합니다. 미읽음 알림은 기간과 관계없이 포함하며, 읽음 여부는 `readAt`으로 구분합니다.
      */
     get: operations['listNotifications']
     put?: never
@@ -1147,7 +1177,7 @@ export interface components {
       nextStep:
         'DEPARTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED' | null
       /**
-       * @description 호출자가 지금 `nextStep`을 기록할 수 있으면 `true` (견적을 보낸 기사님, 확정된 견적의 이사 당일, 완료 기록 전)
+       * @description 견적을 보낸 기사님이고, 견적과 이사 요청이 모두 확정 상태이며, 이사 당일에 기록할 단계가 남아 있으면 `true`
        * @example true
        */
       canRecord: boolean
@@ -1537,6 +1567,66 @@ export interface components {
       createdAt: string
       mover: components['schemas']['MoverSummary']
     }
+    QuoteComparisonRequest: {
+      /** @description 비교할 대기 중인 견적 id. 응답은 이 순서대로 반환합니다. */
+      quoteIds: string[]
+      /** @description 비교 기준 키워드 */
+      keywords: (
+        | 'PRICE'
+        | 'CAREER'
+        | 'PUNCTUALITY'
+        | 'HANDLING'
+        | 'SPEED'
+        | 'COMMUNICATION'
+      )[]
+    }
+    QuoteComparisonMover: {
+      nickname: string | null
+      careerYears: number | null
+      /**
+       * Format: float
+       * @example 4.8
+       */
+      averageRating: number
+      reviewCount: number
+      /** @description AI 리뷰 요약. 리뷰가 10건 미만이면 null. */
+      reviewSummary: string | null
+      /** @description 후기 항목별 언급 수. 가격(PRICE)은 제외합니다. 리뷰가 10건 미만이면 null. */
+      aspects: components['schemas']['ReviewSummaryAspect'][] | null
+    }
+    QuoteComparisonQuote: {
+      /** Format: uuid */
+      id: string
+      /**
+       * @description 원(KRW)
+       * @example 350000
+       */
+      price: number
+      /** @description 기사님이 견적 제출 시 입력한 코멘트. 미입력 시 null. */
+      comment: string | null
+      mover: components['schemas']['QuoteComparisonMover']
+    }
+    /**
+     * @description 선택한 키워드별로 가장 좋은 견적을 정하고, 가장 많은 키워드에서 앞선 견적을 추천합니다.
+     *     가격은 낮을수록, 경력은 길수록, 후기 항목은 (긍정 수 - 부정 수) / 언급 수가 높을수록 앞섭니다.
+     *     경력이 없거나 0년, 후기가 없거나 점수가 0 이하인 기사님은 해당 키워드 비교에서 제외합니다.
+     *     모든 견적이 같은 값인 키워드는 반영하지 않습니다.
+     *     앞선 키워드 수가 같으면 평점이 높은 순, 가격이 낮은 순으로 정하고, 순위가 같은 견적은 함께 추천합니다.
+     */
+    QuoteRecommendation: {
+      /** @description 공동 추천이면 여러 개, 모든 기준에서 차이가 없으면 빈 배열 */
+      quoteIds: string[]
+      /**
+       * @description 추천 이유 문장
+       * @example 가격이 가장 낮고, 경력이 가장 길어요.
+       */
+      reason: string
+    }
+    QuoteComparison: {
+      /** @description 요청한 `quoteIds` 순서대로 반환합니다. */
+      quotes: components['schemas']['QuoteComparisonQuote'][]
+      recommendation: components['schemas']['QuoteRecommendation']
+    }
     QuoteDetail: components['schemas']['CustomerQuote'] & {
       /** Format: date-time */
       confirmedAt: string | null
@@ -1639,6 +1729,8 @@ export interface components {
       /** Format: date */
       moveDate: string
       mover: components['schemas']['MoverSummary']
+      from: components['schemas']['Address']
+      to: components['schemas']['Address']
     }
     MyReview: components['schemas']['ReviewTarget'] & {
       /** Format: uuid */
@@ -2860,6 +2952,44 @@ export interface operations {
       }
     }
   }
+  compareQuotes: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        requestId: components['parameters']['RequestIdPath']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['QuoteComparisonRequest']
+      }
+    }
+    responses: {
+      /** @description 견적 비교 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['QuoteComparison']
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+      /** @description `NOT_FOUND`. 본인의 이사 요청이 아니거나, 선택한 견적이 해당 요청의 대기 중인 견적이 아닌 경우 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ErrorResponse']
+        }
+      }
+    }
+  }
   rejectMoveRequest: {
     parameters: {
       query?: never
@@ -3336,7 +3466,7 @@ export interface operations {
           'application/json': components['schemas']['ErrorResponse']
         }
       }
-      /** @description `MOVE_PROGRESS_NOT_ALLOWED` (확정되지 않은 견적이거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
+      /** @description `MOVE_PROGRESS_NOT_ALLOWED` (견적 또는 이사 요청이 `CONFIRMED` 상태가 아니거나 이사 당일이 아님) 또는 `MOVE_PROGRESS_OUT_OF_ORDER` (`step`이 현재 단계의 바로 다음 단계가 아님). 진행 상황을 다시 조회해 화면을 갱신합니다. */
       409: {
         headers: {
           [name: string]: unknown
@@ -3406,6 +3536,7 @@ export interface operations {
           'application/json': components['schemas']['MyReviewListResponse']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }
@@ -3433,6 +3564,7 @@ export interface operations {
           'application/json': components['schemas']['WritableReviewListResponse']
         }
       }
+      400: components['responses']['ValidationError']
       401: components['responses']['Unauthorized']
       403: components['responses']['Forbidden']
     }
@@ -3449,7 +3581,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 미읽음 알림 목록 */
+      /** @description 알림 목록 */
       200: {
         headers: {
           [name: string]: unknown

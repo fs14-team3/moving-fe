@@ -53,6 +53,9 @@ export const TOAST_MESSAGES = {
 
     rejectSuccess: '견적 요청을 반려했습니다.',
     rejectFailed: '견적 요청 반려에 실패했습니다.',
+
+    compareFailed: '견적 비교에 실패했습니다.',
+    compareStale: '비교할 수 없는 견적이 있습니다. 다시 선택해 주세요.',
   },
 
   review: {

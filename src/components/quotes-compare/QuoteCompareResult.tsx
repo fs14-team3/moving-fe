@@ -1,50 +1,65 @@
 'use client'
 
-import { MOCK_QUOTE_COMPARISON } from '@/features/my-quotes/fixtures/quotes'
+import { COMPARISON_KEYWORD_LABELS } from '@/constants/quotesCompare'
+import type {
+  ComparisonKeyword,
+  QuoteComparison,
+  QuoteComparisonQuote,
+} from '@/features/quotes-compare/types'
 import { cn } from '@/lib/cn'
 import { BadgeCheck } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from '../common/button/Button'
 
 type Props = {
-  // TODO: 선택한 견적, 키워드를 props로 받기
+  result: QuoteComparison
+  keywords: ComparisonKeyword[]
   onPrevious: () => void
 }
-
-// TODO: api 타입으로 교체
-type Quote = (typeof MOCK_QUOTE_COMPARISON.quotes)[number]
 
 type Row = {
   label: string
   isLong?: boolean
-  value: (quote: Quote) => string
+  value: (quote: QuoteComparisonQuote) => string
 }
 
-const ASPECT_ROWS = [
-  { label: '시간 약속', key: 'PUNCTUALITY' },
-  { label: '짐 취급', key: 'HANDLING' },
-  { label: '빠른 작업', key: 'SPEED' },
-  { label: '소통', key: 'COMMUNICATION' },
-]
+const ASPECT_KEYS = [
+  'PUNCTUALITY',
+  'HANDLING',
+  'SPEED',
+  'COMMUNICATION',
+] as const
 
 const EMPTY_VALUE = ['-', '후기 부족', '언급 없음']
 
-const KEYWORD_LABELS: Record<string, string> = {
-  PRICE: '가격',
-  CAREER: '경력',
-  PUNCTUALITY: '시간 약속',
-  HANDLING: '짐 취급',
-  SPEED: '빠른 작업',
-  COMMUNICATION: '소통',
-}
-
-export default function QuoteCompareResult({ onPrevious }: Props) {
+export default function QuoteCompareResult({
+  result,
+  keywords,
+  onPrevious,
+}: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isClamped, setIsClamped] = useState(false)
+  const tableRef = useRef<HTMLTableElement>(null)
 
-  // TODO: 서버 데이터로 교체
-  const quotes = MOCK_QUOTE_COMPARISON.quotes
-  const recommendedId = MOCK_QUOTE_COMPARISON.recommendation.quoteId
-  const selectedKeywords = MOCK_QUOTE_COMPARISON.selectedKeywords
+  useEffect(() => {
+    const table = tableRef.current
+    if (!table || isExpanded || typeof ResizeObserver === 'undefined') return
+
+    const observer = new ResizeObserver(() => {
+      const cells = table.querySelectorAll<HTMLElement>('[data-clamp]')
+      setIsClamped(
+        [...cells].some((cell) => cell.scrollHeight > cell.clientHeight),
+      )
+    })
+    observer.observe(table)
+    return () => observer.disconnect()
+  }, [isExpanded])
+
+  const quotes = result.quotes
+  const recommendedId = result.recommendation.quoteIds
+  const recommendedQuotes = quotes.filter((quote) =>
+    recommendedId.includes(quote.id),
+  )
 
   const rows: Row[] = [
     {
@@ -53,7 +68,8 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
     },
     {
       label: '경력',
-      value: (quote) => `${quote.mover.careerYears}년`,
+      value: (quote) =>
+        quote.mover.careerYears === null ? '-' : `${quote.mover.careerYears}년`,
     },
     {
       label: '평점',
@@ -64,8 +80,8 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
       label: '리뷰 개수',
       value: (quote) => `${quote.mover.reviewCount}개`,
     },
-    ...ASPECT_ROWS.map(({ label, key }): Row => ({
-      label,
+    ...ASPECT_KEYS.map((key): Row => ({
+      label: COMPARISON_KEYWORD_LABELS[key],
       value: (quote) => {
         if (!quote.mover.aspects) return '후기 부족'
 
@@ -87,21 +103,25 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
     },
   ]
 
-  const recommendQuote = MOCK_QUOTE_COMPARISON.quotes.find((quote) =>
-    recommendedId.includes(quote.id),
-  )
-
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="rounded-xl bg-primary-100/60 p-4 shadow-sm md:p-5 lg:p-6">
         <p className="text-base md:text-lg">
-          <span className="font-semibold">
-            {recommendQuote?.mover.nickname}{' '}
-          </span>
-          기사님을 추천해요!
+          {recommendedQuotes.length > 0 ? (
+            <>
+              <span className="font-semibold">
+                {recommendedQuotes
+                  .map((quote) => quote.mover.nickname ?? '익명')
+                  .join(', ')}{' '}
+              </span>
+              기사님을 추천해요!
+            </>
+          ) : (
+            '추천할 기사님이 없어요'
+          )}
         </p>
         <p className="mt-1 text-xs text-gray-500 md:text-sm lg:text-base">
-          {MOCK_QUOTE_COMPARISON.recommendation.reason}
+          {result.recommendation.reason}
         </p>
       </div>
 
@@ -111,18 +131,18 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
           선택한 키워드를 기준으로 비교했어요.
         </p>
         <div className="flex flex-wrap gap-2">
-          {selectedKeywords.map((keyword) => (
+          {keywords.map((keyword) => (
             <span
               key={keyword}
               className="rounded-2xl border border-primary-400 bg-primary-100 px-[10px] py-[6px] text-xs font-medium text-primary-400 md:text-sm"
             >
-              {KEYWORD_LABELS[keyword] ?? keyword}
+              {COMPARISON_KEYWORD_LABELS[keyword]}
             </span>
           ))}
         </div>
       </div>
 
-      <table className="w-full table-fixed border-collapse">
+      <table ref={tableRef} className="w-full table-fixed border-collapse">
         <thead>
           <tr className="border-b border-line-200">
             <th
@@ -148,7 +168,7 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
                       className="mx-auto mb-1 size-4 text-primary-400 lg:size-5"
                     />
                   )}
-                  {quote.mover.nickname}
+                  {quote.mover.nickname ?? '익명'}
                 </th>
               )
             })}
@@ -184,6 +204,7 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
                     )}
                   >
                     <div
+                      data-clamp={row.isLong || undefined}
                       className={
                         row.isLong && !isExpanded ? 'line-clamp-4' : ''
                       }
@@ -198,14 +219,16 @@ export default function QuoteCompareResult({ onPrevious }: Props) {
         </tbody>
       </table>
 
-      <button
-        type="button"
-        aria-expanded={isExpanded}
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="self-center text-xs text-black-200 hover:cursor-pointer hover:text-gray-500 hover:underline md:text-sm lg:text-base"
-      >
-        {isExpanded ? '접기' : '리뷰 요약·견적 메시지 더보기'}
-      </button>
+      {(isClamped || isExpanded) && (
+        <button
+          type="button"
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="-mt-1 self-center text-xs text-black-200 hover:cursor-pointer hover:text-gray-500 hover:underline md:-mt-3 md:text-sm lg:text-base"
+        >
+          {isExpanded ? '접기' : '리뷰 요약·견적 메시지 더보기'}
+        </button>
+      )}
 
       <Button
         variant="outlined"

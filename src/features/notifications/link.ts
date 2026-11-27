@@ -6,7 +6,6 @@ export function getNotificationHref(
   role: Role,
 ) {
   switch (type) {
-    case 'NEW_REQUEST':
     case 'NEW_DESIGNATED_REQUEST':
       return '/mover/requests'
     case 'NEW_QUOTE':

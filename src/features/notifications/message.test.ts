@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { Notification } from '@/features/notifications/api'
-import { toAreaLabel, toMessageParts } from '@/features/notifications/message'
+import {
+  toAreaLabel,
+  toMessageParts,
+  toNewRequestSummaryParts,
+} from '@/features/notifications/message'
 
 function createNotification(
   type: Notification['type'],
@@ -39,19 +43,18 @@ describe('toMessageParts', () => {
     expect(toHighlight(parts)).toBe('소형이사 견적')
   })
 
-  it.each([
-    ['NEW_REQUEST', '김가나 고객님의 가정이사 견적 요청이 도착했어요'],
-    [
-      'NEW_DESIGNATED_REQUEST',
-      '김가나 고객님의 가정이사 지정 견적 요청이 도착했어요',
-    ],
-  ] as const)('%s 알림은 고객 이름과 이사 종류로 만든다', (type, text) => {
+  it('지정 견적 요청 알림은 고객 이름과 이사 종류로 만든다', () => {
     const parts = toMessageParts(
-      createNotification(type, { customerName: '김가나', moveType: 'HOME' }),
+      createNotification('NEW_DESIGNATED_REQUEST', {
+        customerName: '김가나',
+        moveType: 'HOME',
+      }),
       'MOVER',
     )
 
-    expect(toText(parts)).toBe(text)
+    expect(toText(parts)).toBe(
+      '김가나 고객님의 가정이사 지정 견적 요청이 도착했어요',
+    )
   })
 
   it('견적 확정 알림은 받는 사람 기준으로 상대방 이름을 쓴다', () => {
@@ -108,5 +111,14 @@ describe('toAreaLabel', () => {
     ['세종특별자치시 한누리대로 2130', '세종'],
   ])('%s → %s', (address, label) => {
     expect(toAreaLabel(address)).toBe(label)
+  })
+})
+
+describe('toNewRequestSummaryParts', () => {
+  it('새 견적 요청 수를 강조한다', () => {
+    const parts = toNewRequestSummaryParts(3)
+
+    expect(toText(parts)).toBe('서비스 지역에 새 견적 요청 3건이 도착했어요')
+    expect(toHighlight(parts)).toBe('새 견적 요청 3건')
   })
 })

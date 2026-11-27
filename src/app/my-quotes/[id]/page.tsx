@@ -3,6 +3,7 @@
 import Button from '@/components/common/button/Button'
 import IconButton from '@/components/common/button/IconButton'
 import ConfirmQuoteModal from '@/components/common/modal/ConfirmQuoteModal'
+import DamageReportSection from '@/components/damage-reports/DamageReportSection'
 import MoveProgressSection from '@/components/move-progress/MoveProgressSection'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
@@ -280,6 +281,13 @@ export default function QuoteDetail() {
               <ProofPhotoSection
                 quoteId={quote.id}
                 emptyMessage="기사님이 올린 작업 사진이 아직 없어요."
+                className="border-b border-line-100"
+              />
+            )}
+            {isConfirmed && (
+              <DamageReportSection
+                quoteId={quote.id}
+                emptyMessage="이사일 다음 날부터 30일 동안 파손을 접수할 수 있어요."
                 className="border-b border-line-100 lg:border-none"
               />
             )}

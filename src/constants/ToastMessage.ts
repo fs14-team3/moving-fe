@@ -92,6 +92,17 @@ export const TOAST_MESSAGES = {
     outOfOrder: '진행 단계가 이미 바뀌었습니다. 최신 진행 상황을 불러옵니다.',
   },
 
+  damageReport: {
+    tooManyPhotos: (remaining: number) =>
+      `파손 사진은 ${remaining}장 더 올릴 수 있습니다.`,
+    createSuccess: '파손을 접수했습니다.',
+    createFailed: '파손 접수에 실패했습니다.',
+    notAllowed: '파손 접수 기간이 아닙니다.',
+    conflict:
+      '이미 접수된 사진이 포함되어 있어요. 기존 접수 내역을 확인해 주세요.',
+    photoExpired: '사진을 다시 올린 뒤 접수해 주세요.',
+  },
+
   common: {
     linkCopied: '링크가 복사되었습니다.',
     linkCopyFailed: '링크 복사에 실패했습니다.',

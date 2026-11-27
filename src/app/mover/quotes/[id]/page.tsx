@@ -1,6 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
+import DamageReportSection from '@/components/damage-reports/DamageReportSection'
 import MoveProgressSection from '@/components/move-progress/MoveProgressSection'
 import { LoadError, Loading } from '@/components/my-quotes/PageState'
 import QuoteBadges from '@/components/my-quotes/QuoteBadges'
@@ -83,6 +84,13 @@ export default function SentQuoteDetailPage() {
                   ? '고객님이 리뷰를 작성해 작업 사진을 올릴 수 없어요.'
                   : '이사일 다음 날부터 작업 사진을 올릴 수 있어요.'
               }
+              className="border-b border-line-100"
+            />
+          )}
+          {isConfirmed && (
+            <DamageReportSection
+              quoteId={quote.id}
+              emptyMessage="고객님이 접수한 파손이 없어요."
             />
           )}
         </article>

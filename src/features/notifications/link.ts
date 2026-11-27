@@ -15,6 +15,8 @@ export function getNotificationHref(
       return role === 'MOVER'
         ? `/mover/quotes/${quoteId}`
         : `/my-quotes/${quoteId}`
+    case 'DAMAGE_REPORTED':
+      return quoteId ? `/mover/quotes/${quoteId}` : null
     default:
       return null
   }

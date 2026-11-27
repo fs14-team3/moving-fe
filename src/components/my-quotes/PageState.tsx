@@ -77,6 +77,30 @@ export function LoadError({
   )
 }
 
+export function RefetchError({
+  message,
+  onRetry,
+  isRetrying = false,
+}: {
+  message: string
+  onRetry: () => void
+  isRetrying?: boolean
+}) {
+  return (
+    <div role="alert" className="flex items-center justify-between gap-3 pb-3">
+      <p className="text-sm font-medium text-red-500 md:text-base">{message}</p>
+      <button
+        type="button"
+        disabled={isRetrying}
+        onClick={onRetry}
+        className="cursor-pointer text-sm font-semibold text-primary-400 disabled:cursor-not-allowed disabled:opacity-50 md:text-base"
+      >
+        다시 불러오기
+      </button>
+    </div>
+  )
+}
+
 export function Empty({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-6 py-20 text-center lg:py-32">

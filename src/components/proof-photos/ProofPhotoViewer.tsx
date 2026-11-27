@@ -8,26 +8,30 @@ import Modal from '@/components/common/modal/Modal'
 import type { ProofPhoto } from '@/features/proof-photos/api'
 import { cn } from '@/lib/cn'
 
-type ProofPhotoViewerProps = {
-  photos: ProofPhoto[]
+type ViewerPhoto = Pick<ProofPhoto, 'url' | 'thumbnailUrl'>
+
+type ProofPhotoViewerProps<T extends ViewerPhoto> = {
+  photos: T[]
   index: number | null
+  label?: string
   keyboardDisabled?: boolean
   onChange: (index: number) => void
   onClose: () => void
-  onDelete?: (photo: ProofPhoto) => void
+  onDelete?: (photo: T) => void
 }
 
 const NAV_BUTTON =
   'absolute top-1/2 flex size-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-gray-50/90 text-black-400 shadow-md disabled:hidden'
 
-export default function ProofPhotoViewer({
+export default function ProofPhotoViewer<T extends ViewerPhoto>({
   photos,
   index,
+  label = '작업 사진',
   keyboardDisabled = false,
   onChange,
   onClose,
   onDelete,
-}: ProofPhotoViewerProps) {
+}: ProofPhotoViewerProps<T>) {
   const photo = index === null ? undefined : photos[index]
 
   useEffect(() => {
@@ -43,7 +47,7 @@ export default function ProofPhotoViewer({
   }, [index, keyboardDisabled, photos.length, onChange])
 
   return (
-    <Modal open={photo !== undefined} onClose={onClose} title="작업 사진">
+    <Modal open={photo !== undefined} onClose={onClose} title={label}>
       {photo && index !== null && (
         <>
           <div className="relative h-[60dvh] overflow-hidden rounded-xl bg-black-500">
@@ -58,7 +62,7 @@ export default function ProofPhotoViewer({
             <Image
               key={photo.url}
               src={photo.url}
-              alt={`작업 사진 ${index + 1}`}
+              alt={`${label} ${index + 1}`}
               fill
               unoptimized
               className="object-contain"

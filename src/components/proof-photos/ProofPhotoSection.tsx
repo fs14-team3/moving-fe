@@ -1,13 +1,20 @@
 'use client'
 
-import { Check, CircleCheck, ImagePlus } from 'lucide-react'
-import Image from 'next/image'
-import { useId, useRef, useState, type ChangeEvent } from 'react'
+import { Check, CircleCheck } from 'lucide-react'
+import { useId, useState } from 'react'
 import { toast } from 'sonner'
-import Button from '@/components/common/button/Button'
 import ConfirmModal from '@/components/common/modal/ConfirmModal'
-import { LoadError, Loading } from '@/components/my-quotes/PageState'
+import {
+  LoadError,
+  Loading,
+  RefetchError,
+} from '@/components/my-quotes/PageState'
+import PhotoPickerButton from '@/components/proof-photos/PhotoPickerButton'
+import PhotoThumbnail, {
+  PHOTO_GRID,
+} from '@/components/proof-photos/PhotoThumbnail'
 import ProofPhotoViewer from '@/components/proof-photos/ProofPhotoViewer'
+import UploadStatus from '@/components/proof-photos/UploadStatus'
 import UploadTile from '@/components/proof-photos/UploadTile'
 import { TOAST_MESSAGES } from '@/constants/ToastMessage'
 import { useDeleteProofPhoto } from '@/features/proof-photos/hooks/useDeleteProofPhoto'
@@ -41,7 +48,6 @@ export default function ProofPhotoSection({
   className,
 }: ProofPhotoSectionProps) {
   const headingId = useId()
-  const inputRef = useRef<HTMLInputElement>(null)
   const [selected, setSelected] = useState<File[]>([])
   const [viewing, setViewing] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -62,16 +68,12 @@ export default function ProofPhotoSection({
 
   const remaining = maxCount - photos.length - uploads.length
   const hasRetryable = failed.some(({ retryable }) => retryable)
-  const canRetry = !isUploading && hasRetryable
   const leaveGuard = useLeaveGuard(
     selected.length > 0 || isUploading || hasRetryable,
     '/mover/quotes',
   )
 
-  function select(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? [])
-    event.target.value = ''
-    if (files.length === 0) return
+  function select(files: File[]) {
     if (files.length > remaining) {
       toast.error(TOAST_MESSAGES.proofPhoto.tooMany(remaining))
       return
@@ -119,28 +121,16 @@ export default function ProofPhotoSection({
     }
 
     return (
-      <ul className="grid grid-cols-3 gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5">
+      <ul className={PHOTO_GRID}>
         {photos.map((photo, index) => (
-          <li
+          <PhotoThumbnail
             key={photo.id}
-            className="relative aspect-square overflow-hidden rounded-lg bg-background-300"
+            src={photo.thumbnailUrl}
+            label={`작업 사진 ${index + 1} 크게 보기`}
+            onClick={() => setViewing(index)}
           >
-            <button
-              type="button"
-              aria-label={`작업 사진 ${index + 1} 크게 보기`}
-              onClick={() => setViewing(index)}
-              className="relative size-full cursor-pointer"
-            >
-              <Image
-                src={photo.thumbnailUrl}
-                alt=""
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </button>
             {uploadedIds.includes(photo.id) && <UploadedMark />}
-          </li>
+          </PhotoThumbnail>
         ))}
         {uploads.map((upload) => (
           <UploadTile
@@ -176,80 +166,36 @@ export default function ProofPhotoSection({
         </div>
 
         {canEdit && (
-          <>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              onChange={select}
-            />
-            <Button
-              variant="outlined"
-              disabled={
-                isPending || isLoadingError || isUploading || remaining <= 0
-              }
-              onClick={() => inputRef.current?.click()}
-              icon={<ImagePlus aria-hidden="true" className="size-4" />}
-              className="h-10 w-auto gap-1 rounded-xl px-4 text-sm lg:h-11 lg:w-auto lg:text-base"
-            >
-              사진 올리기
-            </Button>
-          </>
+          <PhotoPickerButton
+            disabled={
+              isPending || isLoadingError || isUploading || remaining <= 0
+            }
+            onSelect={select}
+          >
+            사진 올리기
+          </PhotoPickerButton>
         )}
       </div>
 
-      <div
-        aria-live="polite"
-        className="flex items-center justify-between gap-3"
+      <UploadStatus
+        uploadingCount={uploads.length - failed.length}
+        failed={failed}
+        onRetry={retry}
       >
-        {isUploading && (
-          <p className="pb-3 text-sm font-medium text-black-200 md:text-base">
-            {uploads.length - failed.length}장을 올리고 있어요.
-          </p>
-        )}
-        {!isUploading && failed.length === 0 && uploadedIds.length > 0 && (
+        {uploadedIds.length > 0 && (
           <p className="flex items-center gap-1 pb-3 text-sm font-medium text-primary-400 md:text-base">
             <CircleCheck aria-hidden="true" className="size-4 md:size-5" />
             {uploadedIds.length}장을 올렸어요.
           </p>
         )}
-        {!isUploading && failed.length > 0 && (
-          <>
-            <p className="pb-3 text-sm font-medium text-red-500 md:text-base">
-              {failed.length}장을 올리지 못했어요.
-            </p>
-            {canRetry && (
-              <button
-                type="button"
-                onClick={() => retry(failed)}
-                className="cursor-pointer pb-3 text-sm font-semibold text-primary-400 md:text-base"
-              >
-                모두 다시 시도
-              </button>
-            )}
-          </>
-        )}
-      </div>
+      </UploadStatus>
 
       {isRefetchError && (
-        <div
-          role="alert"
-          className="flex items-center justify-between gap-3 pb-3"
-        >
-          <p className="text-sm font-medium text-red-500 md:text-base">
-            작업 사진을 새로 불러오지 못했어요.
-          </p>
-          <button
-            type="button"
-            disabled={isRefetching}
-            onClick={() => refetch()}
-            className="cursor-pointer text-sm font-semibold text-primary-400 disabled:cursor-not-allowed disabled:opacity-50 md:text-base"
-          >
-            다시 불러오기
-          </button>
-        </div>
+        <RefetchError
+          message="작업 사진을 새로 불러오지 못했어요."
+          isRetrying={isRefetching}
+          onRetry={() => refetch()}
+        />
       )}
 
       {renderBody()}

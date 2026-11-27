@@ -88,6 +88,19 @@ describe('toMessageParts', () => {
     )
   })
 
+  it('파손 접수 알림은 고객 이름과 파손 품목으로 만든다', () => {
+    const parts = toMessageParts(
+      createNotification('DAMAGE_REPORTED', {
+        customerName: '김가나',
+        itemName: '4인용 식탁',
+      }),
+      'MOVER',
+    )
+
+    expect(toText(parts)).toBe('김가나 고객님이 4인용 식탁 파손을 접수했어요')
+    expect(toHighlight(parts)).toBe('4인용 식탁 파손')
+  })
+
   it('필요한 값이 없으면 null을 돌려준다', () => {
     expect(
       toMessageParts(
@@ -98,6 +111,12 @@ describe('toMessageParts', () => {
     expect(
       toMessageParts(
         createNotification('QUOTE_CONFIRMED', { moverNickname: '김코드' }),
+        'MOVER',
+      ),
+    ).toBeNull()
+    expect(
+      toMessageParts(
+        createNotification('DAMAGE_REPORTED', { customerName: '김가나' }),
         'MOVER',
       ),
     ).toBeNull()

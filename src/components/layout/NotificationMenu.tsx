@@ -20,6 +20,7 @@ import { useUnreadNotificationCount } from '@/features/notifications/hooks/useUn
 import { receivedRequestKeys } from '@/features/received-requests/queryKeys'
 import { useDismiss } from '@/hooks/useDismiss'
 import { cn } from '@/lib/cn'
+import { queryKeys } from '@/lib/queryKeys'
 import { formatTimeAgo } from '@/lib/formatTimeAgo'
 import { useQueryClient } from '@tanstack/react-query'
 import { LoaderCircle } from 'lucide-react'
@@ -41,6 +42,7 @@ const DEFAULT_MESSAGE: Record<NotificationType, string> = {
   QUOTE_CONFIRMED: '견적이 확정되었어요',
   MOVE_DAY: '내일은 이사 예정일이에요',
   NEW_DESIGNATED_REQUEST: '새로운 지정 견적 요청이 도착했어요',
+  DAMAGE_REPORTED: '파손 접수가 도착했어요',
 }
 
 const ITEM = 'flex gap-2 px-4 py-4 md:px-6'
@@ -310,7 +312,17 @@ export default function NotificationMenu({ role }: { role: Role }) {
             key={notification.id}
             notificationId={notification.id}
             href={getNotificationHref(notification, role)}
-            onNavigate={navigate}
+            onNavigate={(href, id) => {
+              if (
+                notification.type === 'DAMAGE_REPORTED' &&
+                notification.quoteId
+              ) {
+                void queryClient.invalidateQueries({
+                  queryKey: queryKeys.damageReports.list(notification.quoteId),
+                })
+              }
+              navigate(href, id)
+            }}
             createdAt={notification.createdAt}
             unread={!notification.readAt}
           >

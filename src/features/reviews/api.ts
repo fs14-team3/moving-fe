@@ -3,12 +3,7 @@ import type { components, operations } from '@/lib/api-schema'
 
 type Schemas = components['schemas']
 
-// TODO: 시안에는 출발지 · 도착지가 있는데 명세(ReviewTarget)에 없어서 BE에 추가 요청.
-// 응답에 들어오면 확장 타입을 지우고 Schemas['ReviewTarget']만 쓴다.
-export type ReviewTarget = Schemas['ReviewTarget'] & {
-  from?: Schemas['Address']
-  to?: Schemas['Address']
-}
+export type ReviewTarget = Schemas['ReviewTarget']
 
 export type WritableReviewQuery = NonNullable<
   operations['listWritableReviews']['parameters']['query']
@@ -18,9 +13,7 @@ type WritableReviewPage = Schemas['OffsetMeta'] & {
   items: ReviewTarget[]
 }
 
-// 내가 쓴 리뷰도 ReviewTarget을 그대로 이어받아서 출발지 · 도착지가 같이 빠져 있다.
-export type MyReview = ReviewTarget &
-  Pick<Schemas['MyReview'], 'id' | 'rating' | 'content' | 'createdAt'>
+export type MyReview = Schemas['MyReview']
 
 export type MyReviewQuery = NonNullable<
   operations['listMyReviews']['parameters']['query']

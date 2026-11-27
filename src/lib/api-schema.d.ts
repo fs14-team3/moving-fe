@@ -864,7 +864,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** 미읽음 알림 개수 조회 */
+    /**
+     * 미읽음 알림 개수 조회
+     * @description 기사님은 확인하지 않은 새 견적 요청이 있으면 1을 더한 값을 받습니다.
+     */
     get: operations['getUnreadNotificationCount']
     put?: never
     post?: never
@@ -887,8 +890,51 @@ export interface paths {
     delete?: never
     options?: never
     head?: never
-    /** 전체 알림 읽음 처리 */
+    /**
+     * 전체 알림 읽음 처리
+     * @description 기사님은 10초 전까지 들어온 새 견적 요청도 확인 처리합니다.
+     */
     patch: operations['readAllNotifications']
+    trace?: never
+  }
+  '/notifications/new-requests': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 새 견적 요청 요약 조회
+     * @description 기사님이 마지막으로 확인한 뒤 서비스 지역(출발지 또는 도착지)에 들어온 견적 요청 수와 가장 최근 요청 시각을 조회합니다. 받은 요청 목록에 나오는 요청만 세고, 기사님을 지정한 요청과 만들어진 지 10초가 지나지 않은 요청은 제외합니다.
+     */
+    get: operations['getNewRequestSummary']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/notifications/new-requests/read': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * 새 견적 요청 확인 처리
+     * @description 요약에서 받은 `latestAt`까지의 요청을 확인 처리합니다. 10초 전보다 늦은 시각은 10초 전으로 맞추고, 이미 확인한 시각보다 이른 시각은 무시합니다.
+     */
+    patch: operations['readNewRequests']
     trace?: never
   }
   '/notifications/{id}/read': {
@@ -1028,11 +1074,7 @@ export interface components {
     QuoteStatus: 'SUBMITTED' | 'CONFIRMED' | 'NOT_SELECTED'
     /** @enum {string} */
     NotificationType:
-      | 'NEW_REQUEST'
-      | 'NEW_DESIGNATED_REQUEST'
-      | 'NEW_QUOTE'
-      | 'QUOTE_CONFIRMED'
-      | 'MOVE_DAY'
+      'NEW_DESIGNATED_REQUEST' | 'NEW_QUOTE' | 'QUOTE_CONFIRMED' | 'MOVE_DAY'
     /**
      * @description 리뷰 많은 순 / 평점 높은 순 / 경력 많은 순 / 확정 많은 순. 값이 같으면 기사님 id 순서이며, 경력순에서는 경력을 입력하지 않은 기사님이 마지막에 옵니다.
      * @enum {string}
@@ -1768,6 +1810,11 @@ export interface components {
     }
     NotificationListResponse: components['schemas']['CursorMeta'] & {
       items: components['schemas']['Notification'][]
+    }
+    NewRequestSummary: {
+      count: number
+      /** Format: date-time */
+      latestAt: string | null
     }
     ChatMessage: {
       /** Format: uuid */
@@ -3638,6 +3685,60 @@ export interface operations {
         }
       }
       401: components['responses']['Unauthorized']
+    }
+  }
+  getNewRequestSummary: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 새 견적 요청 요약 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['NewRequestSummary']
+        }
+      }
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
+    }
+  }
+  readNewRequests: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: date-time */
+          latestAt: string
+        }
+      }
+    }
+    responses: {
+      /** @description 확인 처리 결과 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            updated: boolean
+          }
+        }
+      }
+      400: components['responses']['ValidationError']
+      401: components['responses']['Unauthorized']
+      403: components['responses']['Forbidden']
     }
   }
   readNotification: {

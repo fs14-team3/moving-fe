@@ -1,4 +1,5 @@
 ﻿import { io, type Socket } from 'socket.io-client'
+import type { ChatMessageImage } from '@/features/chat/types'
 
 export type ChatSocketMessage = {
   id: string
@@ -6,7 +7,8 @@ export type ChatSocketMessage = {
   senderId: string
   content: string
   createdAt: string
-  senderName: string
+  senderName: string | null
+  images: ChatMessageImage[]
 }
 
 export type ChatReadEvent = {

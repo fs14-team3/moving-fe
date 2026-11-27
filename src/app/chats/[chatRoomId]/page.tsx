@@ -15,6 +15,11 @@ import { useSendChatMessage } from '@/features/chat/hooks/useSendChatMessage'
 import { useMarkChatRoomAsRead } from '@/features/chat/hooks/useMarkChatRoomAsRead'
 import { useChatRoomSocket } from '@/features/chat/hooks/useChatRoomSocket'
 import type { ChatMessageListResponse } from '@/features/chat/types'
+import {
+  createChatImageUploads,
+  uploadChatImage,
+  type ChatImageContentType,
+} from '@/features/chat/api'
 
 export default function ChatDetailPage() {
   const params = useParams<{ chatRoomId: string }>()
@@ -136,6 +141,7 @@ export default function ChatDetailPage() {
                 senderName: message.senderName,
                 content: message.content,
                 createdAt: message.createdAt,
+                images: message.images,
               },
             ],
           }
@@ -175,8 +181,54 @@ export default function ChatDetailPage() {
   const isReadOnly = room.quote.status === 'NOT_SELECTED'
   const messages = messageResponse?.items ?? []
 
-  function handleSend(content: string) {
-    sendMessage.mutate(content)
+  async function handleSend(content: string, files: File[]) {
+    const groupedFiles = new Map<ChatImageContentType, File[]>()
+
+    for (const file of files) {
+      const contentType = file.type as ChatImageContentType
+      const group = groupedFiles.get(contentType) ?? []
+
+      group.push(file)
+      groupedFiles.set(contentType, group)
+    }
+
+    const uploadIdsByFile = new Map<File, string>()
+
+    for (const [contentType, groupFiles] of groupedFiles) {
+      const uploads = await createChatImageUploads(
+        chatRoomId,
+        groupFiles.length,
+        contentType,
+      )
+
+      if (uploads.length !== groupFiles.length) {
+        throw new Error('이미지 업로드 정보가 올바르지 않습니다.')
+      }
+
+      await Promise.all(
+        uploads.map(async (upload, index) => {
+          const file = groupFiles[index]
+
+          await uploadChatImage(upload, file)
+          uploadIdsByFile.set(file, upload.uploadId)
+        }),
+      )
+    }
+
+    const imageUploadIds = files.map((file) => {
+      const uploadId = uploadIdsByFile.get(file)
+
+      if (!uploadId) {
+        throw new Error('이미지 업로드에 실패했습니다.')
+      }
+
+      return uploadId
+    })
+
+    await sendMessage.mutateAsync({
+      content,
+      imageUploadIds,
+    })
   }
 
   return (

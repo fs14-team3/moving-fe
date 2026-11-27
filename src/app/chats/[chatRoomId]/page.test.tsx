@@ -91,6 +91,7 @@ const incomingMessage: ChatSocketMessage = {
   senderName: '상대방',
   content: '안녕하세요',
   createdAt: '2026-11-25T10:00:00.000Z',
+  images: [],
 }
 
 let messageCache: ChatMessageListResponse | undefined

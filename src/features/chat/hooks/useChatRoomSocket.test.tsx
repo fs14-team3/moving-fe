@@ -87,6 +87,7 @@ describe('useChatRoomSocket', () => {
       senderName: '김고객',
       content: '안녕하세요.',
       createdAt: '2026-11-20T10:00:00.000Z',
+      images: [],
     }
 
     act(() => {
@@ -113,6 +114,7 @@ describe('useChatRoomSocket', () => {
       senderName: '김고객',
       content: '다른 채팅방 메시지',
       createdAt: '2026-11-20T10:00:00.000Z',
+      images: [],
     }
 
     act(() => {

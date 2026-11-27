@@ -127,25 +127,6 @@ describe('WrittenReviewsPage', () => {
     expect(within(card).getByText('2026.11.22')).toBeInTheDocument()
   })
 
-  it('출발지 · 도착지가 없으면 -로 보여 준다', async () => {
-    mockGetMyReviews.mockResolvedValue(
-      createPage([
-        {
-          ...createReview('review-1', '김코드'),
-          from: undefined,
-          to: undefined,
-        },
-      ]),
-    )
-
-    renderPage()
-
-    const card = (await screen.findByText('김코드 기사님 소개')).closest(
-      'article',
-    )!
-    expect(within(card).getAllByText('-')).toHaveLength(2)
-  })
-
   it('목록 끝에 닿으면 다음 페이지를 이어서 불러온다', async () => {
     mockGetMyReviews
       .mockResolvedValueOnce(

@@ -64,19 +64,13 @@ export function toMessageParts(
         { text: `${moveTypeLabel} 견적`, highlight: true },
         { text: '이 도착했어요' },
       ]
-    case 'NEW_REQUEST':
-    case 'NEW_DESIGNATED_REQUEST': {
+    case 'NEW_DESIGNATED_REQUEST':
       if (!customerName || !moveTypeLabel) return null
-      const request =
-        notification.type === 'NEW_DESIGNATED_REQUEST'
-          ? '지정 견적 요청'
-          : '견적 요청'
       return [
         { text: `${customerName} 고객님의 ` },
-        { text: `${moveTypeLabel} ${request}`, highlight: true },
+        { text: `${moveTypeLabel} 지정 견적 요청`, highlight: true },
         { text: '이 도착했어요' },
       ]
-    }
     case 'QUOTE_CONFIRMED':
       if (role === 'MOVER') {
         if (!customerName) return null
@@ -117,4 +111,12 @@ export function toMessageParts(
     default:
       return null
   }
+}
+
+export function toNewRequestSummaryParts(count: number): MessagePart[] {
+  return [
+    { text: '서비스 지역에 ' },
+    { text: `새 견적 요청 ${count}건`, highlight: true },
+    { text: '이 도착했어요' },
+  ]
 }

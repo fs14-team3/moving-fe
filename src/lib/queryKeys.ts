@@ -134,6 +134,7 @@ export const queryKeys = {
       [...queryKeys.notifications.all, 'list', query] as const,
     // GET /notifications/unread-count
     unreadCount: () => [...queryKeys.notifications.all, 'unreadCount'] as const,
+    newRequests: () => [...queryKeys.notifications.all, 'newRequests'] as const,
   },
 
   chats: {

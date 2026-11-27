@@ -46,8 +46,8 @@ export default function WritableReviewCard({
   const { mover } = target
   const nickname = mover.nickname?.trim() || '익명'
   const intro = mover.intro?.trim() || '등록된 소개가 없습니다.'
-  const from = target.from ? toShortAddress(target.from.address) : '-'
-  const to = target.to ? toShortAddress(target.to.address) : '-'
+  const from = toShortAddress(target.from.address)
+  const to = toShortAddress(target.to.address)
 
   return (
     <article className="grid grid-cols-1 rounded-2xl bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_auto] md:gap-x-6 md:p-6 lg:px-8 lg:py-7">

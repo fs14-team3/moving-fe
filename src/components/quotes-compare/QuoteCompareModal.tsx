@@ -7,12 +7,14 @@ import QuoteCompareStep from './QuoteCompareStep'
 type ModalProps = {
   open: boolean
   onClose: () => void
+  requestId: string
   pendingQuotes: CustomerQuote[]
 }
 
 export default function QuoteCompareModal({
   open,
   onClose,
+  requestId,
   pendingQuotes,
 }: ModalProps) {
   return (
@@ -23,7 +25,7 @@ export default function QuoteCompareModal({
       titleClassName="text-xl"
       className="lg:w-200"
     >
-      <QuoteCompareStep pendingQuotes={pendingQuotes} />
+      <QuoteCompareStep requestId={requestId} pendingQuotes={pendingQuotes} />
     </Modal>
   )
 }

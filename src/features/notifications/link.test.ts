@@ -5,7 +5,6 @@ describe('getNotificationHref', () => {
   it.each([
     ['CUSTOMER', 'NEW_QUOTE', '/my-quotes/quote-1'],
     ['CUSTOMER', 'QUOTE_CONFIRMED', '/my-quotes/quote-1'],
-    ['MOVER', 'NEW_REQUEST', '/mover/requests'],
     ['MOVER', 'NEW_DESIGNATED_REQUEST', '/mover/requests'],
     ['MOVER', 'QUOTE_CONFIRMED', '/mover/quotes/quote-1'],
     ['MOVER', 'DAMAGE_REPORTED', '/mover/quotes/quote-1'],

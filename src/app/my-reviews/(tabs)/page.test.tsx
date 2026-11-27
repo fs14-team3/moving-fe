@@ -130,20 +130,6 @@ describe('WritableReviewsPage', () => {
     })
   })
 
-  it('출발지 · 도착지가 응답에 없으면 -로 보여 준다', async () => {
-    const target = {
-      ...createTarget('quote-1', '김코드'),
-      from: undefined,
-      to: undefined,
-    }
-    mockGetWritableReviews.mockResolvedValue(createPage([target]))
-
-    renderPage()
-
-    const card = (await screen.findByText('김코드 기사님')).closest('article')!
-    expect(within(card).getAllByText('-')).toHaveLength(2)
-  })
-
   it('리뷰를 등록하면 그 견적으로 보내고 모달을 닫는다', async () => {
     mockGetWritableReviews.mockResolvedValue(
       createPage([createTarget('quote-1', '김코드')]),
